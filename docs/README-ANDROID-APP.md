@@ -1,5 +1,11 @@
 # Forum Personal Pod Android App
 
+> Legacy note: this document describes the pre-edge `/api/civic/submit`
+> Android path. The current app points at `secure-worker` and submits opt-in
+> Forum Feedback to `/api/forum/feedback`, with member registration and
+> aggregation handled in Cloudflare D1. Prefer the root `README.md` and
+> `forum-airlock/docs/civic-edge-analysis.md` for current operations.
+
 The Android app wraps `forum-pod` with Capacitor. It keeps the same local-first model:
 
 - civic submissions are saved in the app WebView's IndexedDB;

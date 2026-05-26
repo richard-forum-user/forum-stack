@@ -2,19 +2,12 @@
   "name": "forum-airlock",
   "private": true,
   "scripts": {
-    "listener": "node listener.js",
     "build:pod": "VITE_ALLOW_PILOT_FALLBACK=0 VITE_BASE=/pod/ npm run build --prefix ../forum-pod && rm -rf dist && cp -r ../forum-pod/dist ./dist",
-    "install:server": "bash ../deploy/install-forum-server.sh",
     "dev:worker": "npx wrangler dev",
     "deploy:worker": "npx wrangler deploy"
   },
   "dependencies": {
-    "@simplewebauthn/server": "^13.1.1",
-    "@zk-email/helpers": "^6.4.2",
-    "body-parser": "^2.2.2",
-    "express": "^5.2.1",
-    "snarkjs": "^0.7.6",
-    "sqlite3": "^5.1.7"
+    "@simplewebauthn/server": "^13.1.1"
   },
   "devDependencies": {
     "wrangler": "^3.114.0"

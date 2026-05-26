@@ -16,12 +16,11 @@ Worker version: **`e69b998f-3d17-48d5-bca2-6e413c4fbc8f`** (see [Handovers/13-po
 | Path              | Role                                                                                                                  |
 | ----------------- | --------------------------------------------------------------------------------------------------------------------- |
 | `forum-pod/`      | Vite + React 19 PWA, also packaged as a Capacitor Android APK. Signs Ed25519 bundles, caches in IndexedDB + DuckDB-WASM. |
-| `forum-airlock/`  | Cloudflare Worker (`secure-worker`) + `PersonalPodDO` Durable Object + WebAuthn server + local Node listener.            |
-| `forum-ai/`       | Python analysis pipeline (on-prem). Edge path: `forum-airlock/civic-analysis.js` (D1 SQL only). |
+| `forum-airlock/`  | Cloudflare Worker (`secure-worker`) + `PersonalPodDO` Durable Object + WebAuthn server + D1 ingest/analysis.              |
 | `forum-egress/`   | Cloudflare Worker that serves the public KV-backed report at `forum-egress.yourcommunity.forum`.                       |
 | `deploy/`         | Launch scripts, systemd unit templates, Cloudflare Tunnel config, Android build helpers.                                |
 | `Handovers/`      | The canonical narrative. Read [13](Handovers/13-pod-as-source-of-truth.md) first, walk back to [1](Handovers/handover1.md) for full context. |
-| `archive/`        | Pre-H8 prototypes kept for reference; not built or deployed.                                                            |
+| `archive/`        | Pre-H8 prototypes and retired on-prem listener/analysis code kept for reference; not built or deployed.                  |
 
 ---
 
@@ -50,15 +49,14 @@ npm install
 npx wrangler deploy
 ```
 
-### Full local launch (Vite + listener)
+### Local Pod UI launch
 
 ```bash
 bash deploy/forum-pod-launch.sh
 ```
 
-> Note: deploy scripts currently hardcode `~/Desktop/forum-pod` etc. They
-> still need to be updated to the new `~/Desktop/forum-stack/<component>/`
-> layout — tracked as a follow-up.
+The dev UI talks to the deployed Worker by default. Set `VITE_SERVER_URL`
+if you are running a local `wrangler dev` Worker.
 
 ### Cooperative aggregate analysis (edge)
 
@@ -74,16 +72,6 @@ curl -sS -X POST "$WORKER_URL/api/civic/analysis/run" \
 ```
 
 See [forum-airlock/docs/civic-edge-analysis.md](forum-airlock/docs/civic-edge-analysis.md).
-
-### Analysis pipeline (on-prem, legacy)
-
-```bash
-cd forum-ai
-source venv/bin/activate
-bash run_analysis.sh
-```
-
----
 
 ## Security model (one-paragraph summary)
 
@@ -113,11 +101,11 @@ forum-stack/
 ├── deploy/                           # launch scripts, systemd templates
 ├── docs/                             # legacy READMEs (personal pod, Android, Solid migration)
 ├── forum-pod/                        # PWA + Capacitor APK
-├── forum-airlock/                    # Worker + DO + listener
-├── forum-ai/                         # Python analysis pipeline
+├── forum-airlock/                    # Worker + DO + D1 edge analysis
 ├── forum-egress/                     # public report Worker
 └── archive/
-    └── forum-app/                    # pre-H8 TypeScript prototype (not live)
+    ├── forum-app/                    # pre-H8 TypeScript prototype (not live)
+    └── forum-on-prem/                # retired listener + Python analysis path
 ```
 
 ---
@@ -127,12 +115,10 @@ forum-stack/
 - **Pod-first invariant** (H6 / H13): every user-visible row lives in
   `PersonalPodDO`. No Pod, no app. Sign-out wipes both the cache and the
   Pod-side assistant conversation copy.
-- **Counts-only logging** for the Civic AI Kami chat path: the Worker
-  proxies chat to Ollama and writes only `prompt_eval_count` / `eval_count` /
-  `finish_reason` to D1 — not prompt text. Operators must configure GPU host
-  log retention separately ([kami-ollama-ops.md](forum-airlock/docs/kami-ollama-ops.md)).
-- **No live retrieval for Kami**: local Ollama weights only; no web search
-  (users are disclosed that current-events answers may be stale).
+- **Civic AI Kami retired by default**: the Pod build no longer exposes the
+  assistant unless `VITE_ENABLE_CIVIC_AI=1` is set and the Worker is configured
+  with a managed or Access-protected model upstream. The public loop has no GPU
+  tunnel dependency.
 - **Deterministic data answers**: questions about saved data go through
   the `Explore` tab (hand-written SQL templates over the DuckDB cache).
   The LLM never sees Pod data (H13 §9 pivot).
@@ -146,7 +132,6 @@ forum-stack/
 
 - Architecture overview: [Handovers/handover8-do-pivot.md](Handovers/handover8-do-pivot.md)
 - Wire format and auth: [Handovers/handover11-security-hardening.md](Handovers/handover11-security-hardening.md) §3
-- Civic AI Kami integration: [Handovers/12-civic-ai.md](Handovers/12-civic-ai.md)
-- Kami GPU / Ollama logging (operators): [forum-airlock/docs/kami-ollama-ops.md](forum-airlock/docs/kami-ollama-ops.md)
-- Kami web search (deferred design): [forum-airlock/docs/kami-web-search-deferred.md](forum-airlock/docs/kami-web-search-deferred.md)
+- Civic AI Kami historical integration: [Handovers/12-civic-ai.md](Handovers/12-civic-ai.md)
+- Retired on-prem listener / analysis / Kami tunnel path: [archive/forum-on-prem/README.md](archive/forum-on-prem/README.md)
 - Current head-state notes: [Handovers/13-pod-as-source-of-truth.md](Handovers/13-pod-as-source-of-truth.md)

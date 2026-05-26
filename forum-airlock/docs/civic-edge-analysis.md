@@ -70,7 +70,10 @@ Public HTML: `GET https://forum-egress.yourcommunity.forum/` (KV key `latest`).
 
 ## Legacy on-prem pipeline
 
-`deploy/forum-analysis.timer` is **disabled** (inactive schedule) so `forum-ai/run_analysis.sh` + `push.py` do not overwrite KV `latest` with old `report.json` output. Re-enable only for local experiments.
+The legacy on-prem timer and Python pipeline are archived under
+`archive/forum-on-prem/`. Do not re-enable them for the live report path:
+they read local `forum_inbound.db`, while the cooperative ledger now lives in
+D1 `forum_feedback`.
 
 ## What the report contains
 

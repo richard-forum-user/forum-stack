@@ -1,11 +1,12 @@
 # Copy to ~/.cloudflared/forum-airlock.yml and replace placeholders.
-# This exposes only the local listener to Cloudflare over an outbound tunnel.
-# The public PWA itself is served by the Cloudflare Worker in forum-airlock.
+# The Node listener is retired. This example only exposes the optional
+# local APK download server; the Pod, cooperative ingest, and analysis all
+# run on the Cloudflare Worker + D1.
 
 tunnel: YOUR_TUNNEL_ID
 credentials-file: /home/forum-user1/.cloudflared/YOUR_TUNNEL_ID.json
 
 ingress:
-  - hostname: listener.yourcommunity.forum
-    service: http://127.0.0.1:3000
+  - hostname: apk.yourcommunity.forum
+    service: http://127.0.0.1:8090
   - service: http_status:404

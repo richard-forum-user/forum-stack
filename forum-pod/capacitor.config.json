@@ -7,9 +7,6 @@
     "androidScheme": "https",
     "hostname": "localhost",
     "allowNavigation": [
-      "pod.yourcommunity.forum",
-      "pod-provision.yourcommunity.forum",
-      "listener.yourcommunity.forum",
       "apk.yourcommunity.forum",
       "secure-worker.forum-community.workers.dev"
     ]
