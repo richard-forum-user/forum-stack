@@ -5,6 +5,16 @@ export const SCHEMA = "https://schema.org/";
 
 export const POLICY_VERSION = "coop-data-policy/2026-05-01";
 
+/** Max comment length for Forum Feedback (Pod + cooperative D1). Keep in sync with forum-airlock/feedback-limits.js */
+export const FORUM_FEEDBACK_MAX_COMMENT_CHARS = 2000;
+
+export function clampForumFeedbackComment(text, maxChars = FORUM_FEEDBACK_MAX_COMMENT_CHARS) {
+  const s = String(text ?? "").trim();
+  const max = Number(maxChars) || FORUM_FEEDBACK_MAX_COMMENT_CHARS;
+  if (s.length <= max) return s;
+  return s.slice(0, max);
+}
+
 function podBase(podRoot) {
   return (podRoot || "").replace(/\/$/, "") + "/";
 }

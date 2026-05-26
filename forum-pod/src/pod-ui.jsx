@@ -20,7 +20,11 @@ import {
   LEXICON_VERSION,
 } from "./insight-extractor.js";
 import { recordCivicLocally } from "./pod-ui-sync.js";
-import { POLICY_VERSION } from "./civic-vocab.js";
+import {
+  POLICY_VERSION,
+  FORUM_FEEDBACK_MAX_COMMENT_CHARS,
+  clampForumFeedbackComment,
+} from "./civic-vocab.js";
 import SignInOverlay from "./sign-in-overlay.jsx";
 import Assistant from "./assistant.jsx";
 import Explore from "./explore.jsx";
@@ -711,6 +715,9 @@ export default function PersonalPod() {
   );
   const [civicSending, setCivicSending] = useState(false);
   const [civicStatus, setCivicStatus] = useState(null);
+  const [coopReport, setCoopReport] = useState(null);
+  const [coopReportBusy, setCoopReportBusy] = useState(false);
+  const [coopReportError, setCoopReportError] = useState(null);
   const [localSubmissions, setLocalSubmissions] = useState([]);
   const [serverUrl, setServerUrl] = useState(() => localStorage.getItem("forum.serverUrl") || DEFAULT_SERVER_URL);
   const [memberProfile, setMemberProfile] = useState(() => loadMemberProfile());
@@ -1117,6 +1124,34 @@ export default function PersonalPod() {
     ? `${normalizedServerUrl}/api/forum/feedback`
     : DEFAULT_FORUM_FEEDBACK_API;
 
+  const loadCooperativeReport = useCallback(async () => {
+    if (!normalizedServerUrl) {
+      setCoopReportError("Set the cooperative Worker URL in Settings first.");
+      return;
+    }
+    setCoopReportBusy(true);
+    setCoopReportError(null);
+    try {
+      const res = await fetch(`${normalizedServerUrl}/api/civic/analysis`);
+      const raw = await res.text();
+      let data = {};
+      try {
+        data = raw ? JSON.parse(raw) : {};
+      } catch {
+        throw new Error(`Non-JSON response (${res.status})`);
+      }
+      if (!res.ok) {
+        throw new Error(data.error || `Report unavailable (${res.status})`);
+      }
+      setCoopReport(data);
+    } catch (e) {
+      setCoopReport(null);
+      setCoopReportError(e.message);
+    } finally {
+      setCoopReportBusy(false);
+    }
+  }, [normalizedServerUrl]);
+
   const syncSubmission = useCallback(async (row, activeConn = conn) => {
     if (!row.share_with_cooperative && !shareWithCooperative) {
       return { ok: true, row: { ...row, egress_status: "private" }, skipped: true };
@@ -1175,6 +1210,7 @@ export default function PersonalPod() {
   const transmitForumFeedback = async (comment, zipCode, insightCategoryId) => {
     const receiptId = crypto.randomUUID().split("-")[0].toUpperCase();
     const cat = findInsightCategory(insightCategoryId) || INSIGHT_CATEGORIES[0];
+    const boundedComment = clampForumFeedbackComment(comment);
     const safePayload = {
       type: "FORUM_FEEDBACK_V1",
       receipt_id: receiptId,
@@ -1182,7 +1218,7 @@ export default function PersonalPod() {
       category_code: cat.category,
       category_label: cat.label,
       zip_code: zipCode || null,
-      comment,
+      comment: boundedComment,
     };
     const encryptedData = btoa(JSON.stringify(safePayload));
     const localRow = {
@@ -1192,7 +1228,7 @@ export default function PersonalPod() {
       category_code: cat.category,
       category_id: null, // v1.5+ rows do not use the legacy 4-tier integer id
       category_label: cat.label,
-      comment,
+      comment: boundedComment,
       encrypted_data: encryptedData,
       egress_status: "pending",
       vault_status: null,
@@ -1446,10 +1482,10 @@ export default function PersonalPod() {
               Enable Civic AI Kami
             </div>
             <div style={{ fontSize: 12, color: "#8b949e", lineHeight: 1.6, marginBottom: 14 }}>
-              This assistant runs through the cooperative GPU and receives only what you type into chat. Your conversation is kept in this device's IndexedDB and is cleared when you sign out. The server stores message counts and token counts, not prompt text.
+              This assistant runs through the cooperative GPU and receives only what you type into chat (not your Pod submissions, journal, or other saved rows). Conversations are stored in your Personal Pod on Cloudflare and mirrored on this device for speed. <strong>Stop and forget</strong> or <strong>sign-out</strong> deletes them from the Pod and this device. The cooperative edge stores daily message counts and token counts only — not prompt text.
             </div>
             <div style={{ fontSize: 12, color: "#c9d1d9", lineHeight: 1.6, marginBottom: 14 }}>
-              Pack 4 says affected people must be able to correct or stop the system. You can use "Stop and forget" inside the Assistant tab at any time.
+              The model has a training cutoff and no live news or web search. For current events it may be wrong or outdated; for your own data use the <strong>Explore</strong> tab. Pack 4 says affected people must be able to correct or stop the system — use <strong>Stop and forget</strong> in the Assistant tab any time.
             </div>
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", flexWrap: "wrap" }}>
               <button
@@ -1629,13 +1665,17 @@ export default function PersonalPod() {
               <textarea
                 value={civicComment}
                 onChange={(e) => setCivicComment(e.target.value)}
+                maxLength={FORUM_FEEDBACK_MAX_COMMENT_CHARS}
                 placeholder={
                   findInsightCategory(forumFeedbackCategoryId)?.category === "civic"
                     ? "Describe a municipal issue (no names or addresses)…"
                     : "Share your feedback — no names or addresses…"
                 }
-                style={{ ...S.chatInput, width: "100%", minHeight: 120, marginBottom: 12, boxSizing: "border-box" }}
+                style={{ ...S.chatInput, width: "100%", minHeight: 120, marginBottom: 4, boxSizing: "border-box" }}
               />
+              <div style={{ fontSize: 10, color: "#484f58", marginBottom: 12, textAlign: "right" }}>
+                {civicComment.length}/{FORUM_FEEDBACK_MAX_COMMENT_CHARS} characters (max before cooperative sync)
+              </div>
               <input
                 value={civicZip}
                 onChange={(e) => setCivicZip(e.target.value)}
@@ -1651,6 +1691,13 @@ export default function PersonalPod() {
                   const cat = findInsightCategory(forumFeedbackCategoryId);
                   if (!civicComment.trim()) {
                     setCivicStatus({ ok: false, text: "Comment is required." });
+                    return;
+                  }
+                  if (civicComment.length > FORUM_FEEDBACK_MAX_COMMENT_CHARS) {
+                    setCivicStatus({
+                      ok: false,
+                      text: `Comment must be at most ${FORUM_FEEDBACK_MAX_COMMENT_CHARS} characters.`,
+                    });
                     return;
                   }
                   if (cat?.category === "civic" && !civicZip.trim()) {
@@ -1669,6 +1716,51 @@ export default function PersonalPod() {
                   {civicStatus.text}
                 </div>
               )}
+              <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid #21262d" }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#e6edf3", marginBottom: 6 }}>
+                  Cooperative aggregate (edge)
+                </div>
+                <p style={{ fontSize: 11, color: "#8b949e", lineHeight: 1.5, marginBottom: 10 }}>
+                  Opt-in submissions in cooperative D1 are reported with SQL only — counts plus full comments (up to {FORUM_FEEDBACK_MAX_COMMENT_CHARS} chars at submit). No generative model; nothing beyond the ledger is stated.
+                </p>
+                <button
+                  type="button"
+                  disabled={coopReportBusy}
+                  onClick={loadCooperativeReport}
+                  style={{ ...S.runBtn(coopReportBusy), width: "100%", padding: "9px", textAlign: "center", marginBottom: 10 }}
+                >
+                  {coopReportBusy ? "Loading report…" : "View latest aggregate report"}
+                </button>
+                {coopReportError && (
+                  <div style={{ fontSize: 12, color: "#f85149", marginBottom: 8 }}>{coopReportError}</div>
+                )}
+                {coopReport?.metadata && (
+                  <div style={{ fontSize: 11, color: "#8b949e", marginBottom: 8 }}>
+                    Generated {coopReport.metadata.timestamp || coopReport.created_at}
+                    {" · "}
+                    {coopReport.metadata.opt_in_count ?? coopReport.metadata.volume ?? "?"} submissions
+                    {" · "}
+                    status {coopReport.metadata.status || "unknown"}
+                    {coopReport.model ? ` · model ${coopReport.model}` : ""}
+                  </div>
+                )}
+                {coopReport?.report && (
+                  <pre style={{
+                    whiteSpace: "pre-wrap",
+                    fontSize: 11,
+                    lineHeight: 1.45,
+                    maxHeight: 420,
+                    overflowY: "auto",
+                    padding: 12,
+                    borderRadius: 8,
+                    border: "1px solid #21262d",
+                    background: "#0d1117",
+                    color: "#c9d1d9",
+                  }}>
+                    {coopReport.report}
+                  </pre>
+                )}
+              </div>
             </div>
           </div>
         )}

@@ -29,11 +29,13 @@ Vendored content lives in:
 The Pod Settings screen has a new `Enable Civic AI Kami assistant` toggle.
 The first enable shows a Pack 4 disclosure:
 
-- The assistant runs through the cooperative GPU.
-- Only typed chat messages are sent.
-- Conversation history is stored in this device's IndexedDB.
-- Sign-out clears the assistant conversation store.
-- The Worker logs message counts and token counts only.
+- The assistant runs through the cooperative GPU (Ollama via `AI_UPSTREAM_URL`).
+- Only typed chat messages are sent — not Pod submissions, journal, behaviors, or traits.
+- Conversation history is stored in the **Personal Pod Durable Object** (`assistant_messages` in `pod-do.js`) and mirrored in IndexedDB (`assistant-store.js`) for offline speed. See [13-pod-as-source-of-truth.md](13-pod-as-source-of-truth.md).
+- **Stop and forget** deletes the Pod copy and the local cache for that conversation.
+- **Sign-out** deletes all assistant conversations from the Pod and clears IndexedDB (per user choice in H13).
+- The Worker logs message counts and token counts only — not prompt or completion text.
+- The model has no live news or web search; answers about current events may be stale (disclosed in UI).
 - The Assistant tab includes `Stop and forget`.
 
 When enabled, a new `Assistant` tab appears. It includes:

@@ -23,6 +23,10 @@ WEBAUTHN_ALLOWED_ORIGINS = "https://airlock.yourcommunity.forum,https://secure-w
 AI_UPSTREAM_URL = "https://ai-open.yourcommunity.forum"
 AI_UPSTREAM_MODEL = "qwen2.5:14b-instruct-q4_K_M"
 AI_DAILY_QUOTA = "100"
+# Edge cooperative aggregate analysis (D1 SQL only — no Workers AI). See civic-analysis.js.
+CIVIC_ANALYSIS_MIN_SUBMISSIONS = "1"
+# Set FORUM_AUTO_EDGE_ANALYSIS = "1" to re-run analysis after each forum feedback ingest.
+# FORUM_AUTO_EDGE_ANALYSIS = "0"
 
 # Set via:
 #   npx wrangler secret put AI_ACCESS_CLIENT_ID
@@ -37,16 +41,23 @@ AI_DAILY_QUOTA = "100"
 #   /api/forum/receipt      private encrypted receipt -> listener /submit
 #   /api/forum/feedback     opt-in cooperative export -> D1 forum-db
 #   /api/ai/chat            signed Civic AI Kami chat -> on-prem Ollama
+#   /api/civic/analysis     cooperative aggregate report (D1 SQL only)
 #   /api/civic/submit       legacy alias of /api/forum/receipt   (deprecated)
 #   /api/civic/export       legacy alias of /api/forum/feedback  (deprecated)
 #   /api/zkemail/*          zkEmail proof verify + status
 #   /api/pod/*              signed Personal Pod RPC -> PersonalPodDO (per-device)
 #   /pod, /assets/*         compiled forum-pod (Vite build) bundled into the Worker
 
+[ai]
+binding = "AI"
+
 [[d1_databases]]
 binding = "DB"
 database_name = "forum-db"
 database_id = "b23bdfa3-d8ba-4092-a5ac-ada4d697bc3b"
+
+[triggers]
+crons = ["0 */12 * * *"]
 
 # Personal Pod Durable Object: one DO instance per device credential.
 # Replaces the Community Solid Server (forum-solid) + provision-bridge

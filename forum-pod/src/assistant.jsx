@@ -234,11 +234,13 @@ export default function Assistant({ webId }) {
           </button>
         </div>
         <div style={{ fontSize: 12, color: "#8b949e", lineHeight: 1.5 }}>
-          Civic AI Kami runs on your community GPU. It can discuss the 6-Pack of Care,
-          civic concepts, and how this Pod works. It does <strong>not</strong> see your Pod
-          data — to look at your submissions, journal, behaviors, or traits, use the{" "}
-          <strong>Explore</strong> tab. Conversations are mirrored to your Personal Pod and
-          wiped on sign-out. The cooperative logs counts only.
+          Civic AI Kami runs on your community GPU (local Ollama — no live news or web search).
+          It can discuss the 6-Pack of Care, civic concepts, and how this Pod works. Answers about
+          current events, elections, or “what happened recently” may be wrong or outdated. It does{" "}
+          <strong>not</strong> see your Pod data — use the <strong>Explore</strong> tab for your
+          submissions, journal, behaviors, or traits. Conversations live in your Personal Pod (this
+          device caches them) and are removed on <strong>Stop and forget</strong> or sign-out. The
+          cooperative edge logs counts only, not chat text.
         </div>
       </div>
       <div style={S.body}>
@@ -250,8 +252,13 @@ export default function Assistant({ webId }) {
               {messages.length === 0 && (
                 <div style={{ color: "#484f58", fontSize: 12, lineHeight: 1.6, maxWidth: 640 }}>
                   Ask the Kami about the 6-Pack of Care, a civic concept, or how this Pod works.
-                  For questions about your own data, switch to the <strong>Explore</strong> tab —
+                  For questions about <strong>your own data</strong>, use the <strong>Explore</strong> tab —
                   the Kami cannot see your saved rows.
+                  <br /><br />
+                  <span style={{ color: "#6e7681" }}>
+                    No live news or web search: the model runs on a fixed local weights snapshot and
+                    may be wrong about current events, dates, or “what happened this week.”
+                  </span>
                 </div>
               )}
               {messages.map((msg) => (
