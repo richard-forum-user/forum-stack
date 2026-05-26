@@ -29,7 +29,9 @@ fi
 
 systemctl --user daemon-reload
 systemctl --user enable --now forum-airlock-listener.service
-systemctl --user enable --now forum-analysis.timer
+# Legacy forum-ai timer disabled — edge secure-worker cron publishes every 6h.
+# systemctl --user enable --now forum-analysis.timer
+systemctl --user disable --now forum-analysis.timer 2>/dev/null || true
 
 echo ""
 echo "Forum server installed."

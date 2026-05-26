@@ -16,6 +16,8 @@ import { expectedSessionIdFromPubkey, sessionIdMatchesPubkey } from './session-b
 import { issueUnlockToken, isPilotCredentialId, verifyUnlockToken } from './unlock-token.js';
 import { handleAiChat } from './ai-chat.js';
 import { handleWebAuthnRoute } from './webauthn-server.js';
+import { handleCivicAnalysisRoute, runCivicAnalysis } from './civic-analysis.js';
+import { clampForumFeedbackComment } from './feedback-limits.js';
 
 const FORUM_FEEDBACK_PATH = '/api/forum/feedback';
 const FORUM_RECEIPT_PATH = '/api/forum/receipt';
@@ -92,7 +94,7 @@ async function assertUnlocked(env, bundle) {
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
 
     if (request.method === 'OPTIONS') {
@@ -146,7 +148,22 @@ export default {
         responseHeaders['Link'] = `<${FORUM_FEEDBACK_PATH}>; rel="successor-version"`;
       }
       const result = await handleForumFeedbackAtEdge(request, env);
+      if (
+        result.status === 200 &&
+        env.FORUM_AUTO_EDGE_ANALYSIS === '1' &&
+        ctx?.waitUntil
+      ) {
+        ctx.waitUntil(
+          runCivicAnalysis(env, { trigger: 'feedback' }).catch((err) => {
+            console.error('civic edge analysis failed:', err?.message || err);
+          })
+        );
+      }
       return jsonResponse(result.body, result.status, responseHeaders);
+    }
+
+    if (url.pathname.startsWith('/api/civic/analysis')) {
+      return handleCivicAnalysisRoute(request, env, url);
     }
 
     if (url.pathname === AI_CHAT_PATH) {
@@ -283,6 +300,18 @@ export default {
       404
     );
   },
+
+  async scheduled(event, env, ctx) {
+    if (!env.DB) return;
+    ctx.waitUntil(
+      runCivicAnalysis(env, {
+        trigger: `cron:${event.cron || 'unknown'}`,
+        publish: true,
+      }).catch((err) => {
+        console.error('scheduled civic analysis failed:', err?.message || err);
+      })
+    );
+  },
 };
 
 const FORUM_FEEDBACK_TAXONOMY = {
@@ -340,7 +369,7 @@ function normaliseFeedback(payload) {
     category_code: categoryCode,
     category_label: categoryLabel || taxon.label,
     zip_code: payload.zip_code || null,
-    comment: payload.comment || '',
+    comment: clampForumFeedbackComment(payload.comment || ''),
   };
 }
 

@@ -1,4 +1,4 @@
-import { POLICY_VERSION } from "./civic-vocab.js";
+import { POLICY_VERSION, clampForumFeedbackComment } from "./civic-vocab.js";
 import { ensurePodSigningKey, signBundle } from "./pod-signing.js";
 import { loadMemberProfile, loadSigningMeta } from "./member-store.js";
 import { findInsightCategory } from "./insight-categories.js";
@@ -63,7 +63,7 @@ export function buildForumFeedbackPayload(row, webId, memberHash) {
     category_code: categoryCode,
     category_label: categoryLabel,
     zip_code: row.zip_code || null,
-    comment: row.comment,
+    comment: clampForumFeedbackComment(row.comment),
   };
 }
 
@@ -71,7 +71,16 @@ export function buildForumFeedbackPayload(row, webId, memberHash) {
 export const buildCivicExportPayload = buildForumFeedbackPayload;
 
 export async function postForumFeedback(row, cooperativeBaseUrl) {
-  const base = (cooperativeBaseUrl || "").replace(/\/$/, "");
+  const base = (
+    cooperativeBaseUrl ||
+    import.meta.env.VITE_SERVER_URL ||
+    ""
+  ).replace(/\/$/, "");
+  if (!base) {
+    throw new Error(
+      "Cooperative server URL is not configured. Set the Worker URL in Settings."
+    );
+  }
   const profile = loadMemberProfile();
   if (!profile?.credential_id) {
     throw new Error("Create a Pod before opting in to cooperative share.");
@@ -91,9 +100,20 @@ export async function postForumFeedback(row, cooperativeBaseUrl) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(signed),
   });
-  const data = await res.json().catch(() => ({}));
+  const raw = await res.text();
+  let data;
+  try {
+    data = raw ? JSON.parse(raw) : {};
+  } catch {
+    const snippet = raw.replace(/\s+/g, " ").trim().slice(0, 120);
+    throw new Error(
+      `Forum Feedback export failed (${res.status}): ${snippet || "non-JSON response"}`
+    );
+  }
   if (!res.ok) {
-    throw new Error(data.message || data.error || `Forum Feedback export failed (${res.status})`);
+    throw new Error(
+      data.message || data.error || `Forum Feedback export failed (${res.status})`
+    );
   }
   return data;
 }

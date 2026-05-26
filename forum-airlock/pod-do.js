@@ -10,6 +10,7 @@
  */
 
 import { verifySignedBundle } from "./pod-signing-web.js";
+import { clampForumFeedbackComment } from "./feedback-limits.js";
 
 const META_KEY_PUBKEY = "registered_public_key";
 const META_KEY_SESSION = "session_id";
@@ -265,7 +266,7 @@ export class PersonalPodDO {
         data.category_code || null,
         data.category_id != null ? Number(data.category_id) : null,
         data.category_label || "",
-        data.comment || "",
+        clampForumFeedbackComment(data.comment || ""),
         data.egress_status || "pending",
         data.vault_status || null,
         Number(data.sync_attempts || 0),
