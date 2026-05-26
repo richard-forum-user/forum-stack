@@ -5,10 +5,6 @@ compatibility_flags = [ "nodejs_compat" ]
 
 [vars]
 # Public PWA route is configured in Cloudflare for this Worker.
-# LISTENER_URL must be a Cloudflare Tunnel hostname when deployed,
-# because a deployed Worker cannot reach http://127.0.0.1 on your machine.
-AIRLOCK_URL = "https://pod.yourcommunity.forum"
-LISTENER_URL = "https://listener.yourcommunity.forum"
 # Set via: npx wrangler secret put UNLOCK_TOKEN_KEY
 # Production: pilot bundle bypass disabled. Set "1" only on a dedicated staging Worker.
 ALLOW_PILOT_BUNDLES = "0"
@@ -18,9 +14,12 @@ ALLOW_PILOT_BUNDLES = "0"
 # binds the rp.id / expectedOrigin to whichever origin the client posts,
 # but only if it appears in this list.
 WEBAUTHN_ALLOWED_ORIGINS = "https://airlock.yourcommunity.forum,https://secure-worker.forum-community.workers.dev"
-# Civic AI Kami chat proxy — must sit behind Cloudflare Access (see AI_ACCESS_* secrets).
-AI_UPSTREAM_URL = "https://ai.yourcommunity.forum"
-AI_UPSTREAM_MODEL = "qwen2.5:14b-instruct-q4_K_M"
+# Civic AI Kami is retired by default so the Pod has no dependency on the
+# cooperative GPU tunnel. Re-enable only with an Access-protected upstream or
+# a managed model provider, then build the Pod with VITE_ENABLE_CIVIC_AI=1
+# and set AI_ACCESS_CLIENT_ID / AI_ACCESS_CLIENT_SECRET as Worker secrets.
+# AI_UPSTREAM_URL = "https://ai.yourcommunity.forum"
+# AI_UPSTREAM_MODEL = "qwen2.5:14b-instruct-q4_K_M"
 AI_DAILY_QUOTA = "100"
 # Edge cooperative aggregate analysis (D1 SQL only — no Workers AI). See civic-analysis.js.
 CIVIC_ANALYSIS_MIN_SUBMISSIONS = "1"
@@ -43,14 +42,13 @@ CIVIC_PUBLISH_VERBATIM_COMMENTS = "0"
 
 # Routes:
 #   /                       gate (WebAuthn)
-#   /register/*             WebAuthn challenge + verify
-#   /api/forum/receipt      private encrypted receipt -> listener /submit
+#   /api/webauthn/*         WebAuthn challenge + verify
 #   /api/forum/feedback     opt-in cooperative export -> D1 forum-db
-#   /api/ai/chat            signed Civic AI Kami chat -> on-prem Ollama
+#   /api/ai/chat            signed Civic AI Kami chat -> configured model upstream (disabled by default)
 #   /api/civic/analysis/*   cooperative aggregate (D1 SQL); cron -> egress
-#   /api/civic/submit       legacy alias of /api/forum/receipt   (deprecated)
 #   /api/civic/export       legacy alias of /api/forum/feedback  (deprecated)
-#   /api/zkemail/*          zkEmail proof verify + status
+#   /api/register-member    device member registration -> D1 forum-db
+#   /api/register-signing-key Ed25519 signing-key registry -> D1 forum-db
 #   /api/pod/*              signed Personal Pod RPC -> PersonalPodDO (per-device)
 #   /pod, /assets/*         compiled forum-pod (Vite build) bundled into the Worker
 

@@ -1,5 +1,11 @@
 # Forum Personal Pod
 
+> Legacy note: this document predates the Cloudflare Durable Object + D1 edge
+> architecture. The Node listener and Python analysis pipeline are archived
+> under `archive/forum-on-prem/`. Prefer the root `README.md`,
+> `Handovers/13-pod-as-source-of-truth.md`, and
+> `forum-airlock/docs/civic-edge-analysis.md` for the current stack.
+
 Local-first civic pod with IndexedDB, DuckDB Local SQL, **Solid Pod** storage, **WebAuthn** device gate, and **opt-in** cooperative export (signed bundles).
 
 For Android APK packaging, see `README-ANDROID-APP.md`. For Solid/CSS operations, see `README-SOLID-MIGRATION.md` and `forum-pod/docs/`.
