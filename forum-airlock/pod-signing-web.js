@@ -1,9 +1,10 @@
 /**
  * Ed25519 signed-bundle verifier for the Cloudflare Worker / DO runtime.
  *
- * Mirrors `forum-airlock/pod-signing.js` (Node `crypto`) but uses
- * Web Crypto so it can run inside a Worker / Durable Object. The
- * Pod app on the device produces these bundles via `pod-signing.js`
+ * Mirrors the retired Node verifier now archived under
+ * `archive/forum-on-prem/forum-airlock/pod-signing.js`, but uses Web
+ * Crypto so it can run inside a Worker / Durable Object. The Pod app
+ * on the device produces these bundles via `forum-pod/src/pod-signing.js`
  * (`signBundle`); the Worker calls `verifySignedBundle` before
  * forwarding to the Personal Pod DO.
  */

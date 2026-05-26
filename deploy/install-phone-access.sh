@@ -16,7 +16,7 @@ if [ ! -f "$CLOUDFLARED_CONFIG" ]; then
   mkdir -p "$HOME/.cloudflared"
   cp "$DESKTOP/deploy/cloudflared-forum.yml.example" "$CLOUDFLARED_CONFIG"
   echo "Created $CLOUDFLARED_CONFIG"
-  echo "Edit it with your tunnel id, credentials path, and listener hostname, then rerun this script."
+  echo "Edit it with your tunnel id, credentials path, and APK hostname, then rerun this script."
   exit 1
 fi
 
@@ -49,9 +49,9 @@ echo "Status: systemctl --user status forum-cloudflared.service"
 echo "Logs:   journalctl --user -u forum-cloudflared.service -f"
 echo ""
 echo "Next:"
-echo "  1. Set forum-airlock/wrangler.toml LISTENER_URL to your listener hostname."
-echo "  2. Run: cd $DESKTOP/forum-airlock && npx wrangler secret put AIRLOCK_SECRET"
-echo "  3. Run: cd $DESKTOP/forum-airlock && npm run build:pod && npm run deploy:worker"
+echo "  1. Run: cd $DESKTOP/forum-airlock && npx wrangler secret put AIRLOCK_SECRET"
+echo "  2. Run: cd $DESKTOP/forum-airlock && npm run build:pod && npm run deploy:worker"
+echo "  3. Keep only non-retired tunnel hostnames (for example apk.yourcommunity.forum)."
 echo ""
 echo "If this script is not executable, run it with:"
 echo "  bash $DESKTOP/deploy/install-phone-access.sh"

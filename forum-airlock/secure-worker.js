@@ -20,14 +20,13 @@ import { handleCivicAnalysisRoute, runCivicAnalysis } from './civic-analysis.js'
 import { clampForumFeedbackComment } from './feedback-limits.js';
 
 const FORUM_FEEDBACK_PATH = '/api/forum/feedback';
-const FORUM_RECEIPT_PATH = '/api/forum/receipt';
 const AI_CHAT_PATH = '/api/ai/chat';
 const POD_API_PREFIX = '/api/pod';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
+  'Access-Control-Allow-Headers': 'Content-Type, X-Airlock-Secret',
 };
 
 const SECURITY_HEADERS = {
@@ -101,8 +100,6 @@ export default {
       return new Response(null, { status: 204, headers: CORS });
     }
 
-    const listenerBase = (env.LISTENER_URL || env.AIRLOCK_URL || '').replace(/\/$/, '');
-
     if (url.pathname === '/' && request.method === 'GET') {
       return Response.redirect(`${url.origin}/pod`, 302);
     }
@@ -110,29 +107,6 @@ export default {
     if (url.pathname.startsWith('/api/webauthn/')) {
       const webauthnRes = await handleWebAuthnRoute(request, env, url, issueUnlockToken);
       if (webauthnRes) return webauthnRes;
-    }
-
-    if (
-      (url.pathname === FORUM_RECEIPT_PATH || url.pathname === '/api/civic/submit') &&
-      request.method === 'POST'
-    ) {
-      const body = await request.json();
-      const upstream = await fetch(`${listenerBase}/submit`, {
-        method: 'POST',
-        headers: {
-          'X-Airlock-Secret': env.AIRLOCK_SECRET,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          receiptId: body.receiptId,
-          encryptedData: body.encryptedData,
-          memberId: body.memberId ?? null,
-        }),
-      });
-      return new Response(await upstream.text(), {
-        status: upstream.status,
-        headers: { 'Content-Type': 'application/json', ...CORS },
-      });
     }
 
     if (
@@ -218,19 +192,17 @@ export default {
     }
 
     if (url.pathname === '/api/register-member' && request.method === 'POST') {
-      const body = await request.text();
-      const upstream = await fetch(`${listenerBase}/api/register-member`, {
-        method: 'POST',
-        headers: {
-          'X-Airlock-Secret': env.AIRLOCK_SECRET,
-          'Content-Type': 'application/json',
-        },
-        body,
-      });
-      return new Response(await upstream.text(), {
-        status: upstream.status,
-        headers: { 'Content-Type': 'application/json', ...CORS },
-      });
+      if (!env.DB) {
+        return jsonResponse({ error: 'D1 binding DB is not configured' }, 503);
+      }
+      let data;
+      try {
+        data = await request.json();
+      } catch {
+        return jsonResponse({ error: 'invalid_json' }, 400);
+      }
+      const result = await registerForumMember(env.DB, data);
+      return jsonResponse(result.body, result.status);
     }
 
     if (url.pathname === '/api/register-signing-key' && request.method === 'POST') {
@@ -261,18 +233,6 @@ export default {
           data.web_id || null,
           data.public_key_hex
         );
-      }
-      try {
-        await fetch(`${listenerBase}/api/register-signing-key`, {
-          method: 'POST',
-          headers: {
-            'X-Airlock-Secret': env.AIRLOCK_SECRET,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ ...data, session_id: registerSid }),
-        });
-      } catch {
-        /* listener mirror best-effort */
       }
       return jsonResponse({ success: true, storage: 'd1:forum-db' });
     }
@@ -439,6 +399,18 @@ async function ensureForumD1Schema(db) {
       )
     `),
     db.prepare(`
+      CREATE TABLE IF NOT EXISTS forum_members (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        credential_id TEXT NOT NULL UNIQUE,
+        public_key TEXT NOT NULL,
+        web_id TEXT,
+        session_id TEXT,
+        public_key_hex TEXT,
+        registered_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        last_seen_at DATETIME
+      )
+    `),
+    db.prepare(`
       CREATE INDEX IF NOT EXISTS idx_forum_feedback_created
       ON forum_feedback(created_at)
     `),
@@ -450,7 +422,52 @@ async function ensureForumD1Schema(db) {
       CREATE INDEX IF NOT EXISTS idx_forum_exports_email
       ON forum_exports(email_hash)
     `),
+    db.prepare(`
+      CREATE INDEX IF NOT EXISTS idx_forum_members_session
+      ON forum_members(session_id)
+    `),
   ]);
+}
+
+async function registerForumMember(db, data = {}) {
+  const credentialId = data.credential_id;
+  const publicKey = data.public_key;
+  const webId = data.web_id || null;
+  const sessionId = data.session_id || null;
+  const publicKeyHex = data.public_key_hex || null;
+
+  if (!credentialId || !publicKey) {
+    return { status: 400, body: { error: 'Missing WebAuthn parameters' } };
+  }
+
+  await ensureForumD1Schema(db);
+  await db
+    .prepare(`
+      INSERT INTO forum_members
+        (credential_id, public_key, web_id, session_id, public_key_hex, last_seen_at)
+      VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+      ON CONFLICT(credential_id) DO UPDATE SET
+        public_key = excluded.public_key,
+        web_id = COALESCE(excluded.web_id, forum_members.web_id),
+        session_id = COALESCE(excluded.session_id, forum_members.session_id),
+        public_key_hex = COALESCE(excluded.public_key_hex, forum_members.public_key_hex),
+        last_seen_at = CURRENT_TIMESTAMP
+    `)
+    .bind(String(credentialId), String(publicKey), webId, sessionId, publicKeyHex)
+    .run();
+
+  const row = await db
+    .prepare(`SELECT id FROM forum_members WHERE credential_id = ?`)
+    .bind(String(credentialId))
+    .first();
+  return {
+    status: 200,
+    body: {
+      success: true,
+      member_id: row?.id || String(credentialId),
+      storage: 'd1:forum-db',
+    },
+  };
 }
 
 async function registerEdgeSigningKey(db, sessionId, webId, publicKeyHex) {

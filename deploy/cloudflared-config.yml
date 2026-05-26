@@ -1,31 +1,23 @@
 # /etc/cloudflared/config.yml — Handover 9 (post DO pivot).
 #
-# CSS + provision bridge are gone, so the pod.* / pod-provision.*
-# hostnames are dropped. Pod RPC goes through secure-worker on
-# Cloudflare; only listener + APK download still need ingress here.
+# CSS, provision bridge, and the Node airlock listener are retired.
+# Pod RPC, cooperative ingest, member registration, and public analysis
+# now run on secure-worker + D1 + PersonalPodDO. Only APK download still
+# needs local tunnel ingress here.
 #
 # Install:
 #   sudo cp ~/Desktop/deploy/cloudflared-config.yml /etc/cloudflared/config.yml
 #   sudo systemctl restart cloudflared
 #
-# Then unbind the obsolete hostnames from the tunnel (optional but
-# tidy — leftover entries route to the catch-all and return 404):
-#   sudo cloudflared tunnel route dns --overwrite-dns \
-#       e0a398d3-e102-4793-af6f-722df8d921a1 listener.yourcommunity.forum
+# Then unbind obsolete pod.*, pod-provision.*, listener.*, and ai-open.*
+# hostnames in the Cloudflare dashboard if they are no longer used.
 #   sudo cloudflared tunnel route dns --overwrite-dns \
 #       e0a398d3-e102-4793-af6f-722df8d921a1 apk.yourcommunity.forum
-# The old pod.* / pod-provision.* DNS records can be deleted from the
-# Cloudflare dashboard if you don't want them resolving at all.
 
 tunnel: e0a398d3-e102-4793-af6f-722df8d921a1
 credentials-file: /etc/cloudflared/e0a398d3-e102-4793-af6f-722df8d921a1.json
 
 ingress:
-  # Airlock listener — /api/forum/feedback, /api/register-member,
-  # /api/register-signing-key, /api/zkemail/* (dormant), /submit, /health.
-  - hostname: listener.yourcommunity.forum
-    service: http://127.0.0.1:3000
-
   # APK download host.
   - hostname: apk.yourcommunity.forum
     service: http://127.0.0.1:8090

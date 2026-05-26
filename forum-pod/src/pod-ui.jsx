@@ -58,11 +58,13 @@ const DEFAULT_FORUM_FEEDBACK_API =
   import.meta.env.VITE_CIVIC_API || // legacy env var, still honoured
   "/api/forum/feedback";
 const isNativeShell = window.location.protocol === "capacitor:";
-const DEFAULT_SERVER_URL = import.meta.env.VITE_SERVER_URL || (isNativeShell ? "https://secure-worker.forum-community.workers.dev" : "");
+const DEFAULT_SERVER_URL =
+  import.meta.env.VITE_SERVER_URL || "https://secure-worker.forum-community.workers.dev";
 const DEFAULT_POD_PROVIDER =
   import.meta.env.VITE_POD_PROVIDER_URL ||
   import.meta.env.VITE_SERVER_URL ||
-  "http://localhost:3000";
+  DEFAULT_SERVER_URL;
+const CIVIC_AI_AVAILABLE = import.meta.env.VITE_ENABLE_CIVIC_AI === "1";
 const APP_BUILD = "secure-pod-v1.9-civic-ai";
 
 const POD_USER = { id: "local", name: "Sovereign Member" };
@@ -695,7 +697,7 @@ export default function PersonalPod() {
     () => localStorage.getItem("forum.showAdvanced") === "1"
   );
   const [civicAiEnabled, setCivicAiEnabled] = useState(
-    () => localStorage.getItem("forum.civicAiEnabled") === "1"
+    () => CIVIC_AI_AVAILABLE && localStorage.getItem("forum.civicAiEnabled") === "1"
   );
   const [showCivicAiDisclosure, setShowCivicAiDisclosure] = useState(false);
   const [expandedRowId, setExpandedRowId] = useState(null);
@@ -1500,7 +1502,7 @@ export default function PersonalPod() {
           Checking Pod session…
         </div>
       )}
-      {showCivicAiDisclosure && (
+      {CIVIC_AI_AVAILABLE && showCivicAiDisclosure && (
         <div style={{
           position: "fixed",
           inset: 0,
@@ -1615,7 +1617,7 @@ export default function PersonalPod() {
             { id: "civic", label: "Forum Feedback" },
             { id: "explore", label: "Explore" },
             { id: "data", label: "Import" },
-            ...(civicAiEnabled ? [{ id: "assistant", label: "Assistant" }] : []),
+            ...(CIVIC_AI_AVAILABLE && civicAiEnabled ? [{ id: "assistant", label: "Assistant" }] : []),
             ...(showAdvanced ? [{ id: "sql", label: "SQL Editor" }] : []),
             { id: "settings", label: "Settings" },
           ].map(({ id, label }) => (
@@ -2027,7 +2029,7 @@ export default function PersonalPod() {
 
         {tab === "explore" && <Explore conn={conn} />}
 
-        {tab === "assistant" && civicAiEnabled && (
+        {tab === "assistant" && CIVIC_AI_AVAILABLE && civicAiEnabled && (
           <Assistant webId={memberProfile?.webId || getSolidSession().webId || "local"} />
         )}
         
@@ -2368,31 +2370,39 @@ export default function PersonalPod() {
               </div>
 
               <div style={{ marginTop: 18, paddingTop: 14, borderTop: "1px solid #21262d" }}>
-                <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 12, color: "#8b949e", marginBottom: 12 }}>
-                  <input
-                    type="checkbox"
-                    checked={civicAiEnabled}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        if (localStorage.getItem("forum.civicAiDisclosureAccepted") === "1") {
-                          localStorage.setItem("forum.civicAiEnabled", "1");
-                          setCivicAiEnabled(true);
-                          setTab("assistant");
-                        } else {
-                          setShowCivicAiDisclosure(true);
-                        }
-                      } else {
-                        localStorage.setItem("forum.civicAiEnabled", "0");
-                        setCivicAiEnabled(false);
-                        if (tab === "assistant") setTab("settings");
-                      }
-                    }}
-                  />
-                  Enable Civic AI Kami assistant
-                </label>
-                <div style={{ fontSize: 10, color: "#484f58", marginTop: -6, marginBottom: 12, lineHeight: 1.5 }}>
-                  Uses the community GPU through the signed Worker proxy. Conversations are stored on this device and forgotten on sign-out.
-                </div>
+                {CIVIC_AI_AVAILABLE ? (
+                  <>
+                    <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 12, color: "#8b949e", marginBottom: 12 }}>
+                      <input
+                        type="checkbox"
+                        checked={civicAiEnabled}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            if (localStorage.getItem("forum.civicAiDisclosureAccepted") === "1") {
+                              localStorage.setItem("forum.civicAiEnabled", "1");
+                              setCivicAiEnabled(true);
+                              setTab("assistant");
+                            } else {
+                              setShowCivicAiDisclosure(true);
+                            }
+                          } else {
+                            localStorage.setItem("forum.civicAiEnabled", "0");
+                            setCivicAiEnabled(false);
+                            if (tab === "assistant") setTab("settings");
+                          }
+                        }}
+                      />
+                      Enable Civic AI Kami assistant
+                    </label>
+                    <div style={{ fontSize: 10, color: "#484f58", marginTop: -6, marginBottom: 12, lineHeight: 1.5 }}>
+                      Uses the configured signed Worker proxy. Conversations are stored in your Personal Pod and forgotten on sign-out.
+                    </div>
+                  </>
+                ) : (
+                  <div style={{ fontSize: 11, color: "#8b949e", marginBottom: 12, lineHeight: 1.5 }}>
+                    Civic AI Kami is retired in this build so the Pod has no dependency on the cooperative GPU tunnel. Use <strong>Explore</strong> for deterministic answers about saved Pod data.
+                  </div>
+                )}
                 <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 12, color: "#8b949e" }}>
                   <input
                     type="checkbox"
