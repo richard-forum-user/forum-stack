@@ -1,0 +1,24 @@
+{
+  "upstream": "audreyt/civic.ai",
+  "url": "https://github.com/audreyt/civic.ai",
+  "commit": "34668913dd0eb8ed320a18ff796056e9730899ea",
+  "license": "CC0-1.0",
+  "vendoredAt": "2026-05-25T16:08:44.047Z",
+  "files": [
+    "1.md",
+    "2.md",
+    "3.md",
+    "4.md",
+    "5.md",
+    "6.md",
+    "manifesto.md",
+    "faq.md",
+    "measures.md",
+    "inside-the-kami.md",
+    "ai-alignment-cannot-be-top-down.md"
+  ],
+  "skillUrls": [
+    "https://kami.civic.ai/.well-known/openclaw/SKILL.md",
+    "https://civic.ai/.well-known/openclaw/SKILL.md"
+  ]
+}

@@ -1,0 +1,13 @@
+[Unit]
+Description=Forum Cloudflare Tunnel
+After=network-online.target forum-airlock-listener.service
+Wants=network-online.target forum-airlock-listener.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/cloudflared tunnel --config %h/.cloudflared/forum-airlock.yml run
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target

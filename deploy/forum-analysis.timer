@@ -1,0 +1,11 @@
+[Unit]
+Description=Run Forum Analysis Pipeline Every 15 Minutes
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=15min
+Unit=forum-analysis.service
+Persistent=true
+
+[Install]
+WantedBy=timers.target

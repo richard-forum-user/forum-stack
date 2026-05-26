@@ -1,0 +1,93 @@
+apply plugin: 'com.android.application'
+
+// Release signing material is read from gradle properties (or env vars
+// of the same name). Set in ~/.gradle/gradle.properties for local
+// builds or pass with -P on the command line:
+//   FORUM_RELEASE_STORE_FILE=/path/to/forum-release.keystore
+//   FORUM_RELEASE_STORE_PASSWORD=...
+//   FORUM_RELEASE_KEY_ALIAS=forum-personal-pod
+//   FORUM_RELEASE_KEY_PASSWORD=...
+// If none of these are set, the `release` build type falls back to the
+// debug signing config so `assembleRelease` still produces an APK
+// during local pilots — but that APK is *not* distributable.
+
+def releaseStoreFile      = project.findProperty('FORUM_RELEASE_STORE_FILE')      ?: System.getenv('FORUM_RELEASE_STORE_FILE')
+def releaseStorePassword  = project.findProperty('FORUM_RELEASE_STORE_PASSWORD')  ?: System.getenv('FORUM_RELEASE_STORE_PASSWORD')
+def releaseKeyAlias       = project.findProperty('FORUM_RELEASE_KEY_ALIAS')       ?: System.getenv('FORUM_RELEASE_KEY_ALIAS')
+def releaseKeyPassword    = project.findProperty('FORUM_RELEASE_KEY_PASSWORD')    ?: System.getenv('FORUM_RELEASE_KEY_PASSWORD')
+def releaseSigningReady = releaseStoreFile && releaseStorePassword && releaseKeyAlias && releaseKeyPassword
+
+android {
+    namespace "forum.personalpod"
+    compileSdk rootProject.ext.compileSdkVersion
+    defaultConfig {
+        applicationId "forum.personalpod"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 6
+        versionName "secure-pod-v1.8-security"
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    signingConfigs {
+        if (releaseSigningReady) {
+            release {
+                storeFile file(releaseStoreFile)
+                storePassword releaseStorePassword
+                keyAlias releaseKeyAlias
+                keyPassword releaseKeyPassword
+            }
+        }
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (releaseSigningReady) {
+                signingConfig signingConfigs.release
+            } else {
+                // No release keystore configured — fall back to debug
+                // signing so local pilots still produce an APK.
+                signingConfig signingConfigs.debug
+                logger.warn(
+                    'FORUM_RELEASE_* gradle properties not set; release ' +
+                    'build will use the debug keystore and is NOT ' +
+                    'distributable. See deploy/build-android-release-apk.sh.'
+                )
+            }
+        }
+    }
+}
+
+repositories {
+    flatDir{
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation project(':capacitor-android')
+    testImplementation "junit:junit:$junitVersion"
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    implementation project(':capacitor-cordova-android-plugins')
+}
+
+apply from: 'capacitor.build.gradle'
+
+try {
+    def servicesJSON = file('google-services.json')
+    if (servicesJSON.text) {
+        apply plugin: 'com.google.gms.google-services'
+    }
+} catch(Exception e) {
+    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}

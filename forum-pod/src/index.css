@@ -1,0 +1,8 @@
+/* src/index.css */
+body {
+  margin: 0;
+  padding: 0;
+  background-color: #090b0f; /* Matches your Pod UI background */
+  color: #c9d1d9;
+  font-family: 'IBM Plex Mono', 'Fira Code', 'Courier New', monospace;
+}

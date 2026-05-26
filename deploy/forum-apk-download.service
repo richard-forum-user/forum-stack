@@ -1,0 +1,16 @@
+[Unit]
+Description=ForumAI Android APK Download Server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=forum-user1
+Group=forum-user1
+WorkingDirectory=/home/forum-user1/Desktop/forum-releases
+ExecStart=/usr/bin/python3 -m http.server 8090 --bind 127.0.0.1 --directory /home/forum-user1/Desktop/forum-releases
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,17 @@
+{
+  "name": "Forum Personal Pod",
+  "short_name": "Forum Pod",
+  "description": "A local-first civic data pod that saves submissions privately and syncs to the cooperative.",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#090b0f",
+  "theme_color": "#0d1117",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

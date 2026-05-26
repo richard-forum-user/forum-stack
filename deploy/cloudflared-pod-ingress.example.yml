@@ -1,0 +1,33 @@
+# Paste this into /etc/cloudflared/config.yml, replacing the current
+# ingress: block. It keeps the existing listener and APK routes and
+# adds the two pod hostnames CSS + provision-bridge need.
+
+tunnel: e0a398d3-e102-4793-af6f-722df8d921a1
+credentials-file: /etc/cloudflared/e0a398d3-e102-4793-af6f-722df8d921a1.json
+
+ingress:
+  # Community Solid Server (the user's Pod provider + OIDC issuer)
+  - hostname: pod.yourcommunity.forum
+    service: http://127.0.0.1:3456
+
+  # Provision bridge. Public so the APK can call /api/provision-pod
+  # during Create Pod on a fresh phone. The bridge has no secrets and
+  # rate-limit responsibility falls on Cloudflare.
+  - hostname: pod-provision.yourcommunity.forum
+    service: http://127.0.0.1:3457
+
+  # Airlock listener (existing)
+  - hostname: listener.yourcommunity.forum
+    service: http://127.0.0.1:3000
+
+  # APK download host (existing)
+  - hostname: apk.yourcommunity.forum
+    service: http://127.0.0.1:8090
+
+  # Catch-all
+  - service: http_status:404
+
+# After editing this file run:
+#   sudo cloudflared tunnel route dns e0a398d3-e102-4793-af6f-722df8d921a1 pod.yourcommunity.forum
+#   sudo cloudflared tunnel route dns e0a398d3-e102-4793-af6f-722df8d921a1 pod-provision.yourcommunity.forum
+#   sudo systemctl restart cloudflared

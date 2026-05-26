@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Forum Personal Pod</string>
+    <string name="title_activity_main">Forum Personal Pod</string>
+    <string name="package_name">forum.personalpod</string>
+    <string name="custom_url_scheme">forum.personalpod</string>
+</resources>

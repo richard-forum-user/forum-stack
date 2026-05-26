@@ -1,0 +1,16 @@
+[Unit]
+Description=Forum Community Solid Server
+After=network.target
+
+[Service]
+Type=simple
+User=forum-user1
+WorkingDirectory=/home/forum-user1/Desktop/forum-solid
+Environment=NODE_ENV=production
+Environment=POD_BASE_URL=https://pod.yourcommunity.forum
+ExecStart=/usr/bin/npm run start
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

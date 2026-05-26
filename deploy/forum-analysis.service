@@ -1,0 +1,10 @@
+[Unit]
+Description=Forum Analysis Pipeline
+After=network-online.target forum-airlock-listener.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/Desktop/forum-ai
+EnvironmentFile=%h/Desktop/forum.config.env
+ExecStart=/bin/bash %h/Desktop/forum-ai/run_analysis.sh

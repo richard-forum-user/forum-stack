@@ -1,0 +1,21 @@
+{
+  "appId": "forum.personalpod",
+  "appName": "Forum Personal Pod",
+  "webDir": "dist",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https",
+    "hostname": "localhost",
+    "allowNavigation": [
+      "pod.yourcommunity.forum",
+      "pod-provision.yourcommunity.forum",
+      "listener.yourcommunity.forum",
+      "apk.yourcommunity.forum",
+      "secure-worker.forum-community.workers.dev"
+    ]
+  },
+  "android": {
+    "allowMixedContent": false,
+    "webContentsDebuggingEnabled": true
+  }
+}

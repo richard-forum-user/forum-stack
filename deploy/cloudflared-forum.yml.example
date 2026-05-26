@@ -1,0 +1,11 @@
+# Copy to ~/.cloudflared/forum-airlock.yml and replace placeholders.
+# This exposes only the local listener to Cloudflare over an outbound tunnel.
+# The public PWA itself is served by the Cloudflare Worker in forum-airlock.
+
+tunnel: YOUR_TUNNEL_ID
+credentials-file: /home/forum-user1/.cloudflared/YOUR_TUNNEL_ID.json
+
+ingress:
+  - hostname: listener.yourcommunity.forum
+    service: http://127.0.0.1:3000
+  - service: http_status:404
