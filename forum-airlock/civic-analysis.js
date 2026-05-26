@@ -14,6 +14,7 @@ import {
   FORUM_FEEDBACK_MAX_COMMENT_CHARS,
   clampForumFeedbackComment,
 } from './feedback-limits.js';
+import { secretsEqual } from './secret-compare.js';
 
 const ANALYSIS_PREFIX = '/api/civic/analysis';
 
@@ -43,9 +44,10 @@ function jsonResponse(body, status = 200) {
   });
 }
 
-function verifyAirlock(request, env) {
+async function verifyAirlock(request, env) {
   const secret = request.headers.get('X-Airlock-Secret');
-  return secret && env.AIRLOCK_SECRET && secret === env.AIRLOCK_SECRET;
+  if (!secret || !env.AIRLOCK_SECRET) return false;
+  return secretsEqual(secret, env.AIRLOCK_SECRET);
 }
 
 /** Redact direct identifiers in published text; do not truncate length. */
@@ -85,7 +87,7 @@ export async function ensureAnalysisSchema(db) {
 /**
  * Read the cooperative ledger from D1 — full comment text per row.
  */
-export async function collectLedgerFromD1(db) {
+export async function collectLedgerFromD1(db, env = null) {
   const totalRow = await db.prepare(SQL_SOURCES.total).first();
   const total = Number(totalRow?.n || 0);
 
@@ -104,17 +106,23 @@ export async function collectLedgerFromD1(db) {
   }
 
   const rawLedger = (await db.prepare(SQL_SOURCES.ledger).all()).results || [];
-  const ledger = rawLedger.map((row) => ({
-    receipt_id: row.receipt_id,
-    kind: row.kind,
-    category_code: row.category_code,
-    category_label: row.category_label,
-    zip_code: row.zip_code || null,
-    comment: redactIdentifiers(row.comment || ''),
-    comment_length: String(row.comment || '').length,
-    consent_at: row.consent_at,
-    created_at: row.created_at,
-  }));
+  const includeComments = env?.CIVIC_PUBLISH_VERBATIM_COMMENTS === '1';
+  const ledger = rawLedger.map((row) => {
+    const base = {
+      receipt_id: row.receipt_id,
+      kind: row.kind,
+      category_code: row.category_code,
+      category_label: row.category_label,
+      zip_code: row.zip_code || null,
+      comment_length: String(row.comment || '').length,
+      consent_at: row.consent_at,
+      created_at: row.created_at,
+    };
+    if (includeComments) {
+      base.comment = redactIdentifiers(row.comment || '');
+    }
+    return base;
+  });
 
   return {
     total,
@@ -169,21 +177,34 @@ export function buildFaithfulReport(ledger, reportId) {
     }
   }
   lines.push('');
-  lines.push('## Full submission ledger');
-  lines.push('');
-  if (!ledger.ledger.length) {
-    lines.push('_No rows in D1. The cooperative cannot answer questions about submissions._');
+  const hasVerbatim = ledger.ledger.some((r) => r.comment != null);
+  if (hasVerbatim) {
+    lines.push('## Full submission ledger');
+    lines.push('');
+    if (!ledger.ledger.length) {
+      lines.push('_No rows in D1. The cooperative cannot answer questions about submissions._');
+    } else {
+      for (const row of ledger.ledger) {
+        lines.push(`### ${row.receipt_id}`);
+        lines.push(`- kind: ${row.kind}`);
+        lines.push(`- category: ${row.category_label} (\`${row.category_code}\`)`);
+        lines.push(`- zip_code: ${row.zip_code ?? '(not provided)'}`);
+        lines.push(`- submitted: ${row.created_at}`);
+        lines.push(`- comment (${row.comment_length} chars):`);
+        lines.push('');
+        lines.push(row.comment || '(empty)');
+        lines.push('');
+      }
+    }
   } else {
-    for (const row of ledger.ledger) {
-      lines.push(`### ${row.receipt_id}`);
-      lines.push(`- kind: ${row.kind}`);
-      lines.push(`- category: ${row.category_label} (\`${row.category_code}\`)`);
-      lines.push(`- zip_code: ${row.zip_code ?? '(not provided)'}`);
-      lines.push(`- submitted: ${row.created_at}`);
-      lines.push(`- comment (${row.comment_length} chars):`);
-      lines.push('');
-      lines.push(row.comment || '(empty)');
-      lines.push('');
+    lines.push('## Submission index (aggregates only)');
+    lines.push('');
+    lines.push(
+      '_Verbatim comments are not published in public-beta reports. Only counts and category/ZIP aggregates appear above._'
+    );
+    lines.push('');
+    if (ledger.ledger.length) {
+      lines.push(`Indexed ${ledger.ledger.length} submission(s) by receipt_id (details withheld).`);
     }
   }
   lines.push('## SQL queries used');
@@ -243,7 +264,7 @@ export async function runCivicAnalysis(env, options = {}) {
 
   const minSubmissions = Number(env.CIVIC_ANALYSIS_MIN_SUBMISSIONS || '1');
   await ensureAnalysisSchema(env.DB);
-  const ledger = await collectLedgerFromD1(env.DB);
+  const ledger = await collectLedgerFromD1(env.DB, env);
 
   if (ledger.total < minSubmissions) {
     return {
@@ -360,7 +381,7 @@ export async function handleCivicAnalysisRoute(request, env, url) {
   }
 
   if (request.method === 'GET' && path === `${ANALYSIS_PREFIX}/ledger`) {
-    const ledger = await collectLedgerFromD1(env.DB);
+    const ledger = await collectLedgerFromD1(env.DB, env);
     return jsonResponse({
       source: 'forum_feedback',
       faithful: true,
@@ -369,7 +390,7 @@ export async function handleCivicAnalysisRoute(request, env, url) {
   }
 
   if (request.method === 'POST' && path === `${ANALYSIS_PREFIX}/run`) {
-    if (!verifyAirlock(request, env)) {
+    if (!(await verifyAirlock(request, env))) {
       return jsonResponse({ error: 'Unauthorized' }, 401);
     }
     let body = {};
@@ -386,18 +407,11 @@ export async function handleCivicAnalysisRoute(request, env, url) {
   }
 
   if (request.method === 'POST' && path === `${ANALYSIS_PREFIX}/dev-push`) {
-    if (env.ALLOW_DEV_CIVIC_PUBLISH !== '1') {
-      return jsonResponse({ error: 'dev_push_disabled' }, 403);
-    }
-    const result = await runCivicAnalysis(env, {
-      trigger: 'dev-push',
-      publish: true,
-    });
-    return jsonResponse(result, result.ok ? 200 : 500);
+    return jsonResponse({ error: 'dev_push_removed' }, 404);
   }
 
   if (request.method === 'POST' && path === `${ANALYSIS_PREFIX}/publish`) {
-    if (!verifyAirlock(request, env)) {
+    if (!(await verifyAirlock(request, env))) {
       return jsonResponse({ error: 'Unauthorized' }, 401);
     }
     const latest = await getLatestAnalysisReport(env.DB);

@@ -122,7 +122,10 @@ async function tryPrfWrap(credential) {
   const ext = credential?.getClientExtensionResults?.();
   const prf = ext?.prf?.results?.first;
   if (prf) {
-    await wrapSigningKeyAtRest(new Uint8Array(prf));
+    const prfBytes = new Uint8Array(prf);
+    await wrapSigningKeyAtRest(prfBytes);
+    const { setSessionCryptoKeyFromPrf } = await import("./session-crypto.js");
+    await setSessionCryptoKeyFromPrf(prfBytes);
   }
 }
 

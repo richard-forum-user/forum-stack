@@ -1,6 +1,6 @@
 name = "secure-worker"
 main = "secure-worker.js"
-compatibility_date = "2024-04-19"
+compatibility_date = "2026-05-26"
 compatibility_flags = [ "nodejs_compat" ]
 
 [vars]
@@ -10,25 +10,27 @@ compatibility_flags = [ "nodejs_compat" ]
 AIRLOCK_URL = "https://pod.yourcommunity.forum"
 LISTENER_URL = "https://listener.yourcommunity.forum"
 # Set via: npx wrangler secret put UNLOCK_TOKEN_KEY
-# Pilot APK builds may set ALLOW_PILOT_BUNDLES = "1" until WebAuthn unlock is verified on device.
-ALLOW_PILOT_BUNDLES = "1"
+# Production: pilot bundle bypass disabled. Set "1" only on a dedicated staging Worker.
+ALLOW_PILOT_BUNDLES = "0"
 # Origins allowed to claim a WebAuthn rp.id at this Worker. The Pod app
 # can be served from either airlock.yourcommunity.forum (via Cloudflare
 # route) or secure-worker.forum-community.workers.dev directly. The Worker
 # binds the rp.id / expectedOrigin to whichever origin the client posts,
 # but only if it appears in this list.
 WEBAUTHN_ALLOWED_ORIGINS = "https://airlock.yourcommunity.forum,https://secure-worker.forum-community.workers.dev"
-# Civic AI Kami chat proxy. POC uses an unprotected tunnel hostname because
-# this local Wrangler OAuth token cannot manage Cloudflare Zero Trust Access.
-AI_UPSTREAM_URL = "https://ai-open.yourcommunity.forum"
+# Civic AI Kami chat proxy — must sit behind Cloudflare Access (see AI_ACCESS_* secrets).
+AI_UPSTREAM_URL = "https://ai.yourcommunity.forum"
 AI_UPSTREAM_MODEL = "qwen2.5:14b-instruct-q4_K_M"
 AI_DAILY_QUOTA = "100"
 # Edge cooperative aggregate analysis (D1 SQL only — no Workers AI). See civic-analysis.js.
 CIVIC_ANALYSIS_MIN_SUBMISSIONS = "1"
 # Set FORUM_AUTO_EDGE_ANALYSIS = "1" to re-run analysis after each forum feedback ingest.
 # FORUM_AUTO_EDGE_ANALYSIS = "0"
-# Pilot: unauthenticated POST /api/civic/analysis/dev-push — set "0" before production.
-ALLOW_DEV_CIVIC_PUBLISH = "1"
+# Unauthenticated dev-push removed; use /run and /publish with X-Airlock-Secret.
+ALLOW_DEV_CIVIC_PUBLISH = "0"
+# Public reports: aggregate counts only (no verbatim comments). Set "1" only with counsel approval.
+CIVIC_PUBLISH_VERBATIM_COMMENTS = "0"
+# Rotating salt for member pseudonym hashes in D1 (set via wrangler secret put MEMBER_HASH_SALT).
 # Set via: npx wrangler secret put FORUM_EGRESS_URL  (https://forum-egress.yourcommunity.forum)
 # Set via: npx wrangler secret put FORUM_SECRET      (must match forum-egress Worker)
 
@@ -45,7 +47,7 @@ ALLOW_DEV_CIVIC_PUBLISH = "1"
 #   /api/forum/receipt      private encrypted receipt -> listener /submit
 #   /api/forum/feedback     opt-in cooperative export -> D1 forum-db
 #   /api/ai/chat            signed Civic AI Kami chat -> on-prem Ollama
-#   /api/civic/analysis/*   cooperative aggregate (D1 SQL); dev-push pilot; cron -> egress
+#   /api/civic/analysis/*   cooperative aggregate (D1 SQL); cron -> egress
 #   /api/civic/submit       legacy alias of /api/forum/receipt   (deprecated)
 #   /api/civic/export       legacy alias of /api/forum/feedback  (deprecated)
 #   /api/zkemail/*          zkEmail proof verify + status
@@ -81,9 +83,15 @@ directory = "./dist"
 binding = "ASSETS"
 run_worker_first = true
 
-# Workers Logs (Observability). Explicitly disabled: signed Pod RPC
-# bundles + Forum Feedback payloads carry PII-adjacent data we do not
-# want forwarded to the Cloudflare dashboard. Flip `enabled = true`
-# temporarily when debugging a deploy, then turn it off again.
+# Workers Logs: sampled; never log comment bodies, hashes, or signatures.
 [observability]
-enabled = false
+enabled = true
+head_sampling_rate = 0.1
+
+[[routes]]
+pattern = "pod.yourcommunity.forum"
+custom_domain = true
+
+[[routes]]
+pattern = "airlock.yourcommunity.forum"
+custom_domain = true

@@ -1,6 +1,6 @@
 name = "forum-egress"
 main = "worker.js"
-compatibility_date = "2024-04-19"
+compatibility_date = "2026-05-26"
 
 kv_namespaces = [
   { binding = "FORUM_REPORTS", id = "f120d14428794dc490ade0b03db299b1" }

@@ -6,7 +6,8 @@
     "build:pod": "VITE_ALLOW_PILOT_FALLBACK=0 VITE_BASE=/pod/ npm run build --prefix ../forum-pod && rm -rf dist && cp -r ../forum-pod/dist ./dist",
     "install:server": "bash ../deploy/install-forum-server.sh",
     "dev:worker": "npx wrangler dev",
-    "deploy:worker": "npx wrangler deploy"
+    "deploy:worker": "npx wrangler deploy",
+    "types": "npx wrangler types"
   },
   "dependencies": {
     "@simplewebauthn/server": "^13.1.1",

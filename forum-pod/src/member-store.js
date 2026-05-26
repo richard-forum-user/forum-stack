@@ -1,3 +1,5 @@
+import { clearVolatileSigningKey } from "./pod-signing.js";
+
 const MEMBER_KEY = "forum.member";
 const SIGNING_KEY = "forum.podSigning";
 const WRAPPED_SIGNING_KEY = "forum.podSigning.wrapped";
@@ -6,7 +8,6 @@ const EXPORT_KIND = "forum-personal-pod-device-key-v1";
 const EXPORT_KIND_V2 = "forum-personal-pod-device-key-v2";
 
 const PBKDF2_ITERATIONS = 600_000;
-let volatilePrivateJwk = null;
 
 export function loadMemberProfile() {
   try {
@@ -25,31 +26,26 @@ export function clearMemberProfile() {
   localStorage.removeItem(MEMBER_KEY);
   localStorage.removeItem(SIGNING_KEY);
   localStorage.removeItem(WRAPPED_SIGNING_KEY);
-  volatilePrivateJwk = null;
+  clearVolatileSigningKey();
 }
 
 export function clearSigningMemory() {
-  volatilePrivateJwk = null;
+  clearVolatileSigningKey();
 }
 
 export function loadSigningMeta() {
   try {
     const raw = localStorage.getItem(SIGNING_KEY);
-    const parsed = raw ? JSON.parse(raw) : null;
-    if (parsed && !parsed.privateJwk && volatilePrivateJwk) {
-      return { ...parsed, privateJwk: volatilePrivateJwk };
-    }
-    return parsed;
+    return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
   }
 }
 
 export function saveSigningMeta(meta) {
-  if (meta?.privateJwk) {
-    volatilePrivateJwk = meta.privateJwk;
-  }
-  localStorage.setItem(SIGNING_KEY, JSON.stringify(meta));
+  if (!meta) return;
+  const { privateJwk: _drop, ...rest } = meta;
+  localStorage.setItem(SIGNING_KEY, JSON.stringify(rest));
 }
 
 function base64urlEncode(bytes) {
@@ -67,65 +63,15 @@ function base64urlDecode(b64url) {
   return out;
 }
 
-function buildV1Payload() {
+export async function exportDeviceKeyBlob(_pin) {
   const member = loadMemberProfile();
   const signing = loadSigningMeta();
-  if (!member?.credential_id || !signing?.privateJwk || !signing?.publicKeyHex) {
+  if (!member?.credential_id || !signing?.publicKeyHex) {
     return null;
   }
-  return {
-    kind: EXPORT_KIND,
-    version: 1,
-    exported_at: new Date().toISOString(),
-    member,
-    signing,
-  };
-}
-
-async function derivePinKey(pin, salt) {
-  const keyMaterial = await crypto.subtle.importKey(
-    "raw",
-    new TextEncoder().encode(pin),
-    "PBKDF2",
-    false,
-    ["deriveKey"]
+  throw new Error(
+    "Device key export is disabled for production builds. Enroll a recovery passkey on the cooperative Worker instead."
   );
-  return crypto.subtle.deriveKey(
-    {
-      name: "PBKDF2",
-      salt,
-      iterations: PBKDF2_ITERATIONS,
-      hash: "SHA-256",
-    },
-    keyMaterial,
-    { name: "AES-GCM", length: 256 },
-    false,
-    ["encrypt", "decrypt"]
-  );
-}
-
-/**
- * PIN-wrapped device key export (v2). Requires a non-empty PIN.
- */
-export async function exportDeviceKeyBlob(pin) {
-  const inner = buildV1Payload();
-  if (!inner) return null;
-  if (!pin || String(pin).length < 4) {
-    throw new Error("Choose a PIN of at least 4 characters to protect the export.");
-  }
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const aesKey = await derivePinKey(String(pin), salt);
-  const plaintext = new TextEncoder().encode(JSON.stringify(inner));
-  const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, aesKey, plaintext);
-  const envelope = {
-    kind: EXPORT_KIND_V2,
-    version: 2,
-    exported_at: new Date().toISOString(),
-    kdf: { name: "PBKDF2-SHA-256", salt: base64urlEncode(salt), iterations: PBKDF2_ITERATIONS },
-    cipher: { name: "AES-GCM", iv: base64urlEncode(iv), ciphertext: base64urlEncode(new Uint8Array(ciphertext)) },
-  };
-  return base64urlEncode(new TextEncoder().encode(JSON.stringify(envelope)));
 }
 
 export async function importDeviceKeyBlob(blob, pin) {
@@ -150,7 +96,25 @@ export async function importDeviceKeyBlob(blob, pin) {
     const salt = base64urlDecode(parsed.kdf.salt);
     const iv = base64urlDecode(parsed.cipher.iv);
     const ciphertext = base64urlDecode(parsed.cipher.ciphertext);
-    const aesKey = await derivePinKey(String(pin), salt);
+    const keyMaterial = await crypto.subtle.importKey(
+      "raw",
+      new TextEncoder().encode(pin),
+      "PBKDF2",
+      false,
+      ["deriveKey"]
+    );
+    const aesKey = await crypto.subtle.deriveKey(
+      {
+        name: "PBKDF2",
+        salt,
+        iterations: PBKDF2_ITERATIONS,
+        hash: "SHA-256",
+      },
+      keyMaterial,
+      { name: "AES-GCM", length: 256 },
+      false,
+      ["encrypt", "decrypt"]
+    );
     let plaintext;
     try {
       plaintext = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, aesKey, ciphertext);
@@ -168,11 +132,26 @@ export async function importDeviceKeyBlob(blob, pin) {
   if (!inner.member?.credential_id) {
     throw new Error("Imported blob is missing credential_id.");
   }
-  if (!inner.signing?.privateJwk || !inner.signing?.publicKeyHex) {
+  if (!inner.signing?.publicKeyHex) {
     throw new Error("Imported blob is missing signing key material.");
   }
-  saveMemberProfile(inner.member);
-  saveSigningMeta(inner.signing);
+  if (inner.signing?.privateJwk) {
+    const privateKey = await crypto.subtle.importKey(
+      "jwk",
+      inner.signing.privateJwk,
+      { name: "Ed25519" },
+      false,
+      ["sign"]
+    );
+    const mod = await import("./pod-signing.js");
+    mod.setVolatileSigningPrivateKey?.(privateKey);
+    const { privateJwk: _r, ...signingRest } = inner.signing;
+    saveMemberProfile(inner.member);
+    saveSigningMeta(signingRest);
+  } else {
+    saveMemberProfile(inner.member);
+    saveSigningMeta(inner.signing);
+  }
   return {
     credentialId: inner.member.credential_id,
     webId: inner.member.webId || null,
@@ -181,51 +160,10 @@ export async function importDeviceKeyBlob(blob, pin) {
   };
 }
 
-/**
- * Optional PRF wrap of signing key at rest (Phase 3d).
- */
-export async function wrapSigningKeyAtRest(prfOutput) {
-  const signing = loadSigningMeta();
-  if (!signing?.privateJwk || !prfOutput) return false;
-  const wrapKey = await crypto.subtle.importKey(
-    "raw",
-    prfOutput.slice(0, 32),
-    { name: "AES-GCM" },
-    false,
-    ["encrypt", "decrypt"]
-  );
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  const plaintext = new TextEncoder().encode(JSON.stringify(signing.privateJwk));
-  const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, wrapKey, plaintext);
-  localStorage.setItem(
-    WRAPPED_SIGNING_KEY,
-    JSON.stringify({
-      iv: base64urlEncode(iv),
-      ciphertext: base64urlEncode(new Uint8Array(ciphertext)),
-    })
-  );
-  const { privateJwk: _removed, ...rest } = signing;
-  volatilePrivateJwk = signing.privateJwk;
-  saveSigningMeta(rest);
-  return true;
+export async function wrapSigningKeyAtRest(_prfOutput) {
+  return false;
 }
 
-export async function unwrapSigningKeyAtRest(prfOutput) {
-  const wrappedRaw = localStorage.getItem(WRAPPED_SIGNING_KEY);
-  if (!wrappedRaw || !prfOutput) return loadSigningMeta();
-  const wrapped = JSON.parse(wrappedRaw);
-  const wrapKey = await crypto.subtle.importKey(
-    "raw",
-    prfOutput.slice(0, 32),
-    { name: "AES-GCM" },
-    false,
-    ["encrypt", "decrypt"]
-  );
-  const iv = base64urlDecode(wrapped.iv);
-  const ciphertext = base64urlDecode(wrapped.ciphertext);
-  const plaintext = await crypto.subtle.decrypt({ name: "AES-GCM", iv }, wrapKey, ciphertext);
-  const privateJwk = JSON.parse(new TextDecoder().decode(plaintext));
-  volatilePrivateJwk = privateJwk;
-  const meta = { ...loadSigningMeta(), privateJwk };
-  return meta;
+export async function unwrapSigningKeyAtRest(_prfOutput) {
+  return loadSigningMeta();
 }

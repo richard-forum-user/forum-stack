@@ -16,6 +16,6 @@
   },
   "android": {
     "allowMixedContent": false,
-    "webContentsDebuggingEnabled": true
+    "webContentsDebuggingEnabled": false
   }
 }

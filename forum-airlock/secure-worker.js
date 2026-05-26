@@ -13,7 +13,14 @@ export { PersonalPodDO } from './pod-do.js';
 
 import { verifySignedBundle } from './pod-signing-web.js';
 import { expectedSessionIdFromPubkey, sessionIdMatchesPubkey } from './session-binding.js';
-import { issueUnlockToken, isPilotCredentialId, verifyUnlockToken } from './unlock-token.js';
+import {
+  issueUnlockToken,
+  isPilotCredentialId,
+  verifyUnlockToken,
+} from './unlock-token.js';
+import { loadMemberHashSalt, memberHashFromPublicKey } from './member-hash.js';
+import { checkRateLimit, clientIp } from './rate-limit.js';
+import { checkPodWriteBudget, podBodyTooLarge } from './do-guards.js';
 import { handleAiChat } from './ai-chat.js';
 import { handleWebAuthnRoute } from './webauthn-server.js';
 import { handleCivicAnalysisRoute, runCivicAnalysis } from './civic-analysis.js';
@@ -83,7 +90,12 @@ async function assertUnlocked(env, bundle) {
   if (!deviceCredentialId) {
     return { ok: false, reason: 'missing_device_credential_id' };
   }
-  const verdict = await verifyUnlockToken(env, bundle.unlockToken);
+  const verdict = await verifyUnlockToken(
+    env,
+    bundle.unlockToken,
+    bundle.signature,
+    env.DB
+  );
   if (!verdict.ok) {
     return verdict;
   }
@@ -92,6 +104,27 @@ async function assertUnlocked(env, bundle) {
   }
   return { ok: true };
 }
+
+async function applyIngressRateLimit(request, env, bucketSuffix, limit, windowMs) {
+  if (!env.DB) return null;
+  const ip = clientIp(request);
+  const verdict = await checkRateLimit(env.DB, `${bucketSuffix}:${ip}`, limit, windowMs);
+  if (!verdict.ok) {
+    return jsonResponse(
+      { error: 'rate_limited', retry_after_sec: verdict.retryAfterSec },
+      429,
+      { 'Retry-After': String(verdict.retryAfterSec || 60) }
+    );
+  }
+  return null;
+}
+
+const SECURITY_TXT = `Contact: mailto:security@yourcommunity.forum
+Expires: 2027-05-26T00:00:00.000Z
+Preferred-Languages: en
+Canonical: https://pod.yourcommunity.forum/.well-known/security.txt
+Policy: https://pod.yourcommunity.forum/privacy
+`;
 
 export default {
   async fetch(request, env, ctx) {
@@ -105,6 +138,12 @@ export default {
 
     if (url.pathname === '/' && request.method === 'GET') {
       return Response.redirect(`${url.origin}/pod`, 302);
+    }
+
+    if (url.pathname === '/.well-known/security.txt' && request.method === 'GET') {
+      return new Response(SECURITY_TXT, {
+        headers: { 'Content-Type': 'text/plain; charset=utf-8', ...CORS },
+      });
     }
 
     if (url.pathname.startsWith('/api/webauthn/')) {
@@ -139,6 +178,8 @@ export default {
       (url.pathname === FORUM_FEEDBACK_PATH || url.pathname === '/api/civic/export') &&
       request.method === 'POST'
     ) {
+      const rlFb = await applyIngressRateLimit(request, env, 'forum_feedback', 30, 60_000);
+      if (rlFb) return rlFb;
       const responseHeaders = {
         'Content-Type': 'application/json',
         ...CORS,
@@ -163,10 +204,20 @@ export default {
     }
 
     if (url.pathname.startsWith('/api/civic/analysis')) {
+      const rlCivic = await applyIngressRateLimit(
+        request,
+        env,
+        `civic_${request.method}`,
+        request.method === 'GET' ? 60 : 20,
+        60_000
+      );
+      if (rlCivic) return rlCivic;
       return handleCivicAnalysisRoute(request, env, url);
     }
 
     if (url.pathname === AI_CHAT_PATH) {
+      const rlAi = await applyIngressRateLimit(request, env, 'ai_chat', 40, 60_000);
+      if (rlAi) return rlAi;
       return handleAiChat(request, env);
     }
 
@@ -174,6 +225,8 @@ export default {
       if (request.method !== 'POST') {
         return jsonResponse({ error: 'use_post' }, 405);
       }
+      const rl = await applyIngressRateLimit(request, env, 'pod_rpc', 120, 60_000);
+      if (rl) return rl;
       if (!env.POD) {
         return jsonResponse({ error: 'pod_do_not_bound' }, 500);
       }
@@ -182,6 +235,9 @@ export default {
         bodyText = await request.text();
       } catch {
         return jsonResponse({ error: 'unreadable_body' }, 400);
+      }
+      if (podBodyTooLarge(bodyText)) {
+        return jsonResponse({ error: 'payload_too_large' }, 413);
       }
       let bundle;
       try {
@@ -201,6 +257,12 @@ export default {
         );
       }
       const sessionId = bundle.sessionId;
+      if (env.DB) {
+        const budget = await checkPodWriteBudget(env.DB, sessionId);
+        if (!budget.ok) {
+          return jsonResponse({ error: budget.reason || 'pod_rate_limited' }, 429);
+        }
+      }
       const id = env.POD.idFromName(sessionId);
       const stub = env.POD.get(id);
       const upstream = await stub.fetch(
@@ -304,10 +366,28 @@ export default {
   async scheduled(event, env, ctx) {
     if (!env.DB) return;
     ctx.waitUntil(
-      runCivicAnalysis(env, {
-        trigger: `cron:${event.cron || 'unknown'}`,
-        publish: true,
-      }).catch((err) => {
+      (async () => {
+        const cycleSalt = crypto.randomUUID();
+        await env.DB.prepare(
+          `CREATE TABLE IF NOT EXISTS civic_cycle_config (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          )`
+        ).run();
+        await env.DB.prepare(
+          `INSERT INTO civic_cycle_config (key, value, updated_at)
+           VALUES ('member_hash_salt', ?, datetime('now'))
+           ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`
+        )
+          .bind(cycleSalt)
+          .run();
+        env.CIVIC_CYCLE_SALT = cycleSalt;
+        await runCivicAnalysis(env, {
+          trigger: `cron:${event.cron || 'unknown'}`,
+          publish: true,
+        });
+      })().catch((err) => {
         console.error('scheduled civic analysis failed:', err?.message || err);
       })
     );
@@ -564,7 +644,8 @@ async function handleForumFeedbackAtEdge(request, env) {
   }
 
   const webId = payload.webId || verdict.sessionId;
-  const memberHash = await sha256Hex(verdict.publicKeyHex);
+  const cycleSalt = await loadMemberHashSalt(env.DB, env);
+  const memberHash = await memberHashFromPublicKey(verdict.publicKeyHex, env, cycleSalt);
   const consentAt = payload.consent_at || new Date().toISOString();
   const policyVersion = payload.policy_version || 'coop-data-policy/2026-05-01';
   const encryptedData = base64EncodeUtf8(JSON.stringify(payload));

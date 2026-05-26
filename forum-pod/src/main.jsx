@@ -2,6 +2,11 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import PersonalPod from './pod-ui.jsx' // Import your pod component
 import './index.css'
+import { installSessionLock } from './session-lock.js'
+import { migrateLegacySigningKey } from './pod-signing.js'
+
+installSessionLock()
+migrateLegacySigningKey().catch(() => {})
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>

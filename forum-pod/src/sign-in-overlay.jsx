@@ -146,7 +146,7 @@ export default function SignInOverlay({
           Sign in to your Pod
         </div>
         <p style={{ fontSize: 12, color: "#8b949e", lineHeight: 1.55, marginBottom: 20 }}>
-          Your journal, submissions, and personal data live in your Personal Pod (Cloudflare Durable Object), keyed to a WebAuthn passkey on this device. Nothing is stored on this device after you sign out.
+          Your journal, submissions, and personal data live in your Personal Pod (Cloudflare Durable Object), keyed to a WebAuthn passkey on this device. This device may cache encrypted copies while you are signed in; signing out or locking clears signing keys from memory.
         </p>
 
         <button

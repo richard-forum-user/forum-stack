@@ -45,7 +45,12 @@ async function assertUnlocked(env, bundle) {
   if (!deviceCredentialId) {
     return { ok: false, reason: 'missing_device_credential_id' };
   }
-  const verdict = await verifyUnlockToken(env, bundle.unlockToken);
+  const verdict = await verifyUnlockToken(
+    env,
+    bundle.unlockToken,
+    bundle.signature,
+    env.DB
+  );
   if (!verdict.ok) {
     return verdict;
   }
@@ -265,6 +270,9 @@ export async function handleAiChat(request, env) {
   if (!upstreamUrl) {
     return jsonResponse({ error: 'ai_upstream_not_configured' }, 503);
   }
+  if (!env.AI_ACCESS_CLIENT_ID || !env.AI_ACCESS_CLIENT_SECRET) {
+    return jsonResponse({ error: 'ai_access_not_configured' }, 503);
+  }
 
   let bundle;
   try {
@@ -314,11 +322,11 @@ export async function handleAiChat(request, env) {
     return jsonResponse({ error: 'empty_messages' }, 400);
   }
 
-  const headers = { 'Content-Type': 'application/json' };
-  if (env.AI_ACCESS_CLIENT_ID && env.AI_ACCESS_CLIENT_SECRET) {
-    headers['CF-Access-Client-Id'] = env.AI_ACCESS_CLIENT_ID;
-    headers['CF-Access-Client-Secret'] = env.AI_ACCESS_CLIENT_SECRET;
-  }
+  const headers = {
+    'Content-Type': 'application/json',
+    'CF-Access-Client-Id': env.AI_ACCESS_CLIENT_ID,
+    'CF-Access-Client-Secret': env.AI_ACCESS_CLIENT_SECRET,
+  };
 
   let upstream;
   try {

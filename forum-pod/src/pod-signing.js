@@ -15,9 +15,44 @@ function bytesToHex(bytes) {
 
 export { deriveBoundSessionId };
 
+/** Non-extractable Ed25519 private key — lives in memory for the session only. */
+let volatileSigningPrivateKey = null;
+
+export function clearVolatileSigningKey() {
+  volatileSigningPrivateKey = null;
+}
+
+export function setVolatileSigningPrivateKey(privateKey) {
+  volatileSigningPrivateKey = privateKey;
+}
+
+export async function migrateLegacySigningKey() {
+  const raw = localStorage.getItem("forum.podSigning");
+  if (!raw || volatileSigningPrivateKey) return false;
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return false;
+  }
+  if (!parsed?.privateJwk) return false;
+  volatileSigningPrivateKey = await crypto.subtle.importKey(
+    "jwk",
+    parsed.privateJwk,
+    { name: "Ed25519" },
+    false,
+    ["sign"]
+  );
+  const { privateJwk: _removed, ...rest } = parsed;
+  const { saveSigningMeta } = await import("./member-store.js");
+  saveSigningMeta(rest);
+  return true;
+}
+
 export async function ensurePodSigningKey(_legacySessionHint) {
+  await migrateLegacySigningKey();
   const existing = loadSigningMeta();
-  if (existing?.publicKeyHex && existing.privateJwk) {
+  if (existing?.publicKeyHex && volatileSigningPrivateKey) {
     const sessionId = await deriveBoundSessionId(existing.publicKeyHex);
     const meta = { ...existing, sessionId };
     if (existing.sessionId !== sessionId) {
@@ -29,12 +64,17 @@ export async function ensurePodSigningKey(_legacySessionHint) {
     }
     return meta;
   }
+  if (existing?.publicKeyHex && !volatileSigningPrivateKey) {
+    throw new Error(
+      "Signing key is locked. Unlock with your passkey to sign requests."
+    );
+  }
   const keyPair = await crypto.subtle.generateKey(
     { name: "Ed25519" },
-    true,
+    false,
     ["sign", "verify"]
   );
-  const privateJwk = await crypto.subtle.exportKey("jwk", keyPair.privateKey);
+  volatileSigningPrivateKey = keyPair.privateKey;
   const publicJwk = await crypto.subtle.exportKey("jwk", keyPair.publicKey);
   const rawPub = Uint8Array.from(atob(publicJwk.x.replace(/-/g, "+").replace(/_/g, "/")), (c) =>
     c.charCodeAt(0)
@@ -44,7 +84,6 @@ export async function ensurePodSigningKey(_legacySessionHint) {
   const meta = {
     sessionId,
     publicKeyHex,
-    privateJwk,
     publicJwk,
     createdAt: Date.now(),
   };
@@ -61,16 +100,9 @@ export async function signBundle(payload, _sessionHint) {
   const sessionId = meta.sessionId;
   const timestamp = new Date().toISOString();
   const message = canonicalise({ payload, sessionId, timestamp });
-  const privateKey = await crypto.subtle.importKey(
-    "jwk",
-    meta.privateJwk,
-    { name: "Ed25519" },
-    false,
-    ["sign"]
-  );
   const sig = await crypto.subtle.sign(
     { name: "Ed25519" },
-    privateKey,
+    volatileSigningPrivateKey,
     new TextEncoder().encode(message)
   );
   return {

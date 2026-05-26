@@ -1,3 +1,5 @@
+import { secretsEqual } from './secret-compare.js';
+
 export default {
   async fetch(request, env) {
     if (request.method === "GET") {
@@ -42,7 +44,7 @@ export default {
     }
 
     const authHeader = request.headers.get("X-Forum-Secret");
-    if (!authHeader || authHeader !== env.FORUM_SECRET) {
+    if (!(await secretsEqual(authHeader, env.FORUM_SECRET))) {
       return new Response(JSON.stringify({ error: "Unauthorized access" }), {
         status: 401,
         headers: { "Content-Type": "application/json" }

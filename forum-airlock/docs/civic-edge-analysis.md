@@ -22,19 +22,6 @@ public cooperative summaries. Personal Pod data is never read for this path.
 | `GET` | `/api/civic/analysis/ledger` | Public | Live D1 ledger + SQL sources (no stored report) |
 | `POST` | `/api/civic/analysis/run` | `X-Airlock-Secret` | Rebuild report from D1 |
 | `POST` | `/api/civic/analysis/publish` | `X-Airlock-Secret` | Push latest stored report to egress |
-| `POST` | `/api/civic/analysis/dev-push` | None (pilot) | Generate from D1 and publish — requires `ALLOW_DEV_CIVIC_PUBLISH = "1"` |
-
-### Pilot: DEV push (no secret)
-
-Pod **Forum Feedback** → **DEV: Generate & publish public report**, or:
-
-```bash
-curl -sS -X POST "https://secure-worker.forum-community.workers.dev/api/civic/analysis/dev-push"
-```
-
-Updates D1 `civic_analysis_reports` and POSTs to `FORUM_EGRESS_URL` when secrets are set.
-Set `ALLOW_DEV_CIVIC_PUBLISH = "0"` in `wrangler.toml` before production.
-
 ### Run analysis (operator)
 
 ```bash
@@ -90,7 +77,8 @@ Published reports include opt-in cooperative comments (length-capped at submit).
 | Variable | Default | Purpose |
 |----------|---------|---------|
 | `CIVIC_ANALYSIS_MIN_SUBMISSIONS` | `1` | Skip run if fewer rows (still returns `skipped`) |
-| `ALLOW_DEV_CIVIC_PUBLISH` | `1` (pilot) | Enable unauthenticated `dev-push`; set `"0"` before launch |
+| `CIVIC_PUBLISH_VERBATIM_COMMENTS` | `0` (beta) | Set `"1"` only with counsel approval to publish verbatim comments |
+| `ALLOW_DEV_CIVIC_PUBLISH` | `0` | Deprecated; dev-push endpoint removed |
 | `FORUM_FEEDBACK_MAX_COMMENT_CHARS` | `2000` (code) | Documented in `feedback-limits.js` / `civic-vocab.js` |
 
 Workers AI (`[ai]` binding) is **not** used by civic analysis. The binding remains for other features (e.g. Kami chat proxy).
