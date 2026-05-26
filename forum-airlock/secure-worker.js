@@ -304,7 +304,10 @@ export default {
   async scheduled(event, env, ctx) {
     if (!env.DB) return;
     ctx.waitUntil(
-      runCivicAnalysis(env, { trigger: `cron:${event.cron || 'unknown'}` }).catch((err) => {
+      runCivicAnalysis(env, {
+        trigger: `cron:${event.cron || 'unknown'}`,
+        publish: true,
+      }).catch((err) => {
         console.error('scheduled civic analysis failed:', err?.message || err);
       })
     );

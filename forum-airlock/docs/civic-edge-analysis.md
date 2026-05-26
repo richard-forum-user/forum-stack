@@ -21,7 +21,19 @@ public cooperative summaries. Personal Pod data is never read for this path.
 | `GET` | `/api/civic/analysis` | Public | Latest report JSON (`report`, `metadata`, `ledger`) |
 | `GET` | `/api/civic/analysis/ledger` | Public | Live D1 ledger + SQL sources (no stored report) |
 | `POST` | `/api/civic/analysis/run` | `X-Airlock-Secret` | Rebuild report from D1 |
-| `POST` | `/api/civic/analysis/publish` | `X-Airlock-Secret` | Push latest to `FORUM_EGRESS_URL` |
+| `POST` | `/api/civic/analysis/publish` | `X-Airlock-Secret` | Push latest stored report to egress |
+| `POST` | `/api/civic/analysis/dev-push` | None (pilot) | Generate from D1 and publish — requires `ALLOW_DEV_CIVIC_PUBLISH = "1"` |
+
+### Pilot: DEV push (no secret)
+
+Pod **Forum Feedback** → **DEV: Generate & publish public report**, or:
+
+```bash
+curl -sS -X POST "https://secure-worker.forum-community.workers.dev/api/civic/analysis/dev-push"
+```
+
+Updates D1 `civic_analysis_reports` and POSTs to `FORUM_EGRESS_URL` when secrets are set.
+Set `ALLOW_DEV_CIVIC_PUBLISH = "0"` in `wrangler.toml` before production.
 
 ### Run analysis (operator)
 
@@ -29,16 +41,16 @@ public cooperative summaries. Personal Pod data is never read for this path.
 curl -sS -X POST "https://secure-worker.forum-community.workers.dev/api/civic/analysis/run" \
   -H "Content-Type: application/json" \
   -H "X-Airlock-Secret: $AIRLOCK_SECRET" \
-  -d '{"trigger":"manual","publish":false}'
+  -d '{"trigger":"manual","publish":true}'
 ```
 
-### Publish to forum-egress Worker
+### Publish latest to forum-egress Worker
 
 Set secrets on `secure-worker`:
 
 ```bash
 npx wrangler secret put FORUM_EGRESS_URL   # e.g. https://forum-egress.yourcommunity.forum
-npx wrangler secret put FORUM_SECRET       # matches forum-egress FORUM_SECRET
+npx wrangler secret put FORUM_SECRET       # matches forum-egress Worker FORUM_SECRET
 ```
 
 Then:
@@ -48,11 +60,17 @@ curl -sS -X POST ".../api/civic/analysis/publish" \
   -H "X-Airlock-Secret: $AIRLOCK_SECRET"
 ```
 
+Public HTML: `GET https://forum-egress.yourcommunity.forum/` (KV key `latest`).
+
 ## Automation
 
-- **Cron**: every 12 hours (`wrangler.toml` `[triggers].crons`).
+- **Cron**: every **6 hours** UTC (`0 */6 * * *` in `wrangler.toml`). Each run **generates and publishes** (`publish: true`) to forum-egress when secrets are configured.
 - **Per feedback**: set `FORUM_AUTO_EDGE_ANALYSIS = "1"` in `wrangler.toml`
-  to `waitUntil` an analysis run after each successful `/api/forum/feedback`.
+  to `waitUntil` an analysis run after each successful `/api/forum/feedback` (D1 only unless you also pass publish in code).
+
+## Legacy on-prem pipeline
+
+`deploy/forum-analysis.timer` is **disabled** (inactive schedule) so `forum-ai/run_analysis.sh` + `push.py` do not overwrite KV `latest` with old `report.json` output. Re-enable only for local experiments.
 
 ## What the report contains
 
@@ -72,6 +90,7 @@ Published reports include opt-in cooperative comments (length-capped at submit).
 | Variable | Default | Purpose |
 |----------|---------|---------|
 | `CIVIC_ANALYSIS_MIN_SUBMISSIONS` | `1` | Skip run if fewer rows (still returns `skipped`) |
+| `ALLOW_DEV_CIVIC_PUBLISH` | `1` (pilot) | Enable unauthenticated `dev-push`; set `"0"` before launch |
 | `FORUM_FEEDBACK_MAX_COMMENT_CHARS` | `2000` (code) | Documented in `feedback-limits.js` / `civic-vocab.js` |
 
 Workers AI (`[ai]` binding) is **not** used by civic analysis. The binding remains for other features (e.g. Kami chat proxy).

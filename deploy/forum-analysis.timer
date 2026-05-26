@@ -1,11 +1,13 @@
 [Unit]
-Description=Run Forum Analysis Pipeline Every 15 Minutes
+Description=DISABLED — legacy forum-ai pipeline (edge cron replaces this)
+Documentation=forum-airlock/docs/civic-edge-analysis.md
 
 [Timer]
-OnBootSec=5min
-OnUnitActiveSec=15min
+# Inactive schedule: public reports come from secure-worker every 6h.
+# To re-enable legacy on-prem analysis, restore OnBootSec/OnUnitActiveSec and run:
+#   systemctl --user enable --now forum-analysis.timer
+OnCalendar=2099-01-01 00:00:00 UTC
 Unit=forum-analysis.service
-Persistent=true
 
 [Install]
 WantedBy=timers.target

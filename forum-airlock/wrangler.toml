@@ -27,6 +27,10 @@ AI_DAILY_QUOTA = "100"
 CIVIC_ANALYSIS_MIN_SUBMISSIONS = "1"
 # Set FORUM_AUTO_EDGE_ANALYSIS = "1" to re-run analysis after each forum feedback ingest.
 # FORUM_AUTO_EDGE_ANALYSIS = "0"
+# Pilot: unauthenticated POST /api/civic/analysis/dev-push — set "0" before production.
+ALLOW_DEV_CIVIC_PUBLISH = "1"
+# Set via: npx wrangler secret put FORUM_EGRESS_URL  (https://forum-egress.yourcommunity.forum)
+# Set via: npx wrangler secret put FORUM_SECRET      (must match forum-egress Worker)
 
 # Set via:
 #   npx wrangler secret put AI_ACCESS_CLIENT_ID
@@ -41,7 +45,7 @@ CIVIC_ANALYSIS_MIN_SUBMISSIONS = "1"
 #   /api/forum/receipt      private encrypted receipt -> listener /submit
 #   /api/forum/feedback     opt-in cooperative export -> D1 forum-db
 #   /api/ai/chat            signed Civic AI Kami chat -> on-prem Ollama
-#   /api/civic/analysis     cooperative aggregate report (D1 SQL only)
+#   /api/civic/analysis/*   cooperative aggregate (D1 SQL); dev-push pilot; cron -> egress
 #   /api/civic/submit       legacy alias of /api/forum/receipt   (deprecated)
 #   /api/civic/export       legacy alias of /api/forum/feedback  (deprecated)
 #   /api/zkemail/*          zkEmail proof verify + status
@@ -57,7 +61,7 @@ database_name = "forum-db"
 database_id = "b23bdfa3-d8ba-4092-a5ac-ada4d697bc3b"
 
 [triggers]
-crons = ["0 */12 * * *"]
+crons = ["0 */6 * * *"]
 
 # Personal Pod Durable Object: one DO instance per device credential.
 # Replaces the Community Solid Server (forum-solid) + provision-bridge

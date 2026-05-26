@@ -718,6 +718,8 @@ export default function PersonalPod() {
   const [coopReport, setCoopReport] = useState(null);
   const [coopReportBusy, setCoopReportBusy] = useState(false);
   const [coopReportError, setCoopReportError] = useState(null);
+  const [coopDevPushBusy, setCoopDevPushBusy] = useState(false);
+  const [coopDevPushStatus, setCoopDevPushStatus] = useState(null);
   const [localSubmissions, setLocalSubmissions] = useState([]);
   const [serverUrl, setServerUrl] = useState(() => localStorage.getItem("forum.serverUrl") || DEFAULT_SERVER_URL);
   const [memberProfile, setMemberProfile] = useState(() => loadMemberProfile());
@@ -1151,6 +1153,46 @@ export default function PersonalPod() {
       setCoopReportBusy(false);
     }
   }, [normalizedServerUrl]);
+
+  const PUBLIC_EGRESS_REPORT_URL = "https://forum-egress.yourcommunity.forum/";
+
+  const devPushCooperativeReport = useCallback(async () => {
+    if (!normalizedServerUrl) {
+      setCoopDevPushStatus({ ok: false, text: "Set the cooperative Worker URL in Settings first." });
+      return;
+    }
+    setCoopDevPushBusy(true);
+    setCoopDevPushStatus(null);
+    try {
+      const res = await fetch(`${normalizedServerUrl}/api/civic/analysis/dev-push`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      });
+      const raw = await res.text();
+      let data = {};
+      try {
+        data = raw ? JSON.parse(raw) : {};
+      } catch {
+        throw new Error(`Non-JSON response (${res.status})`);
+      }
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || data.reason || `Dev push failed (${res.status})`);
+      }
+      const egressNote = data.egress?.pushed
+        ? "Public site updated."
+        : `Egress not updated: ${data.egress?.reason || "unknown"}`;
+      setCoopDevPushStatus({
+        ok: true,
+        text: `Report ${data.report_id || "generated"}. ${egressNote}`,
+      });
+      await loadCooperativeReport();
+    } catch (e) {
+      setCoopDevPushStatus({ ok: false, text: e.message });
+    } finally {
+      setCoopDevPushBusy(false);
+    }
+  }, [normalizedServerUrl, loadCooperativeReport]);
 
   const syncSubmission = useCallback(async (row, activeConn = conn) => {
     if (!row.share_with_cooperative && !shareWithCooperative) {
@@ -1725,7 +1767,35 @@ export default function PersonalPod() {
                 </p>
                 <button
                   type="button"
-                  disabled={coopReportBusy}
+                  disabled={coopDevPushBusy || coopReportBusy}
+                  onClick={devPushCooperativeReport}
+                  style={{ ...S.runBtn(coopDevPushBusy), width: "100%", padding: "9px", textAlign: "center", marginBottom: 8 }}
+                >
+                  {coopDevPushBusy ? "Generating & publishing…" : "DEV: Generate & publish public report"}
+                </button>
+                {coopDevPushStatus && (
+                  <div style={{
+                    marginBottom: 10,
+                    fontSize: 12,
+                    color: coopDevPushStatus.ok ? "#3fb950" : "#f85149",
+                    lineHeight: 1.45,
+                  }}>
+                    {coopDevPushStatus.text}{" "}
+                    {coopDevPushStatus.ok && (
+                      <a
+                        href={PUBLIC_EGRESS_REPORT_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: "#58a6ff" }}
+                      >
+                        Open public report
+                      </a>
+                    )}
+                  </div>
+                )}
+                <button
+                  type="button"
+                  disabled={coopReportBusy || coopDevPushBusy}
                   onClick={loadCooperativeReport}
                   style={{ ...S.runBtn(coopReportBusy), width: "100%", padding: "9px", textAlign: "center", marginBottom: 10 }}
                 >

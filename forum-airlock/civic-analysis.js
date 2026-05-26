@@ -385,6 +385,17 @@ export async function handleCivicAnalysisRoute(request, env, url) {
     return jsonResponse(result, result.ok ? 200 : 500);
   }
 
+  if (request.method === 'POST' && path === `${ANALYSIS_PREFIX}/dev-push`) {
+    if (env.ALLOW_DEV_CIVIC_PUBLISH !== '1') {
+      return jsonResponse({ error: 'dev_push_disabled' }, 403);
+    }
+    const result = await runCivicAnalysis(env, {
+      trigger: 'dev-push',
+      publish: true,
+    });
+    return jsonResponse(result, result.ok ? 200 : 500);
+  }
+
   if (request.method === 'POST' && path === `${ANALYSIS_PREFIX}/publish`) {
     if (!verifyAirlock(request, env)) {
       return jsonResponse({ error: 'Unauthorized' }, 401);
