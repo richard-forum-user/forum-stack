@@ -101,17 +101,21 @@ jobs:
       - name: Download workerd binary (POSIX)
         if: runner.os != 'Windows'
         working-directory: desktop
+        env:
+          WORKERD_VERSION: ${{ env.WORKERD_VERSION }}
         run: ./scripts/fetch-workerd.sh
 
       - name: Download workerd binary (Windows)
         if: runner.os == 'Windows'
         working-directory: desktop
         shell: bash
+        env:
+          WORKERD_VERSION: ${{ env.WORKERD_VERSION }}
         run: ./scripts/fetch-workerd.sh
 
       - name: Install Tauri CLI
         working-directory: desktop
-        run: npm install
+        run: npm install --ignore-scripts
 
       - name: Build installer
         working-directory: desktop

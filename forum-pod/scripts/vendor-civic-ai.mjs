@@ -20,7 +20,7 @@ const OPENCLAW_SKILL_URLS = [
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const PUBLIC_OUT = path.join(ROOT, "public", "civic-ai");
 const SRC_OUT = path.join(ROOT, "src", "civic-ai");
-const AIRLOCK_PROMPT_MODULE = path.resolve(ROOT, "..", "forum-airlock", "civic-ai-system-prompt.js");
+const AIRLOCK_PROMPT_MODULE = path.resolve(ROOT, "..", "forum-pod-airlock", "civic-ai-system-prompt.js");
 
 const CONTENT_FILES = [
   "1.md",
