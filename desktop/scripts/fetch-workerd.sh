@@ -35,7 +35,7 @@ asset_for() {
     aarch64-unknown-linux-gnu)  echo "workerd-linux-arm64.gz" ;;
     x86_64-apple-darwin)        echo "workerd-darwin-64.gz" ;;
     aarch64-apple-darwin)       echo "workerd-darwin-arm64.gz" ;;
-    x86_64-pc-windows-msvc)     echo "workerd-windows-64.exe" ;;
+    x86_64-pc-windows-msvc)     echo "workerd-windows-64.gz" ;;
     *)                          echo "" ;;
   esac
 }
@@ -51,12 +51,13 @@ fetch_one() {
   fi
   local url="https://github.com/cloudflare/workerd/releases/download/${WORKERD_VERSION}/${asset}"
   local out_basename="workerd-${triple}"
+  echo "→ ${triple}: ${url}"
   if [[ "$triple" == *windows* ]]; then
-    out_basename="${out_basename}.exe"
-    echo "→ ${triple}: ${url}"
-    curl -fL "$url" -o "${OUT_DIR}/${out_basename}"
+    local gz_path="${OUT_DIR}/workerd-windows-64.gz"
+    curl -fL "$url" -o "$gz_path"
+    gunzip -f "$gz_path"
+    mv "${OUT_DIR}/workerd-windows-64" "${OUT_DIR}/${out_basename}.exe"
   else
-    echo "→ ${triple}: ${url}"
     curl -fL "$url" -o "${OUT_DIR}/${out_basename}.gz"
     gunzip -f "${OUT_DIR}/${out_basename}.gz"
     chmod +x "${OUT_DIR}/${out_basename}"
