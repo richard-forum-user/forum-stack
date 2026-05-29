@@ -1,21 +1,24 @@
 #!/bin/bash
-# Local Forum stack helper: install deps and print the edge-first dev commands.
+# forum-stack helper — cooperative pipeline + personal Pod in one repo.
 set -euo pipefail
 
-DESKTOP="$(cd "$(dirname "$0")" && pwd)"
+ROOT="$(cd "$(dirname "$0")" && pwd)"
 
-echo "== Forum stack =="
-echo "1) Installing Worker deps (if needed)..."
-(cd "$DESKTOP/forum-airlock" && npm install --silent 2>/dev/null || npm install)
-
-echo "2) Installing Pod deps (if needed)..."
-(cd "$DESKTOP/forum-pod" && npm install --silent 2>/dev/null || npm install)
+echo "== forum-stack =="
+(cd "$ROOT/forum-airlock" && npm install --silent 2>/dev/null || npm install)
+(cd "$ROOT/forum-pod-airlock" && npm install --silent 2>/dev/null || npm install)
 
 echo ""
-echo "Next steps (separate terminals):"
-echo "  Pod UI dev:     cd $DESKTOP/forum-pod && VITE_SERVER_URL=https://secure-worker.forum-community.workers.dev npm run dev"
-echo "  Worker dev:     cd $DESKTOP/forum-airlock && npm run build:pod && npm run dev:worker"
-echo "  Worker deploy:  cd $DESKTOP/forum-airlock && npm run build:pod && npm run deploy:worker"
+echo "Cooperative pipeline (coop.yourcommunity.forum):"
+echo "  cd $ROOT/forum-airlock && npx wrangler deploy"
 echo ""
-echo "Cooperative flow: Pod → /api/forum/feedback → D1 forum_feedback → edge civic analysis cron → forum-egress KV"
+echo "Airlock Pod PWA (airlock.yourcommunity.forum):"
+echo "  cd $ROOT/forum-pod-airlock && npm run build:pod && npx wrangler deploy"
 echo ""
+echo "Pod UI dev server:"
+echo "  cd $ROOT/forum-pod && npm run dev"
+echo ""
+echo "Desktop Docker self-host:"
+echo "  cd $ROOT && docker compose up --build"
+echo ""
+echo "Flow: Pod opt-in → coop…/api/forum/feedback → D1 → analysis → egress → 7d contest → wipe"

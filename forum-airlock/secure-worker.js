@@ -1,61 +1,33 @@
 /**
- * Forum secure Worker — Pod assets, PersonalPodDO RPC, edge D1 ingest.
- *
- * Security hardening (v1.8):
- *   - No decorative /register/* or dev cookie gate
- *   - CSP + security headers on static assets
- *   - sessionId must be pubkey:sha256(publicKeyHex)
- *   - WebAuthn challenges + unlock tokens on writes (when UNLOCK_TOKEN_KEY set)
- *   - zkEmail not proxied at the edge
+ * Cooperative pipeline Worker (coop.yourcommunity.forum).
+ * D1 ingest, civic analysis, membership issuance, outbound WS acks.
+ * No Pod UI, no PersonalPodDO, no WebAuthn — those live in forum-pod-airlock/.
  */
-
-export { PersonalPodDO } from './pod-do.js';
 
 import { verifySignedBundle } from './pod-signing-web.js';
 import { expectedSessionIdFromPubkey, sessionIdMatchesPubkey } from './session-binding.js';
 import {
-  issueUnlockToken,
   isPilotCredentialId,
+  isLocalDeviceCredentialId,
   verifyUnlockToken,
 } from './unlock-token.js';
 import { loadMemberHashSalt, memberHashFromPublicKey } from './member-hash.js';
 import { checkRateLimit, clientIp } from './rate-limit.js';
-import { checkPodWriteBudget, podBodyTooLarge } from './do-guards.js';
-import { handleAiChat } from './ai-chat.js';
-import { handleWebAuthnRoute } from './webauthn-server.js';
-import { handleCivicAnalysisRoute, runCivicAnalysis } from './civic-analysis.js';
+import { handleCivicAnalysisRoute, runCivicAnalysis, wipeExpiredFeedback } from './civic-analysis.js';
+import { handleCivicContestRoute } from './civic-contest.js';
 import { clampForumFeedbackComment } from './feedback-limits.js';
+import { handleMembershipRoute, handleCoopWebSocket } from './membership.js';
+import { secretsEqual } from './secret-compare.js';
+import { handleRecoveryRoute, appendRecoveryReceipt } from './recovery-routes.js';
+import { hashFeedbackPayload } from './recovery-crypto.js';
 
 const FORUM_FEEDBACK_PATH = '/api/forum/feedback';
-const AI_CHAT_PATH = '/api/ai/chat';
-const POD_API_PREFIX = '/api/pod';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, X-Airlock-Secret',
 };
-
-const SECURITY_HEADERS = {
-  'Content-Security-Policy':
-    "default-src 'self'; script-src 'self' blob: https://cdn.jsdelivr.net 'wasm-unsafe-eval'; script-src-elem 'self' https://cdn.jsdelivr.net; worker-src 'self' blob:; child-src 'self' blob:; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https: blob:; frame-ancestors 'none'; base-uri 'none'",
-  'X-Frame-Options': 'DENY',
-  'Referrer-Policy': 'strict-origin-when-cross-origin',
-  'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
-  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
-};
-
-function withSecurityHeaders(response) {
-  const headers = new Headers(response.headers);
-  for (const [k, v] of Object.entries(SECURITY_HEADERS)) {
-    headers.set(k, v);
-  }
-  return new Response(response.body, {
-    status: response.status,
-    statusText: response.statusText,
-    headers,
-  });
-}
 
 function jsonResponse(body, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(body), {
@@ -80,6 +52,9 @@ async function assertUnlocked(env, bundle) {
     return { ok: true, skipped: true };
   }
   const deviceCredentialId = bundle.deviceCredentialId || null;
+  if (isLocalDeviceCredentialId(deviceCredentialId)) {
+    return { ok: true, local_device: true };
+  }
   if (isPilotCredentialId(deviceCredentialId)) {
     if (env.ALLOW_PILOT_BUNDLES === '1') {
       return { ok: true, pilot: true };
@@ -118,13 +93,6 @@ async function applyIngressRateLimit(request, env, bucketSuffix, limit, windowMs
   return null;
 }
 
-const SECURITY_TXT = `Contact: mailto:security@yourcommunity.forum
-Expires: 2027-05-26T00:00:00.000Z
-Preferred-Languages: en
-Canonical: https://pod.yourcommunity.forum/.well-known/security.txt
-Policy: https://pod.yourcommunity.forum/privacy
-`;
-
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
@@ -134,18 +102,30 @@ export default {
     }
 
     if (url.pathname === '/' && request.method === 'GET') {
-      return Response.redirect(`${url.origin}/pod`, 302);
-    }
-
-    if (url.pathname === '/.well-known/security.txt' && request.method === 'GET') {
-      return new Response(SECURITY_TXT, {
-        headers: { 'Content-Type': 'text/plain; charset=utf-8', ...CORS },
+      return jsonResponse({
+        service: 'coop-pipeline',
+        docs: 'https://github.com/richard-forum-user/forum-stack',
       });
     }
 
-    if (url.pathname.startsWith('/api/webauthn/')) {
-      const webauthnRes = await handleWebAuthnRoute(request, env, url, issueUnlockToken);
-      if (webauthnRes) return webauthnRes;
+    if (url.pathname.startsWith('/membership')) {
+      return handleMembershipRoute(request, env, url);
+    }
+
+    if (url.pathname.startsWith('/api/recovery')) {
+      return handleRecoveryRoute(request, env, url);
+    }
+
+    if (url.pathname === '/api/coop/ws') {
+      return handleCoopWebSocket(request, env);
+    }
+
+    if (
+      url.pathname.startsWith('/api/civic/contest') ||
+      url.pathname === '/api/forum/feedback/status' ||
+      url.pathname === '/api/forum/feedback/receipt'
+    ) {
+      return handleCivicContestRoute(request, env, url);
     }
 
     if (
@@ -169,7 +149,7 @@ export default {
         ctx?.waitUntil
       ) {
         ctx.waitUntil(
-          runCivicAnalysis(env, { trigger: 'feedback' }).catch((err) => {
+          runCivicAnalysis(env, { trigger: 'feedback', publish: true }).catch((err) => {
             console.error('civic edge analysis failed:', err?.message || err);
           })
         );
@@ -189,68 +169,13 @@ export default {
       return handleCivicAnalysisRoute(request, env, url);
     }
 
-    if (url.pathname === AI_CHAT_PATH) {
-      const rlAi = await applyIngressRateLimit(request, env, 'ai_chat', 40, 60_000);
-      if (rlAi) return rlAi;
-      return handleAiChat(request, env);
-    }
-
-    if (url.pathname.startsWith(POD_API_PREFIX + '/') || url.pathname === POD_API_PREFIX) {
-      if (request.method !== 'POST') {
-        return jsonResponse({ error: 'use_post' }, 405);
+    if (url.pathname === '/api/civic/analysis/wipe-expired' && request.method === 'POST') {
+      const secret = request.headers.get('X-Airlock-Secret');
+      if (!(await secretsEqual(secret, env.AIRLOCK_SECRET))) {
+        return jsonResponse({ error: 'Unauthorized' }, 401);
       }
-      const rl = await applyIngressRateLimit(request, env, 'pod_rpc', 120, 60_000);
-      if (rl) return rl;
-      if (!env.POD) {
-        return jsonResponse({ error: 'pod_do_not_bound' }, 500);
-      }
-      let bodyText;
-      try {
-        bodyText = await request.text();
-      } catch {
-        return jsonResponse({ error: 'unreadable_body' }, 400);
-      }
-      if (podBodyTooLarge(bodyText)) {
-        return jsonResponse({ error: 'payload_too_large' }, 413);
-      }
-      let bundle;
-      try {
-        bundle = JSON.parse(bodyText);
-      } catch {
-        return jsonResponse({ error: 'invalid_json' }, 400);
-      }
-      const binding = await assertSessionBinding(bundle);
-      if (!binding.ok) {
-        return jsonResponse({ error: 'auth_failed', reason: binding.reason }, 401);
-      }
-      const unlock = await assertUnlocked(env, bundle);
-      if (!unlock.ok) {
-        return jsonResponse(
-          { error: 'auth_failed', reason: unlock.reason || 'unlock_required' },
-          401
-        );
-      }
-      const sessionId = bundle.sessionId;
-      if (env.DB) {
-        const budget = await checkPodWriteBudget(env.DB, sessionId);
-        if (!budget.ok) {
-          return jsonResponse({ error: budget.reason || 'pod_rate_limited' }, 429);
-        }
-      }
-      const id = env.POD.idFromName(sessionId);
-      const stub = env.POD.get(id);
-      const upstream = await stub.fetch(
-        new Request('https://pod-do/', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: bodyText,
-        })
-      );
-      const text = await upstream.text();
-      return new Response(text, {
-        status: upstream.status,
-        headers: { 'Content-Type': 'application/json', ...CORS },
-      });
+      const result = await wipeExpiredFeedback(env);
+      return jsonResponse(result);
     }
 
     if (url.pathname === '/api/register-member' && request.method === 'POST') {
@@ -299,24 +224,6 @@ export default {
       return jsonResponse({ success: true, storage: 'd1:forum-db' });
     }
 
-    if (url.pathname.startsWith('/pod') || url.pathname.startsWith('/assets/')) {
-      try {
-        const assetUrl = new URL(request.url);
-        if (assetUrl.pathname === '/pod' || assetUrl.pathname === '/pod/') {
-          assetUrl.pathname = '/';
-        } else if (assetUrl.pathname.startsWith('/pod/')) {
-          assetUrl.pathname = assetUrl.pathname.replace(/^\/pod/, '') || '/index.html';
-        }
-        const assetRes = await env.ASSETS.fetch(new Request(assetUrl, request));
-        return withSecurityHeaders(assetRes);
-      } catch {
-        return new Response(
-          'Pod UI not found. Run: cd forum-airlock && npm run build:pod',
-          { status: 404 }
-        );
-      }
-    }
-
     return jsonResponse(
       { error: 'route_not_found', path: url.pathname, method: request.method },
       404
@@ -347,6 +254,7 @@ export default {
           trigger: `cron:${event.cron || 'unknown'}`,
           publish: true,
         });
+        await wipeExpiredFeedback(env);
       })().catch((err) => {
         console.error('scheduled civic analysis failed:', err?.message || err);
       })
@@ -408,8 +316,16 @@ function normaliseFeedback(payload) {
     kind: kind || taxon.kind,
     category_code: categoryCode,
     category_label: categoryLabel || taxon.label,
+    category_id: payload.category_id != null ? Number(payload.category_id) : null,
     zip_code: payload.zip_code || null,
     comment: clampForumFeedbackComment(payload.comment || ''),
+    egress_status: payload.egress_status || 'pending',
+    vault_status: payload.vault_status || null,
+    sync_attempts: Number(payload.sync_attempts || 0),
+    last_error: payload.last_error || null,
+    submitted_at: payload.submitted_at || null,
+    share_status: payload.share_status || 'cooperative',
+    updated_at: payload.updated_at || new Date().toISOString(),
   };
 }
 
@@ -433,7 +349,30 @@ async function ensureForumD1Schema(db) {
         policy_version TEXT NOT NULL,
         encrypted_blob TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        wiped_at TEXT
+        wiped_at TEXT,
+        category_id INTEGER,
+        egress_status TEXT DEFAULT 'pending',
+        vault_status TEXT,
+        sync_attempts INTEGER DEFAULT 0,
+        last_error TEXT,
+        submitted_at TEXT,
+        share_status TEXT,
+        updated_at TEXT,
+        contest_window_ends_at TEXT
+      )
+    `),
+    db.prepare(`
+      CREATE TABLE IF NOT EXISTS forum_contest_claims (
+        claim_id TEXT PRIMARY KEY,
+        report_id TEXT NOT NULL,
+        receipt_id TEXT NOT NULL,
+        claim_text TEXT NOT NULL,
+        claim_signature TEXT NOT NULL,
+        filed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        status TEXT NOT NULL DEFAULT 'pending',
+        resolved_at TEXT,
+        resolved_by TEXT,
+        resolution_notes TEXT
       )
     `),
     db.prepare(`
@@ -505,6 +444,27 @@ async function ensureForumD1Schema(db) {
     db.prepare(`
       CREATE INDEX IF NOT EXISTS idx_forum_members_session
       ON forum_members(session_id)
+    `),
+    db.prepare(`
+      CREATE TABLE IF NOT EXISTS forum_deletion_receipts (
+        receipt_id TEXT PRIMARY KEY,
+        payload_sha256 TEXT NOT NULL,
+        ingested_at TEXT NOT NULL,
+        report_id TEXT,
+        wiped_at TEXT
+      )
+    `),
+    db.prepare(`
+      CREATE INDEX IF NOT EXISTS idx_forum_deletion_receipts_wiped
+      ON forum_deletion_receipts(wiped_at)
+    `),
+    db.prepare(`
+      CREATE TABLE IF NOT EXISTS recovery_device_links (
+        device_pubkey_hex TEXT PRIMARY KEY,
+        recovery_id TEXT NOT NULL,
+        recovery_pub_hex TEXT NOT NULL,
+        enrolled_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
     `),
   ]);
 }
@@ -666,6 +626,13 @@ async function handleForumFeedbackAtEdge(request, env) {
   const consentAt = payload.consent_at || new Date().toISOString();
   const policyVersion = payload.policy_version || 'coop-data-policy/2026-05-01';
   const encryptedData = base64EncodeUtf8(JSON.stringify(payload));
+  const payloadSha256 = await hashFeedbackPayload(
+    norm,
+    consentAt,
+    policyVersion,
+    verdict.publicKeyHex
+  );
+  const ingestedAt = new Date().toISOString();
 
   await env.DB.batch([
     env.DB.prepare(`
@@ -692,24 +659,35 @@ async function handleForumFeedbackAtEdge(request, env) {
     ),
     env.DB.prepare(`
       INSERT INTO forum_feedback
-        (receipt_id, kind, category_code, category_label, zip_code, comment,
+        (receipt_id, kind, category_code, category_label, category_id, zip_code, comment,
          email_hash, domain_hash, web_id, session_id, public_key_hex,
-         signature_hex, consent_at, policy_version, encrypted_blob)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         signature_hex, consent_at, policy_version, encrypted_blob,
+         egress_status, vault_status, sync_attempts, last_error, submitted_at,
+         share_status, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(receipt_id) DO UPDATE SET
         kind = excluded.kind,
         category_code = excluded.category_code,
         category_label = excluded.category_label,
+        category_id = excluded.category_id,
         zip_code = excluded.zip_code,
         comment = excluded.comment,
         consent_at = excluded.consent_at,
         policy_version = excluded.policy_version,
-        encrypted_blob = excluded.encrypted_blob
+        encrypted_blob = excluded.encrypted_blob,
+        egress_status = excluded.egress_status,
+        vault_status = excluded.vault_status,
+        sync_attempts = excluded.sync_attempts,
+        last_error = excluded.last_error,
+        submitted_at = excluded.submitted_at,
+        share_status = excluded.share_status,
+        updated_at = excluded.updated_at
     `).bind(
       norm.receipt_id,
       norm.kind,
       norm.category_code,
       norm.category_label,
+      norm.category_id,
       norm.zip_code,
       norm.comment,
       memberHash,
@@ -720,9 +698,34 @@ async function handleForumFeedbackAtEdge(request, env) {
       outer.signature || null,
       consentAt,
       policyVersion,
-      encryptedData
+      encryptedData,
+      norm.egress_status,
+      norm.vault_status,
+      norm.sync_attempts,
+      norm.last_error,
+      norm.submitted_at,
+      norm.share_status,
+      norm.updated_at
     ),
+    env.DB.prepare(`
+      INSERT INTO forum_deletion_receipts
+        (receipt_id, payload_sha256, ingested_at, report_id, wiped_at)
+      VALUES (?, ?, ?, ?, ?)
+      ON CONFLICT(receipt_id) DO UPDATE SET
+        payload_sha256 = excluded.payload_sha256,
+        ingested_at = excluded.ingested_at
+    `).bind(norm.receipt_id, payloadSha256, ingestedAt, null, null),
   ]);
+
+  try {
+    await appendRecoveryReceipt(env, verdict.publicKeyHex, {
+      receipt_id: norm.receipt_id,
+      payload_sha256: payloadSha256,
+      ingested_at: ingestedAt,
+    });
+  } catch (err) {
+    console.error('recovery receipt append failed:', err?.message || err);
+  }
 
   return {
     status: 200,
@@ -733,6 +736,9 @@ async function handleForumFeedbackAtEdge(request, env) {
       category_code: norm.category_code,
       storage: 'd1:forum-db',
       vault: 'skipped_edge_ingest',
+      payload_sha256: payloadSha256,
     },
   };
 }
+
+export { RecoveryDO } from './recovery-do.js';

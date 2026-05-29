@@ -1,7 +1,11 @@
 import CIVIC_AI_SYSTEM_PROMPT from './civic-ai-system-prompt.js';
 import { verifySignedBundle } from './pod-signing-web.js';
 import { sessionIdMatchesPubkey } from './session-binding.js';
-import { isPilotCredentialId, verifyUnlockToken } from './unlock-token.js';
+import {
+  isLocalDeviceCredentialId,
+  isPilotCredentialId,
+  verifyUnlockToken,
+} from './unlock-token.js';
 
 const SSE_HEADERS = {
   'Content-Type': 'text/event-stream; charset=utf-8',
@@ -42,15 +46,13 @@ async function assertUnlocked(env, bundle) {
     }
     return { ok: false, reason: 'pilot_bundles_disabled' };
   }
+  if (isLocalDeviceCredentialId(deviceCredentialId)) {
+    return { ok: true, local: true };
+  }
   if (!deviceCredentialId) {
     return { ok: false, reason: 'missing_device_credential_id' };
   }
-  const verdict = await verifyUnlockToken(
-    env,
-    bundle.unlockToken,
-    bundle.signature,
-    env.DB
-  );
+  const verdict = await verifyUnlockToken(env, bundle.unlockToken);
   if (!verdict.ok) {
     return verdict;
   }
@@ -270,9 +272,6 @@ export async function handleAiChat(request, env) {
   if (!upstreamUrl) {
     return jsonResponse({ error: 'ai_upstream_not_configured' }, 503);
   }
-  if (!env.AI_ACCESS_CLIENT_ID || !env.AI_ACCESS_CLIENT_SECRET) {
-    return jsonResponse({ error: 'ai_access_not_configured' }, 503);
-  }
 
   let bundle;
   try {
@@ -322,11 +321,11 @@ export async function handleAiChat(request, env) {
     return jsonResponse({ error: 'empty_messages' }, 400);
   }
 
-  const headers = {
-    'Content-Type': 'application/json',
-    'CF-Access-Client-Id': env.AI_ACCESS_CLIENT_ID,
-    'CF-Access-Client-Secret': env.AI_ACCESS_CLIENT_SECRET,
-  };
+  const headers = { 'Content-Type': 'application/json' };
+  if (env.AI_ACCESS_CLIENT_ID && env.AI_ACCESS_CLIENT_SECRET) {
+    headers['CF-Access-Client-Id'] = env.AI_ACCESS_CLIENT_ID;
+    headers['CF-Access-Client-Secret'] = env.AI_ACCESS_CLIENT_SECRET;
+  }
 
   let upstream;
   try {

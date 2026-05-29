@@ -1,0 +1,74 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Forum Pod",
+  "version": "0.1.0",
+  "identifier": "forum.personalpod.desktop",
+  "build": {
+    "frontendDist": "dist",
+    "devUrl": "http://127.0.0.1:8787",
+    "beforeDevCommand": "",
+    "beforeBuildCommand": ""
+  },
+  "app": {
+    "withGlobalTauri": false,
+    "windows": [
+      {
+        "label": "main",
+        "title": "Forum Personal Pod",
+        "width": 1100,
+        "height": 760,
+        "minWidth": 720,
+        "minHeight": 520,
+        "resizable": true,
+        "fullscreen": false,
+        "decorations": true,
+        "url": "http://127.0.0.1:8787"
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["app", "dmg", "msi", "nsis", "deb", "appimage"],
+    "category": "Utility",
+    "shortDescription": "Your personal Pod for the Forum cooperative.",
+    "longDescription": "Self-hosted Personal Pod that stores your civic submissions, journal entries and Kami chat history locally in an encrypted SQLite vault. Communication with the cooperative is opt-in and strictly outbound.",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "resources": ["airlock/**/*", "workerd-config.capnp"],
+    "externalBin": ["binaries/workerd"],
+    "publisher": "Forum Community",
+    "copyright": "© Forum Community. AGPL-3.0",
+    "homepage": "https://github.com/richard-forum-user/forum-stack"
+  },
+  "plugins": {
+    "shell": {
+      "sidecar": true,
+      "scope": [
+        {
+          "name": "binaries/workerd",
+          "sidecar": true,
+          "args": true
+        }
+      ]
+    },
+    "updater": {
+      "active": true,
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDM5RUU5NTk3MTkzNzFGMTEKUldRUkh6Y1psNVh1T1hDblFiRk1yd2p3ZXBSVkdxbnZ4UFN6Z1lkVm85QzRYdC9IUUFXdmp1dTUK",
+      "endpoints": [
+        "https://github.com/richard-forum-user/forum-stack/releases/latest/download/latest.json"
+      ],
+      "dialog": true,
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  }
+}

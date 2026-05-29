@@ -1,9 +1,9 @@
 {
   "upstream": "audreyt/civic.ai",
   "url": "https://github.com/audreyt/civic.ai",
-  "commit": "34668913dd0eb8ed320a18ff796056e9730899ea",
+  "commit": "94519c4a1043412739926587776b15144262f73c",
   "license": "CC0-1.0",
-  "vendoredAt": "2026-05-25T16:08:44.047Z",
+  "vendoredAt": "2026-05-29T22:03:15.227Z",
   "files": [
     "1.md",
     "2.md",

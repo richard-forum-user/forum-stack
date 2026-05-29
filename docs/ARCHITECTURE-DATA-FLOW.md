@@ -1,53 +1,44 @@
 # Architecture & Data Flow
 
-## Components
+## Monorepo layout (`forum-stack`)
 
-| Component | Role |
-|-----------|------|
-| `forum-pod` | PWA / Capacitor client; WebAuthn + Ed25519 signing |
-| `secure-worker` | Edge API, D1 ingest, DO router, civic analysis |
-| `PersonalPodDO` | Per-user SQLite state (journal, assistant, traits) |
-| `forum-egress` | Public HTML/JSON reports (KV `latest`) |
-| `listener` | Optional on-prem encrypted receipt mirror |
+| Path | Worker / hostname | Role |
+|------|-------------------|------|
+| `forum-pod-airlock/` | `airlock.yourcommunity.forum`, `pod.yourcommunity.forum` | Personal Pod UI + `PersonalPodDO` + Civic AI |
+| `forum-airlock/` | `coop.yourcommunity.forum` | Cooperative pipeline (`coop-pipeline`) |
+| `forum-egress/` | egress worker | Public aggregate reports (KV) |
+| `forum-pod/` | (built into pod-airlock `dist/`) | Shared PWA / Capacitor source |
 
-## Signed request flow
-
-1. Client unlocks with WebAuthn → receives `unlockToken` (`jti`, 5 min TTL).
-2. Client builds payload → `signBundle` (Ed25519, non-extractable key in memory).
-3. Client attaches `deviceCredentialId`, `unlockToken`, `signature`.
-4. Worker: session binding → unlock verify (+ jti) → signature verify → replay cache → handler.
-
-## Cooperative feedback
+## Cooperative feedback (opt-in only)
 
 ```mermaid
 sequenceDiagram
-  participant Pod
-  participant Worker
+  participant Pod as forum-pod
+  participant Coop as coop-pipeline
   participant D1
   participant Egress
-  Pod->>Worker: POST /api/forum/feedback signed
-  Worker->>D1: forum_feedback row salted email_hash
-  Note over Worker: Cron 6h
-  Worker->>D1: civic_analysis_reports
-  Worker->>Egress: POST report aggregates only
+  Pod->>Coop: POST /api/forum/feedback signed
+  Coop->>D1: forum_feedback row
+  Coop->>D1: civic_analysis_reports
+  Coop->>Egress: POST aggregate report
+  Note over D1: contest_window_ends_at +7d
+  Note over D1: wipe-expired deletes rows
 ```
 
-## Encryption & signing
+Pods **initiate** all connections to the co-op. The co-op never opens inbound connections to a member's self-hosted pod.
 
-| Layer | Mechanism |
-|-------|-----------|
-| Transport | HTTPS / HSTS |
-| Device signing | Ed25519 non-extractable Web Crypto |
-| Unlock | HMAC-SHA256 + D1 jti |
-| Local cache | AES-GCM via WebAuthn PRF (when available) |
-| Receipt mirror | Fernet via listener (optional) |
+## Signed request flow (co-op ingest)
+
+1. Client creates or unlocks a local signing key (WebAuthn on DO-hosted pods, or `local-*` Ed25519 on airlock local-first).
+2. Client `signBundle` → `POST coop…/api/forum/feedback`.
+3. Co-op: session binding → unlock verify (or local-credential bypass) → signature verify → D1 insert.
 
 ## Public vs private
 
 | Surface | Public? |
 |---------|---------|
-| `GET /api/civic/analysis` | Yes — latest report (aggregates) |
-| `GET /api/civic/analysis/ledger` | Yes — no verbatim comments in beta |
-| `GET forum-egress` | Yes — HTML report |
-| `/api/pod/*` | No — signed + unlocked |
-| `/api/ai/chat` | No — signed + unlocked + quota |
+| `GET forum-egress` | Yes — published aggregate report |
+| `GET /api/civic/analysis` | Yes — published aggregate snapshot |
+| `POST /api/forum/feedback` | No — signed |
+| `/api/pod/*` | No — on `forum-pod-airlock` worker |
+| `/api/ai/chat` | No — on `forum-pod-airlock` worker |

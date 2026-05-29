@@ -5,14 +5,35 @@
   "bundledWebRuntime": false,
   "server": {
     "androidScheme": "https",
+    "iosScheme": "https",
     "hostname": "localhost",
     "allowNavigation": [
-      "apk.yourcommunity.forum",
-      "secure-worker.forum-community.workers.dev"
+      "airlock.yourcommunity.forum",
+      "coop.yourcommunity.forum"
     ]
   },
   "android": {
     "allowMixedContent": false,
     "webContentsDebuggingEnabled": false
+  },
+  "ios": {
+    "scheme": "App",
+    "limitsNavigationsToAppBoundDomains": false
+  },
+  "plugins": {
+    "CapacitorSQLite": {
+      "iosDatabaseLocation": "Library/CapacitorDatabase",
+      "iosIsEncryption": false,
+      "iosBiometric": {
+        "biometricAuth": false,
+        "biometricTitle": "Unlock Forum Pod"
+      },
+      "androidIsEncryption": false,
+      "androidBiometric": {
+        "biometricAuth": false,
+        "biometricTitle": "Unlock Forum Pod"
+      },
+      "electronIsEncryption": false
+    }
   }
 }

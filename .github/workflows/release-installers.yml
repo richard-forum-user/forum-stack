@@ -1,0 +1,307 @@
+name: Release installers
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  # Pin workerd to avoid the unauthenticated `releases/latest` API call
+  # (which gets HTTP 403 from GitHub's anonymous rate-limit on busy
+  # runners). Bump as needed; the binary just needs to match the
+  # workerd-config.capnp surface that desktop/src-tauri ships with.
+  WORKERD_VERSION: v1.20260529.1
+
+jobs:
+  desktop:
+    name: Desktop · ${{ matrix.label }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: linux-x64
+            os: ubuntu-22.04
+            target: x86_64-unknown-linux-gnu
+            tauri_targets: ""
+          - label: macos-x64
+            os: macos-13
+            target: x86_64-apple-darwin
+            tauri_targets: "--target x86_64-apple-darwin"
+          - label: macos-arm64
+            os: macos-14
+            target: aarch64-apple-darwin
+            tauri_targets: "--target aarch64-apple-darwin"
+          - label: windows-x64
+            os: windows-2022
+            target: x86_64-pc-windows-msvc
+            tauri_targets: ""
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Install Linux Tauri deps
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libwebkit2gtk-4.1-dev \
+            libsoup-3.0-dev \
+            libayatana-appindicator3-dev \
+            libgtk-3-dev \
+            librsvg2-dev
+
+      - name: Cache cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            desktop/src-tauri/target
+          key: ${{ runner.os }}-${{ matrix.target }}-cargo-${{ hashFiles('desktop/src-tauri/Cargo.toml') }}
+
+      - name: Install Pod PWA deps
+        working-directory: forum-pod
+        run: npm ci
+
+      - name: Build Pod PWA
+        working-directory: forum-pod
+        run: npm run build
+
+      - name: Stage PWA into Tauri
+        shell: bash
+        run: |
+          rm -rf desktop/src-tauri/dist
+          cp -r forum-pod/dist desktop/src-tauri/dist
+
+      - name: Stage airlock worker into Tauri
+        shell: bash
+        run: |
+          mkdir -p desktop/src-tauri/airlock
+          for f in secure-worker.js pod-do.js pod-signing-web.js session-binding.js \
+            unlock-token.js rate-limit.js do-guards.js webauthn-server.js \
+            feedback-limits.js secret-compare.js member-hash.js membership-verify.js \
+            membership-routes.js pod-sync.js ai-chat.js civic-ai-system-prompt.js; do
+            cp "forum-pod-airlock/$f" "desktop/src-tauri/airlock/"
+          done
+
+      - name: Download workerd binary (POSIX)
+        if: runner.os != 'Windows'
+        working-directory: desktop
+        run: ./scripts/fetch-workerd.sh
+
+      - name: Download workerd binary (Windows)
+        if: runner.os == 'Windows'
+        working-directory: desktop
+        shell: bash
+        run: ./scripts/fetch-workerd.sh
+
+      - name: Install Tauri CLI
+        working-directory: desktop
+        run: npm install
+
+      - name: Build installer
+        working-directory: desktop
+        env:
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          # dispatch2/bitflags macro expansion can blow the default stack on
+          # macOS runners; give the compiler more headroom.
+          RUST_MIN_STACK: 16777216
+        run: npx tauri build ${{ matrix.tauri_targets }}
+
+      - name: Upload installer artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: forum-pod-${{ matrix.label }}
+          path: |
+            desktop/src-tauri/target/**/release/bundle/**/*.dmg
+            desktop/src-tauri/target/**/release/bundle/**/*.dmg.sig
+            desktop/src-tauri/target/**/release/bundle/**/*.app.tar.gz
+            desktop/src-tauri/target/**/release/bundle/**/*.app.tar.gz.sig
+            desktop/src-tauri/target/**/release/bundle/**/*.AppImage
+            desktop/src-tauri/target/**/release/bundle/**/*.AppImage.sig
+            desktop/src-tauri/target/**/release/bundle/**/*.AppImage.tar.gz
+            desktop/src-tauri/target/**/release/bundle/**/*.AppImage.tar.gz.sig
+            desktop/src-tauri/target/**/release/bundle/**/*.deb
+            desktop/src-tauri/target/**/release/bundle/**/*.deb.sig
+            desktop/src-tauri/target/**/release/bundle/**/*.msi
+            desktop/src-tauri/target/**/release/bundle/**/*.msi.sig
+            desktop/src-tauri/target/**/release/bundle/**/*.msi.zip
+            desktop/src-tauri/target/**/release/bundle/**/*.msi.zip.sig
+            desktop/src-tauri/target/**/release/bundle/**/*-setup.exe
+            desktop/src-tauri/target/**/release/bundle/**/*-setup.exe.sig
+            desktop/src-tauri/target/**/release/bundle/**/*.nsis.zip
+            desktop/src-tauri/target/**/release/bundle/**/*.nsis.zip.sig
+
+  android:
+    name: Android APK
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Install Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Pod deps
+        working-directory: forum-pod
+        run: npm ci
+
+      - name: Build PWA + Android project
+        working-directory: forum-pod
+        run: npm run build:android
+
+      - name: Assemble release APK
+        working-directory: forum-pod/android
+        env:
+          ANDROID_KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_B64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -n "$ANDROID_KEYSTORE_B64" ]; then
+            echo "$ANDROID_KEYSTORE_B64" | base64 -d > release.keystore
+            cat > keystore.properties <<EOF
+          storeFile=release.keystore
+          storePassword=$ANDROID_KEYSTORE_PASSWORD
+          keyAlias=$ANDROID_KEY_ALIAS
+          keyPassword=$ANDROID_KEY_PASSWORD
+          EOF
+            ./gradlew assembleRelease
+          else
+            echo "No release keystore configured; building debug APK."
+            ./gradlew assembleDebug
+          fi
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: forum-pod-android
+          path: |
+            forum-pod/android/app/build/outputs/apk/release/*.apk
+            forum-pod/android/app/build/outputs/apk/debug/*.apk
+
+  ios:
+    name: iOS IPA
+    runs-on: macos-14
+    if: ${{ github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v') }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install Pod deps
+        working-directory: forum-pod
+        run: npm ci
+
+      - name: Add iOS Capacitor project
+        working-directory: forum-pod
+        run: |
+          if [ ! -d ios ]; then
+            npx cap add ios
+          fi
+          npm run build:ios
+
+      - name: Pod-install Capacitor pods
+        working-directory: forum-pod/ios/App
+        run: pod install
+
+      - name: Build unsigned archive
+        working-directory: forum-pod/ios/App
+        run: |
+          xcodebuild \
+            -workspace App.xcworkspace \
+            -scheme App \
+            -configuration Release \
+            -archivePath build/App.xcarchive \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            archive
+
+      - name: Export unsigned IPA
+        working-directory: forum-pod/ios/App
+        run: |
+          mkdir -p build/ipa
+          cp -R build/App.xcarchive/Products/Applications/App.app build/ipa/
+          cd build/ipa
+          mkdir Payload
+          mv App.app Payload/
+          zip -r forum-pod-ios-unsigned.ipa Payload
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: forum-pod-ios
+          path: forum-pod/ios/App/build/ipa/*.ipa
+
+  release:
+    name: Publish GitHub Release
+    needs: [desktop, android, ios]
+    runs-on: ubuntu-22.04
+    # Publish whatever installers built successfully. Desktop is a matrix
+    # with fail-fast: false, so linux can finish even if windows/mac fail;
+    # android + ios are hard requirements for a usable mobile drop.
+    if: >-
+      always() &&
+      startsWith(github.ref, 'refs/tags/v') &&
+      needs.android.result == 'success' &&
+      needs.ios.result == 'success'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Resolve repo + version
+        id: meta
+        run: |
+          echo "repo=${GITHUB_REPOSITORY}" >> "$GITHUB_OUTPUT"
+          echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Build updater manifest (latest.json)
+        run: |
+          node desktop/scripts/build-latest-json.mjs \
+            --artifacts artifacts \
+            --version "${{ steps.meta.outputs.version }}" \
+            --repo "${{ steps.meta.outputs.repo }}" \
+            --out latest.json
+          cp latest.json "artifacts/latest.json"
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/**/*
+            latest.json
+          generate_release_notes: true
+          fail_on_unmatched_files: false

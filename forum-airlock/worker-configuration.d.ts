@@ -19,6 +19,7 @@ interface Env {
   MEMBER_HASH_SALT?: string;
   CIVIC_CYCLE_SALT?: string;
   DB: D1Database;
+  RECOVERY: DurableObjectNamespace;
   POD: DurableObjectNamespace;
   ASSETS: Fetcher;
   AI: Ai;

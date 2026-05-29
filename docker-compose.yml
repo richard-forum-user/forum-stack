@@ -1,0 +1,11 @@
+services:
+  forum-stack:
+    build: .
+    container_name: forum-stack
+    ports:
+      - "127.0.0.1:8787:8787"
+    volumes:
+      - ./pod-data:/data
+    environment:
+      COOP_URL: "https://coop.yourcommunity.forum"
+    restart: unless-stopped

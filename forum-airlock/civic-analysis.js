@@ -24,17 +24,21 @@ const CORS = {
   'Access-Control-Allow-Headers': 'Content-Type, X-Airlock-Secret',
 };
 
+const LEDGER_WHERE = `wiped_at IS NULL AND (
+  contest_window_ends_at IS NULL OR contest_window_ends_at > datetime('now')
+)`;
+
 const SQL_SOURCES = {
-  total: `SELECT COUNT(*) AS n FROM forum_feedback WHERE wiped_at IS NULL`,
-  distinctParticipants: `SELECT COUNT(DISTINCT email_hash) AS n FROM forum_feedback WHERE wiped_at IS NULL`,
+  total: `SELECT COUNT(*) AS n FROM forum_feedback WHERE ${LEDGER_WHERE}`,
+  distinctParticipants: `SELECT COUNT(DISTINCT email_hash) AS n FROM forum_feedback WHERE ${LEDGER_WHERE}`,
   byCategory: `SELECT category_code, category_label, kind, COUNT(*) AS n
-    FROM forum_feedback WHERE wiped_at IS NULL
+    FROM forum_feedback WHERE ${LEDGER_WHERE}
     GROUP BY category_code, category_label, kind ORDER BY n DESC`,
   byZip: `SELECT zip_code, COUNT(*) AS n FROM forum_feedback
-    WHERE wiped_at IS NULL AND zip_code IS NOT NULL AND zip_code != ''
+    WHERE ${LEDGER_WHERE} AND zip_code IS NOT NULL AND zip_code != ''
     GROUP BY zip_code ORDER BY n DESC`,
-  ledger: `SELECT receipt_id, kind, category_code, category_label, zip_code, comment, consent_at, created_at
-    FROM forum_feedback WHERE wiped_at IS NULL ORDER BY created_at ASC`,
+  ledger: `SELECT receipt_id, kind, category_code, category_label, zip_code, comment, consent_at, created_at, contest_window_ends_at
+    FROM forum_feedback WHERE ${LEDGER_WHERE} ORDER BY created_at ASC`,
 };
 
 function jsonResponse(body, status = 200) {
@@ -319,6 +323,19 @@ export async function runCivicAnalysis(env, options = {}) {
   let egress = { pushed: false };
   if (options.publish) {
     egress = await pushReportToEgress(env, payload);
+    if (egress.pushed && ledger.ledger?.length) {
+      const ids = ledger.ledger.map((r) => r.receipt_id).filter(Boolean);
+      for (const receiptId of ids) {
+        await env.DB.prepare(
+          `UPDATE forum_feedback
+           SET contest_window_ends_at = datetime('now', '+7 days'),
+               egress_status = 'aggregated'
+           WHERE receipt_id = ? AND wiped_at IS NULL`
+        )
+          .bind(receiptId)
+          .run();
+      }
+    }
   }
 
   return {
@@ -373,7 +390,16 @@ export async function handleCivicAnalysisRoute(request, env, url) {
   const path = url.pathname.replace(/\/$/, '') || ANALYSIS_PREFIX;
 
   if (request.method === 'GET' && (path === ANALYSIS_PREFIX || path === `${ANALYSIS_PREFIX}/latest`)) {
-    const latest = await getLatestAnalysisReport(env.DB);
+    const ledger = await collectLedgerFromD1(env.DB, env);
+    const minSubmissions = Number(env.CIVIC_ANALYSIS_MIN_SUBMISSIONS || '1');
+    let latest = await getLatestAnalysisReport(env.DB);
+    const snapshotCount = Number(
+      latest?.metadata?.opt_in_count ?? latest?.metadata?.volume ?? 0
+    );
+    if (ledger.total >= minSubmissions && ledger.total > snapshotCount) {
+      await runCivicAnalysis(env, { trigger: 'get_refresh', publish: true });
+      latest = await getLatestAnalysisReport(env.DB);
+    }
     if (!latest) {
       return jsonResponse({ error: 'No analysis report has been generated yet' }, 404);
     }
@@ -428,7 +454,45 @@ export async function handleCivicAnalysisRoute(request, env, url) {
     return jsonResponse({ ok: true, egress, report_id: latest.report_id });
   }
 
+  if (request.method === 'POST' && path === `${ANALYSIS_PREFIX}/wipe-expired`) {
+    if (!(await verifyAirlock(request, env))) {
+      return jsonResponse({ error: 'Unauthorized' }, 401);
+    }
+    const result = await wipeExpiredFeedback(env);
+    return jsonResponse(result);
+  }
+
   return jsonResponse({ error: 'Not found' }, 404);
+}
+
+/**
+ * Hard-delete cooperative rows after the 7-day contest window (articles of incorporation).
+ */
+export async function wipeExpiredFeedback(env) {
+  if (!env.DB) {
+    return { ok: false, error: 'D1 binding DB is not configured' };
+  }
+  const eligible = await env.DB.prepare(
+    `SELECT receipt_id FROM forum_feedback
+     WHERE contest_window_ends_at IS NOT NULL
+       AND contest_window_ends_at < datetime('now')
+       AND wiped_at IS NULL`
+  ).all();
+  const ids = (eligible.results || []).map((r) => r.receipt_id);
+  if (!ids.length) {
+    return { ok: true, deleted: 0 };
+  }
+  for (const receiptId of ids) {
+    const wipedAt = new Date().toISOString();
+    await env.DB.batch([
+      env.DB.prepare(
+        `UPDATE forum_deletion_receipts SET wiped_at = ? WHERE receipt_id = ?`
+      ).bind(wipedAt, receiptId),
+      env.DB.prepare(`DELETE FROM forum_payloads WHERE receipt_id = ?`).bind(receiptId),
+      env.DB.prepare(`DELETE FROM forum_feedback WHERE receipt_id = ?`).bind(receiptId),
+    ]);
+  }
+  return { ok: true, deleted: ids.length, receipt_ids: ids };
 }
 
 export { clampForumFeedbackComment, FORUM_FEEDBACK_MAX_COMMENT_CHARS };

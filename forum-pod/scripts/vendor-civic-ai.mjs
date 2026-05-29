@@ -2,6 +2,7 @@ import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { execFile as execFileCb } from "node:child_process";
 import { promisify } from "node:util";
+import { fileURLToPath } from "node:url";
 import path from "node:path";
 import os from "node:os";
 
@@ -13,7 +14,10 @@ const OPENCLAW_SKILL_URLS = [
   "https://civic.ai/.well-known/openclaw/SKILL.md",
 ];
 
-const ROOT = path.resolve(new URL("..", import.meta.url).pathname);
+// `new URL("..", import.meta.url).pathname` returns `/D:/…` on Windows,
+// which `path.resolve` then doubles into `D:\D:\…`. fileURLToPath
+// produces the correct platform-native path on every OS.
+const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const PUBLIC_OUT = path.join(ROOT, "public", "civic-ai");
 const SRC_OUT = path.join(ROOT, "src", "civic-ai");
 const AIRLOCK_PROMPT_MODULE = path.resolve(ROOT, "..", "forum-airlock", "civic-ai-system-prompt.js");

@@ -11,11 +11,22 @@
 
 import { verifySignedBundle } from "./pod-signing-web.js";
 import { clampForumFeedbackComment } from "./feedback-limits.js";
+import {
+  META_JWKS,
+  META_JWT_RAW,
+  META_JWT_CLAIMS,
+  verifyJwtEs256,
+  fetchJwks,
+} from "./membership-verify.js";
+import { requireUserConsent, syncWithCloud, appendInternalEvent } from "./pod-sync.js";
 
 const META_KEY_PUBKEY = "registered_public_key";
+const META_LAMPORT = "lamport_clock";
 const META_KEY_SESSION = "session_id";
 const META_KEY_CREATED = "created_at";
 const META_KEY_WEBID = "web_id";
+const META_KEY_LAST_TOUCH = "last_touch";
+const META_KEY_GRADUATED = "graduated_to_local";
 
 // Replay window enforced by verifySignedBundle. Matches the value passed
 // to that function (5 min) plus a small grace so the cleanup query never
@@ -23,9 +34,17 @@ const META_KEY_WEBID = "web_id";
 const REPLAY_WINDOW_MS = 5 * 60 * 1000;
 const REPLAY_CLEANUP_GRACE_MS = 60 * 1000;
 
+// Trial-pod retention. Banner appears after this many days; the DO
+// alarm wipes the entire Pod after the grace expires unless the user
+// signalled graduation by hitting /membership/graduated.
+const TRIAL_BANNER_AFTER_DAYS = 7;
+const TRIAL_GRACE_DAYS = 30;
+const TRIAL_ALARM_INTERVAL_MS = 24 * 60 * 60 * 1000;
+
 export class PersonalPodDO {
-  constructor(state) {
+  constructor(state, env) {
     this.state = state;
+    this.env = env || {};
     this.sql = state.storage.sql;
     this._ready = state.blockConcurrencyWhile(() => this.initSchema());
   }
@@ -136,7 +155,32 @@ export class PersonalPodDO {
 
       CREATE INDEX IF NOT EXISTS idx_replay_seen_at
         ON replay_cache(seen_at_ms);
+
+      CREATE TABLE IF NOT EXISTS pod_events (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        event_type TEXT NOT NULL,
+        payload TEXT NOT NULL,
+        sig TEXT NOT NULL,
+        sync_status INTEGER NOT NULL DEFAULT 0,
+        lamport_clock INTEGER NOT NULL,
+        created_at TEXT NOT NULL
+      );
+      CREATE INDEX IF NOT EXISTS idx_pod_events_sync ON pod_events(sync_status, id);
+      CREATE INDEX IF NOT EXISTS idx_pod_events_type ON pod_events(event_type);
+
+      CREATE TABLE IF NOT EXISTS pod_local_state (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        lamport_clock INTEGER NOT NULL
+      );
     `);
+  }
+
+  bumpClock() {
+    const cur = Number(this.getMeta(META_LAMPORT) || 0) + 1;
+    this.setMeta(META_LAMPORT, String(cur));
+    return cur;
   }
 
   /**
@@ -211,7 +255,15 @@ export class PersonalPodDO {
       this.setMeta(META_KEY_PUBKEY, publicKeyHex);
       this.setMeta(META_KEY_SESSION, sessionId);
       this.setMeta(META_KEY_CREATED, new Date().toISOString());
+      if (this.env.IS_TRIAL_POD === "1") {
+        try {
+          await this.state.storage.setAlarm(Date.now() + TRIAL_ALARM_INTERVAL_MS);
+        } catch (e) {
+          /* alarms unavailable in some runtimes; degrade gracefully */
+        }
+      }
     }
+    this.setMeta(META_KEY_LAST_TOUCH, new Date().toISOString());
 
     if (!payload || typeof payload !== "object") {
       return jsonResp(400, { error: "invalid_payload" });
@@ -224,17 +276,68 @@ export class PersonalPodDO {
     }
 
     try {
-      const result = this.dispatch(verb, path, data);
-      return jsonResp(result.status || 200, result.body ?? {});
+      const result = await this.dispatch(verb, path, data);
+      return jsonResp(result.status || 200, result.body ?? {}, this.trialHeaders());
     } catch (e) {
       return jsonResp(500, {
         error: "handler_failed",
         reason: e?.message || String(e),
-      });
+      }, this.trialHeaders());
     }
   }
 
-  dispatch(verb, path, data) {
+  trialHeaders() {
+    if (this.env.IS_TRIAL_POD !== "1") return {};
+    const createdAt = this.getMeta(META_KEY_CREATED);
+    if (!createdAt) return {};
+    if (this.getMeta(META_KEY_GRADUATED) === "1") {
+      return { "X-Pod-Trial-Status": "graduated" };
+    }
+    const ageDays = Math.floor(
+      (Date.now() - Date.parse(createdAt)) / (24 * 60 * 60 * 1000)
+    );
+    const remaining = Math.max(0, TRIAL_GRACE_DAYS - ageDays);
+    const banner = ageDays >= TRIAL_BANNER_AFTER_DAYS ? "1" : "0";
+    return {
+      "X-Pod-Trial-Status": `age=${ageDays};banner=${banner};wipe_in_days=${remaining}`,
+    };
+  }
+
+  async alarm() {
+    await this._ready;
+    if (this.env.IS_TRIAL_POD !== "1") return;
+    if (this.getMeta(META_KEY_GRADUATED) === "1") return;
+
+    const createdAt = this.getMeta(META_KEY_CREATED);
+    if (!createdAt) return;
+    const ageMs = Date.now() - Date.parse(createdAt);
+    const graceMs = TRIAL_GRACE_DAYS * 24 * 60 * 60 * 1000;
+    if (ageMs >= graceMs) {
+      const tables = [
+        "civic_submissions",
+        "journal_entries",
+        "behaviors",
+        "traits",
+        "email_proof",
+        "assistant_messages",
+        "pod_events",
+        "pod_local_state",
+        "replay_cache",
+        "pod_meta",
+      ];
+      for (const t of tables) {
+        this.sql.exec(`DELETE FROM ${t}`);
+      }
+      return;
+    }
+    try {
+      await this.state.storage.setAlarm(Date.now() + TRIAL_ALARM_INTERVAL_MS);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  async dispatch(verb, path, data) {
     const now = new Date().toISOString();
 
     if (verb === "PROVISION") {
@@ -497,13 +600,171 @@ export class PersonalPodDO {
       };
     }
 
+    // pod_events — append-only audit log (device-signed payloads)
+    if (verb === "PUT" && path === "/events/append") {
+      const eventType = String(data.event_type || "");
+      const payloadStr =
+        typeof data.payload === "string"
+          ? data.payload
+          : JSON.stringify(data.payload || {});
+      const sig = String(data.sig || "");
+      if (!eventType || !sig) {
+        return { status: 400, body: { error: "missing_event_type_or_sig" } };
+      }
+      const clock = this.bumpClock();
+      const inserted = this.sql
+        .exec(
+          `INSERT INTO pod_events (event_type, payload, sig, sync_status, lamport_clock, created_at)
+           VALUES (?, ?, ?, 0, ?, ?) RETURNING id`,
+          eventType,
+          payloadStr,
+          sig,
+          clock,
+          now
+        )
+        .one();
+      const id = inserted?.id;
+      if (
+        ["consent_to_sync", "civic_export", "membership_verified"].includes(eventType) &&
+        data.projection_key
+      ) {
+        this.sql.exec(
+          `INSERT OR REPLACE INTO pod_local_state (key, value, updated_at, lamport_clock)
+           VALUES (?, ?, ?, ?)`,
+          String(data.projection_key),
+          payloadStr,
+          now,
+          clock
+        );
+      }
+      return { status: 200, body: { ok: true, id, lamport_clock: clock } };
+    }
+
+    if (verb === "LIST" && path.startsWith("/events")) {
+      const statusFilter = data.status || "all";
+      let q = `SELECT id, event_type, payload, sig, sync_status, lamport_clock, created_at
+                 FROM pod_events`;
+      if (statusFilter === "pending") q += ` WHERE sync_status = 0`;
+      else if (statusFilter === "synced") q += ` WHERE sync_status = 1`;
+      q += ` ORDER BY id ASC LIMIT 200`;
+      const rows = this.sql.exec(q).toArray();
+      return { status: 200, body: { rows } };
+    }
+
+    if (verb === "PUT" && path.startsWith("/events/") && path.endsWith("/ack")) {
+      const idPart = path.slice("/events/".length, -"/ack".length);
+      const id = Number(idPart);
+      if (!id) return { status: 400, body: { error: "invalid_id" } };
+      this.sql.exec(`UPDATE pod_events SET sync_status = 1 WHERE id = ?`, id);
+      return { status: 200, body: { ok: true, id } };
+    }
+
+    if (verb === "LIST" && path === "/local-state") {
+      const rows = this.sql.exec(`SELECT * FROM pod_local_state ORDER BY key`).toArray();
+      return { status: 200, body: { rows } };
+    }
+
+    if (verb === "GET" && path.startsWith("/local-state/")) {
+      const key = decodeURIComponent(path.slice("/local-state/".length));
+      const rows = this.sql
+        .exec(`SELECT * FROM pod_local_state WHERE key = ?`, key)
+        .toArray();
+      return { status: 200, body: rows[0] || null };
+    }
+
+    if (verb === "PUT" && path === "/membership/jwt") {
+      const jwt = String(data.jwt || "");
+      if (!jwt) return { status: 400, body: { error: "missing_jwt" } };
+      let jwks;
+      const pinned = this.getMeta(META_JWKS);
+      if (pinned) {
+        try {
+          jwks = JSON.parse(pinned);
+        } catch {
+          jwks = null;
+        }
+      }
+      if (!jwks && data.coop_url) {
+        jwks = await fetchJwks(data.coop_url);
+        this.setMeta(META_JWKS, JSON.stringify(jwks));
+      }
+      if (!jwks) {
+        return { status: 400, body: { error: "jwks_not_pinned" } };
+      }
+      const expectedIss =
+        data.expected_iss ||
+        (data.coop_url ? `${String(data.coop_url).replace(/\/$/, "")}` : null);
+      const verdict = await verifyJwtEs256(jwt, jwks, expectedIss);
+      if (!verdict.ok) {
+        return { status: 401, body: { error: "jwt_invalid", reason: verdict.reason } };
+      }
+      this.setMeta(META_JWT_RAW, jwt);
+      this.setMeta(META_JWT_CLAIMS, JSON.stringify(verdict.payload));
+      if (data.coop_url) {
+        this.setMeta("coop_url", String(data.coop_url).replace(/\/$/, ""));
+      }
+      return {
+        status: 200,
+        body: {
+          ok: true,
+          member_hash: verdict.payload.member_hash,
+          class: verdict.payload.class,
+          expires_at: verdict.payload.expires_at,
+        },
+      };
+    }
+
+    if (verb === "POST" && path === "/sync/cloud") {
+      const result = await syncWithCloud({
+        sql: this.sql,
+        getMeta: (k) => this.getMeta(k),
+        env: this.env || {},
+        bumpClock: () => this.bumpClock(),
+      });
+      return { status: result.ok ? 200 : 403, body: result };
+    }
+
+    // Trial-pod graduation marker. The Pod UI calls this after the user
+    // has successfully booted a local install and verified the
+    // graduation export. From here the trial pod stops emitting the
+    // banner header and skips the 30-day wipe.
+    if (verb === "POST" && path === "/membership/graduated") {
+      this.setMeta(META_KEY_GRADUATED, "1");
+      return {
+        status: 200,
+        body: { ok: true, graduated_at: new Date().toISOString() },
+      };
+    }
+
+    if (verb === "GET" && path === "/membership/trial-status") {
+      const createdAt = this.getMeta(META_KEY_CREATED);
+      if (!createdAt) {
+        return { status: 200, body: { kind: "not-trial" } };
+      }
+      const ageDays = Math.floor(
+        (Date.now() - Date.parse(createdAt)) / (24 * 60 * 60 * 1000)
+      );
+      return {
+        status: 200,
+        body: {
+          kind: this.env.IS_TRIAL_POD === "1" ? "trial" : "self-hosted",
+          created_at: createdAt,
+          age_days: ageDays,
+          banner_after_days: TRIAL_BANNER_AFTER_DAYS,
+          grace_days: TRIAL_GRACE_DAYS,
+          wipe_in_days: Math.max(0, TRIAL_GRACE_DAYS - ageDays),
+          graduated: this.getMeta(META_KEY_GRADUATED) === "1",
+        },
+      };
+    }
+
     return { status: 404, body: { error: "route_not_found", verb, path } };
   }
 }
 
-function jsonResp(status, body) {
+function jsonResp(status, body, extraHeaders = {}) {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...extraHeaders },
   });
 }

@@ -6,6 +6,12 @@
 
 import { loadMemberProfile } from "./member-store.js";
 import { podRpc } from "./solid-session.js";
+import { ownershipMode } from "./pod-adapter.js";
+
+function useLocalPodStoreOnly() {
+  const mode = ownershipMode();
+  return mode === "browser-local" || mode === "local-device";
+}
 
 function podSessionAvailable() {
   return !!loadMemberProfile()?.credential_id;
@@ -31,6 +37,9 @@ export async function fetchCivicSubmission() {
 }
 
 export async function listPodRows(path) {
+  if (useLocalPodStoreOnly()) {
+    return [];
+  }
   const body = await podRpc("LIST", path);
   return Array.isArray(body?.rows) ? body.rows : [];
 }

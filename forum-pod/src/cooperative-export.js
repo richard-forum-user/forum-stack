@@ -62,23 +62,47 @@ export function buildForumFeedbackPayload(row, webId, memberHash) {
     kind,
     category_code: categoryCode,
     category_label: categoryLabel,
+    category_id: row.category_id != null ? Number(row.category_id) : null,
     zip_code: row.zip_code || null,
     comment: clampForumFeedbackComment(row.comment),
+    egress_status: row.egress_status || "pending",
+    vault_status: row.vault_status || null,
+    sync_attempts: Number(row.sync_attempts || 0),
+    last_error: row.last_error || null,
+    submitted_at: row.submitted_at || new Date().toISOString(),
+    share_status: row.share_status || "cooperative",
+    updated_at: new Date().toISOString(),
   };
+}
+
+export function cooperativeBaseUrl() {
+  // The cooperative is a distinct worker from the Personal Pod / airlock.
+  // Never fall back to VITE_SERVER_URL (the pod URL) — that worker has no
+  // /api/forum/feedback route and returns route_not_found.
+  return (
+    import.meta.env.VITE_COOP_URL ||
+    "https://coop.yourcommunity.forum"
+  ).replace(/\/$/, "");
+}
+
+export async function fetchCooperativeReceiptStatus(receiptId) {
+  const base = cooperativeBaseUrl();
+  if (!base || !receiptId) return null;
+  const res = await fetch(
+    `${base}/api/forum/feedback/status?receipt_id=${encodeURIComponent(receiptId)}`
+  );
+  if (!res.ok) return null;
+  return res.json();
 }
 
 /** v1.4 alias. Kept so existing callers keep compiling. */
 export const buildCivicExportPayload = buildForumFeedbackPayload;
 
-export async function postForumFeedback(row, cooperativeBaseUrl) {
-  const base = (
-    cooperativeBaseUrl ||
-    import.meta.env.VITE_SERVER_URL ||
-    ""
-  ).replace(/\/$/, "");
+export async function postForumFeedback(row, coopUrlOverride) {
+  const base = (coopUrlOverride || cooperativeBaseUrl()).replace(/\/$/, "");
   if (!base) {
     throw new Error(
-      "Cooperative server URL is not configured. Set the Worker URL in Settings."
+      "Cooperative URL is not configured. Set VITE_COOP_URL in Settings or .env."
     );
   }
   const profile = loadMemberProfile();

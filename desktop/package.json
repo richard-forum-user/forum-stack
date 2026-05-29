@@ -1,0 +1,18 @@
+{
+  "name": "forum-pod-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Tauri installer that bundles workerd + the Forum Personal Pod PWA.",
+  "scripts": {
+    "prepare:pod": "cd ../forum-pod && npm install && npm run build && rm -rf ../desktop/src-tauri/dist && cp -r dist ../desktop/src-tauri/dist",
+    "prepare:airlock": "mkdir -p src-tauri/airlock && cp ../forum-airlock/secure-worker.js src-tauri/airlock/ && cp ../forum-airlock/pod-do.js src-tauri/airlock/ && cp ../forum-airlock/pod-signing-web.js src-tauri/airlock/ && cp ../forum-airlock/session-binding.js src-tauri/airlock/ && cp ../forum-airlock/unlock-token.js src-tauri/airlock/ && cp ../forum-airlock/rate-limit.js src-tauri/airlock/ && cp ../forum-airlock/do-guards.js src-tauri/airlock/ && cp ../forum-airlock/webauthn-server.js src-tauri/airlock/ && cp ../forum-airlock/feedback-limits.js src-tauri/airlock/ && cp ../forum-airlock/secret-compare.js src-tauri/airlock/ && cp ../forum-airlock/member-hash.js src-tauri/airlock/ && cp ../forum-airlock/membership-verify.js src-tauri/airlock/ && cp ../forum-airlock/membership-routes.js src-tauri/airlock/ && cp ../forum-airlock/pod-sync.js src-tauri/airlock/",
+    "prepare:workerd": "./scripts/fetch-workerd.sh",
+    "prepare": "npm run prepare:pod && npm run prepare:airlock",
+    "tauri": "tauri",
+    "tauri:dev": "npm run prepare && tauri dev",
+    "tauri:build": "npm run prepare && tauri build"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.1.0"
+  }
+}

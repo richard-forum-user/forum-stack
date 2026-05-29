@@ -1,0 +1,76 @@
+name = "secure-worker"
+main = "secure-worker.js"
+compatibility_date = "2026-05-26"
+compatibility_flags = [ "nodejs_compat" ]
+
+[vars]
+ALLOW_PILOT_BUNDLES = "0"
+WEBAUTHN_ALLOWED_ORIGINS = "https://airlock.yourcommunity.forum,https://pod.yourcommunity.forum,https://secure-worker.forum-community.workers.dev,http://127.0.0.1:8787,http://localhost:8787"
+COOP_URL = "https://coop.yourcommunity.forum"
+# IS_TRIAL_POD is deliberately unset for self-hosted / docker / tauri
+# deploys (Pod is the user's permanent home; never auto-wiped).
+# Set via: npx wrangler secret put UNLOCK_TOKEN_KEY
+
+# Cooperative-managed trial pod deployment. Run with:
+#   npx wrangler deploy --env trial
+# This enables the 7-day banner + 30-day auto-wipe so trial users are
+# nudged into a real local install.
+[env.trial]
+name = "secure-worker"
+[env.trial.vars]
+ALLOW_PILOT_BUNDLES = "0"
+WEBAUTHN_ALLOWED_ORIGINS = "https://airlock.yourcommunity.forum,https://pod.yourcommunity.forum,https://secure-worker.forum-community.workers.dev"
+COOP_URL = "https://coop.yourcommunity.forum"
+IS_TRIAL_POD = "1"
+
+[[env.trial.d1_databases]]
+binding = "DB"
+database_name = "forum-db"
+database_id = "b23bdfa3-d8ba-4092-a5ac-ada4d697bc3b"
+
+[[env.trial.durable_objects.bindings]]
+name = "POD"
+class_name = "PersonalPodDO"
+
+[[env.trial.migrations]]
+tag = "v1"
+new_sqlite_classes = ["PersonalPodDO"]
+
+[env.trial.assets]
+directory = "./dist"
+binding = "ASSETS"
+run_worker_first = true
+
+[[env.trial.routes]]
+pattern = "airlock.yourcommunity.forum"
+custom_domain = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "forum-db"
+database_id = "b23bdfa3-d8ba-4092-a5ac-ada4d697bc3b"
+
+[[durable_objects.bindings]]
+name = "POD"
+class_name = "PersonalPodDO"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["PersonalPodDO"]
+
+[assets]
+directory = "./dist"
+binding = "ASSETS"
+run_worker_first = true
+
+[observability]
+enabled = true
+head_sampling_rate = 0.1
+
+[[routes]]
+pattern = "pod.yourcommunity.forum"
+custom_domain = true
+
+[[routes]]
+pattern = "airlock.yourcommunity.forum"
+custom_domain = true

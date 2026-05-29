@@ -3,7 +3,7 @@ set -euo pipefail
 
 APP_NAME="Forum Personal Pod"
 APP_BUILD="${APP_BUILD:-secure-pod-v1.5}"
-APK_SOURCE="${APK_SOURCE:-$HOME/Desktop/forum-pod/android/app/build/outputs/apk/debug/app-debug.apk}"
+APK_SOURCE="${APK_SOURCE:-$HOME/Desktop/forum-stack/forum-pod/android/app/build/outputs/apk/debug/app-debug.apk}"
 RELEASE_DIR="${RELEASE_DIR:-$HOME/Desktop/forum-releases}"
 PUBLIC_HOST="${PUBLIC_HOST:-apk.yourcommunity.forum}"
 STABLE_APK="forum-personal-pod-${APP_BUILD}.apk"

@@ -1,95 +1,49 @@
-name = "secure-worker"
+name = "coop-pipeline"
 main = "secure-worker.js"
 compatibility_date = "2026-05-26"
 compatibility_flags = [ "nodejs_compat" ]
 
 [vars]
-# Public PWA route is configured in Cloudflare for this Worker.
-# Set via: npx wrangler secret put UNLOCK_TOKEN_KEY
-# Production: pilot bundle bypass disabled. Set "1" only on a dedicated staging Worker.
 ALLOW_PILOT_BUNDLES = "0"
-# Origins allowed to claim a WebAuthn rp.id at this Worker. The Pod app
-# can be served from either airlock.yourcommunity.forum (via Cloudflare
-# route) or secure-worker.forum-community.workers.dev directly. The Worker
-# binds the rp.id / expectedOrigin to whichever origin the client posts,
-# but only if it appears in this list.
-WEBAUTHN_ALLOWED_ORIGINS = "https://airlock.yourcommunity.forum,https://secure-worker.forum-community.workers.dev"
-# Civic AI Kami is retired by default so the Pod has no dependency on the
-# cooperative GPU tunnel. Re-enable only with an Access-protected upstream or
-# a managed model provider, then build the Pod with VITE_ENABLE_CIVIC_AI=1
-# and set AI_ACCESS_CLIENT_ID / AI_ACCESS_CLIENT_SECRET as Worker secrets.
-# AI_UPSTREAM_URL = "https://ai.yourcommunity.forum"
-# AI_UPSTREAM_MODEL = "qwen2.5:14b-instruct-q4_K_M"
-AI_DAILY_QUOTA = "100"
-# Edge cooperative aggregate analysis (D1 SQL only — no Workers AI). See civic-analysis.js.
 CIVIC_ANALYSIS_MIN_SUBMISSIONS = "1"
-# Set FORUM_AUTO_EDGE_ANALYSIS = "1" to re-run analysis after each forum feedback ingest.
-# FORUM_AUTO_EDGE_ANALYSIS = "0"
-# Unauthenticated dev-push removed; use /run and /publish with X-Airlock-Secret.
+FORUM_AUTO_EDGE_ANALYSIS = "1"
 ALLOW_DEV_CIVIC_PUBLISH = "0"
-# Public reports: aggregate counts only (no verbatim comments). Set "1" only with counsel approval.
 CIVIC_PUBLISH_VERBATIM_COMMENTS = "0"
-# Rotating salt for member pseudonym hashes in D1 (set via wrangler secret put MEMBER_HASH_SALT).
-# Set via: npx wrangler secret put FORUM_EGRESS_URL  (https://forum-egress.yourcommunity.forum)
-# Set via: npx wrangler secret put FORUM_SECRET      (must match forum-egress Worker)
-
-# Set via:
-#   npx wrangler secret put AI_ACCESS_CLIENT_ID
-#   npx wrangler secret put AI_ACCESS_CLIENT_SECRET
+MEMBERSHIP_ISSUER = "https://coop.yourcommunity.forum"
+MEMBERSHIP_TTL_SEC = "86400"
+# Set FORUM_AUTO_EDGE_ANALYSIS = "1" to re-run analysis after each forum feedback ingest.
+# Set ALLOW_DEV_MEMBERSHIP = "1" only on staging (skips JWT signing when keys absent).
 
 # Set via: npx wrangler secret put AIRLOCK_SECRET
-# Must match AIRLOCK_SECRET in ../forum.config.env
-
-# Routes:
-#   /                       gate (WebAuthn)
-#   /api/webauthn/*         WebAuthn challenge + verify
-#   /api/forum/feedback     opt-in cooperative export -> D1 forum-db
-#   /api/ai/chat            signed Civic AI Kami chat -> configured model upstream (disabled by default)
-#   /api/civic/analysis/*   cooperative aggregate (D1 SQL); cron -> egress
-#   /api/civic/export       legacy alias of /api/forum/feedback  (deprecated)
-#   /api/register-member    device member registration -> D1 forum-db
-#   /api/register-signing-key Ed25519 signing-key registry -> D1 forum-db
-#   /api/pod/*              signed Personal Pod RPC -> PersonalPodDO (per-device)
-#   /pod, /assets/*         compiled forum-pod (Vite build) bundled into the Worker
-
-[ai]
-binding = "AI"
+# Set via: npx wrangler secret put FORUM_EGRESS_URL
+# Set via: npx wrangler secret put FORUM_SECRET
+# Set via: npx wrangler secret put TURNSTILE_SECRET
+# Set via: npx wrangler secret put STRIPE_SECRET_KEY
+# Set via: npx wrangler secret put STRIPE_WEBHOOK_SECRET
+# Set via: npx wrangler secret put MEMBERSHIP_PRIVATE_KEY_JWK
+# Set via: npx wrangler secret put MEMBERSHIP_PUBLIC_KEY_JWK
+# Set via: npx wrangler secret put MEMBER_HASH_SALT
 
 [[d1_databases]]
 binding = "DB"
 database_name = "forum-db"
 database_id = "b23bdfa3-d8ba-4092-a5ac-ada4d697bc3b"
 
+[[durable_objects.bindings]]
+name = "RECOVERY"
+class_name = "RecoveryDO"
+
+[[migrations]]
+tag = "v1-recovery-do"
+new_sqlite_classes = ["RecoveryDO"]
+
 [triggers]
 crons = ["0 */6 * * *"]
 
-# Personal Pod Durable Object: one DO instance per device credential.
-# Replaces the Community Solid Server (forum-solid) + provision-bridge
-# stack — see forum-airlock/pod-do.js.
-[[durable_objects.bindings]]
-name = "POD"
-class_name = "PersonalPodDO"
-
-# Required migration to enable the SQLite-backed DO storage class.
-[[migrations]]
-tag = "v1"
-new_sqlite_classes = ["PersonalPodDO"]
-
-# Add this to bundle the compiled React app into the Worker
-[assets]
-directory = "./dist"
-binding = "ASSETS"
-run_worker_first = true
-
-# Workers Logs: sampled; never log comment bodies, hashes, or signatures.
 [observability]
 enabled = true
 head_sampling_rate = 0.1
 
 [[routes]]
-pattern = "pod.yourcommunity.forum"
-custom_domain = true
-
-[[routes]]
-pattern = "airlock.yourcommunity.forum"
+pattern = "coop.yourcommunity.forum"
 custom_domain = true

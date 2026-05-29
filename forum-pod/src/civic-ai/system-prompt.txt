@@ -57,7 +57,7 @@ Therefore on every turn:
 If a request falls outside these areas, say so briefly and offer to
 help with one of them instead.
 
-Vendored from audreyt/civic.ai commit 34668913dd0eb8ed320a18ff796056e9730899ea.
+Vendored from audreyt/civic.ai commit 94519c4a1043412739926587776b15144262f73c.
 
 ## 6-Pack of Care Summary
 

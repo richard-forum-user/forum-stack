@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-DESKTOP="${FORUM_DESKTOP:-$HOME/Desktop}"
+DESKTOP="${FORUM_DESKTOP:-$(cd "$(dirname "$0")/.." && pwd)}"
 CONFIG="$DESKTOP/forum.config.env"
 USER_SYSTEMD="$HOME/.config/systemd/user"
 CLOUDFLARED_CONFIG="$HOME/.cloudflared/forum-airlock.yml"
@@ -49,8 +49,8 @@ echo "Status: systemctl --user status forum-cloudflared.service"
 echo "Logs:   journalctl --user -u forum-cloudflared.service -f"
 echo ""
 echo "Next:"
-echo "  1. Run: cd $DESKTOP/forum-airlock && npx wrangler secret put AIRLOCK_SECRET"
-echo "  2. Run: cd $DESKTOP/forum-airlock && npm run build:pod && npm run deploy:worker"
+echo "  1. Run: cd $DESKTOP/forum-pod-airlock && npx wrangler secret put UNLOCK_TOKEN_KEY"
+echo "  2. Run: cd $DESKTOP/forum-pod-airlock && npm run build:pod && npm run deploy:worker"
 echo "  3. Keep only non-retired tunnel hostnames (for example apk.yourcommunity.forum)."
 echo ""
 echo "If this script is not executable, run it with:"

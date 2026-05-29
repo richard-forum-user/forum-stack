@@ -26,6 +26,7 @@ import {
   clampForumFeedbackComment,
 } from "./civic-vocab.js";
 import SignInOverlay from "./sign-in-overlay.jsx";
+import { ownershipMode, isAirlockWebApp } from "./pod-adapter.js";
 import Assistant from "./assistant.jsx";
 import Explore from "./explore.jsx";
 import { clearAllAssistantConversations } from "./assistant-store.js";
@@ -52,6 +53,15 @@ import {
   saveSigningMeta,
 } from "./member-store.js";
 import { deriveBoundSessionId, isBoundSessionId } from "./session-id.js";
+import {
+  generateRecoveryPhrase,
+  loadRecoveryEnrollment,
+  loadRecoveryReceipts,
+  deriveRecoveryKeyPair,
+} from "./recovery-phrase.js";
+import { enrollRecoveryPhrase, fetchDeletionReceipt } from "./recovery-api.js";
+import { downloadLocalDataExport } from "./local-data-export.js";
+import { cooperativeBaseUrl } from "./cooperative-export.js";
 
 const DEFAULT_FORUM_FEEDBACK_API =
   import.meta.env.VITE_FORUM_FEEDBACK_API ||
@@ -59,13 +69,39 @@ const DEFAULT_FORUM_FEEDBACK_API =
   "/api/forum/feedback";
 const isNativeShell = window.location.protocol === "capacitor:";
 const DEFAULT_SERVER_URL =
-  import.meta.env.VITE_SERVER_URL || "https://secure-worker.forum-community.workers.dev";
+  import.meta.env.VITE_SERVER_URL || "https://airlock.yourcommunity.forum";
+// The cooperative is a SEPARATE worker from the Personal Pod / airlock.
+// Civic-feedback export and the cooperative analysis report live on the
+// cooperative worker (coop.yourcommunity.forum); the airlock pod worker has
+// no such routes and answers route_not_found. Keep these URLs decoupled.
+const DEFAULT_COOP_URL =
+  import.meta.env.VITE_COOP_URL || "https://coop.yourcommunity.forum";
 const DEFAULT_POD_PROVIDER =
   import.meta.env.VITE_POD_PROVIDER_URL ||
   import.meta.env.VITE_SERVER_URL ||
   DEFAULT_SERVER_URL;
 const CIVIC_AI_AVAILABLE = import.meta.env.VITE_ENABLE_CIVIC_AI === "1";
 const APP_BUILD = "secure-pod-v1.9-civic-ai";
+
+/**
+ * Resolve the cooperative worker URL. Older builds defaulted this field to the
+ * airlock/pod URL, so a stored value pointing at the pod host is wrong (the pod
+ * worker has no /api/forum/feedback route -> route_not_found). Treat any such
+ * value, or an empty value, as "use the cooperative default".
+ */
+function resolveCoopUrl(stored) {
+  const val = (stored || "").trim().replace(/\/$/, "");
+  if (!val) return DEFAULT_COOP_URL;
+  try {
+    const host = new URL(val).host;
+    const podHost = new URL(DEFAULT_POD_PROVIDER).host;
+    const airlockHost = new URL(DEFAULT_SERVER_URL).host;
+    if (host === podHost || host === airlockHost) return DEFAULT_COOP_URL;
+  } catch {
+    return DEFAULT_COOP_URL;
+  }
+  return val;
+}
 
 const POD_USER = { id: "local", name: "Sovereign Member" };
 
@@ -124,6 +160,36 @@ async function setupCivicTables(connection) {
       VALUES (${c.id}, '${sqlEscape(c.code)}', '${sqlEscape(c.label)}', ${c.tier});
     `);
   }
+}
+
+/** Load session cache from IndexedDB (browser-local / airlock web app). */
+async function hydrateFromLocalStore(connection) {
+  const [civicRows, journalRows, behaviorRows, traitRows] = await Promise.all([
+    getSubmissions(),
+    getRawSubmissions(),
+    getBehaviors(),
+    getPsychographics(),
+  ]);
+
+  for (const row of civicRows) {
+    await recordCivicLocally(connection, row);
+  }
+  for (const row of journalRows) {
+    await recordRawSubmissionLocally(connection, row);
+  }
+  for (const row of behaviorRows) {
+    await recordBehaviorLocally(connection, row);
+  }
+  for (const row of traitRows) {
+    await recordPsychographicLocally(connection, row);
+  }
+}
+
+async function hydrateSessionCache(connection) {
+  if (ownershipMode() === "browser-local" || isAirlockWebApp()) {
+    return hydrateFromLocalStore(connection);
+  }
+  return hydrateFromPod(connection);
 }
 
 /** Load all user data from the Pod DO into session cache (IndexedDB + DuckDB). */
@@ -721,7 +787,7 @@ export default function PersonalPod() {
   const [coopReportBusy, setCoopReportBusy] = useState(false);
   const [coopReportError, setCoopReportError] = useState(null);
   const [localSubmissions, setLocalSubmissions] = useState([]);
-  const [serverUrl, setServerUrl] = useState(() => localStorage.getItem("forum.serverUrl") || DEFAULT_SERVER_URL);
+  const [serverUrl, setServerUrl] = useState(() => resolveCoopUrl(localStorage.getItem("forum.serverUrl")));
   const [memberProfile, setMemberProfile] = useState(() => loadMemberProfile());
   const [shareWithCooperative, setShareWithCooperative] = useState(
     () => localStorage.getItem("forum.shareWithCooperative") === "1"
@@ -733,6 +799,13 @@ export default function PersonalPod() {
   const [deviceKeyImport, setDeviceKeyImport] = useState("");
   const [deviceKeyStatus, setDeviceKeyStatus] = useState(null);
   const [showDeviceKeyImport, setShowDeviceKeyImport] = useState(false);
+  const [recoveryEnrollment, setRecoveryEnrollment] = useState(() => loadRecoveryEnrollment());
+  const [recoveryPhraseShown, setRecoveryPhraseShown] = useState("");
+  const [recoveryConfirmInput, setRecoveryConfirmInput] = useState("");
+  const [recoveryBusy, setRecoveryBusy] = useState(false);
+  const [recoveryStatus, setRecoveryStatus] = useState(null);
+  const [recoveryReceipts, setRecoveryReceipts] = useState(() => loadRecoveryReceipts());
+  const [localExportStatus, setLocalExportStatus] = useState(null);
   const [podStatus, setPodStatus] = useState("connecting");
   const [schema, setSchema] = useState([]);
   const [expanded, setExpanded] = useState({});
@@ -767,6 +840,11 @@ export default function PersonalPod() {
   const [uploading, setUploading] = useState(false);
   const [uploadMsg, setUploadMsg] = useState(null);
   const [dragOver, setDragOver] = useState(false);
+
+  const isLocalWebApp = useMemo(
+    () => ownershipMode() === "browser-local" || isAirlockWebApp(),
+    []
+  );
 
   const refreshLocalSubmissions = useCallback(async () => {
     const rows = await getSubmissions();
@@ -805,7 +883,8 @@ export default function PersonalPod() {
   }, [journalText]);
 
   const submitJournalEntry = useCallback(async () => {
-    if (!journalText.trim() || journalSending || !conn) return;
+    if (!journalText.trim() || journalSending) return;
+    if (!conn && !isLocalWebApp) return;
     const cat = findInsightCategory(journalCategoryId);
     if (!cat) {
       setJournalStatus({ ok: false, text: "Pick a category for this entry." });
@@ -890,14 +969,16 @@ export default function PersonalPod() {
       }
 
       await saveRawSubmission(rawRow);
-      await recordRawSubmissionLocally(conn, rawRow);
+      if (conn) {
+        await recordRawSubmissionLocally(conn, rawRow);
+      }
       for (const row of podRows.behaviors) {
         await saveBehavior(row);
-        await recordBehaviorLocally(conn, row);
+        if (conn) await recordBehaviorLocally(conn, row);
       }
       for (const row of podRows.traits) {
         await savePsychographic(row);
-        await recordPsychographicLocally(conn, row);
+        if (conn) await recordPsychographicLocally(conn, row);
       }
 
       await refreshJournalTotals();
@@ -912,7 +993,7 @@ export default function PersonalPod() {
     } finally {
       setJournalSending(false);
     }
-  }, [journalText, journalCategoryId, journalSending, conn, refreshJournalTotals]);
+  }, [journalText, journalCategoryId, journalSending, conn, isLocalWebApp, refreshJournalTotals]);
 
   useEffect(() => {
     const onResize = () => setViewport({ w: window.innerWidth, h: window.innerHeight });
@@ -1070,17 +1151,29 @@ export default function PersonalPod() {
     if (authState !== "signed_in") return;
     let cancelled = false;
 
+    function isMobileBrowser() {
+      if (typeof navigator === "undefined") return false;
+      return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+    }
+
     async function initDuckDb() {
       // Cloudflare Workers Assets reject DuckDB's local WASM files (>25 MiB),
       // so the installable PWA loads DuckDB runtime bundles from jsDelivr.
-      const bundle = await duckdb.selectBundle(duckdb.getJsDelivrBundles());
+      const bundles = duckdb.getJsDelivrBundles();
+      // Mobile Chrome often fails with the pthread bundle — use MVP (single-threaded).
+      const bundle = isMobileBrowser()
+        ? bundles.mvp
+        : await duckdb.selectBundle(bundles);
       const workerUrl = URL.createObjectURL(
         new Blob([`importScripts("${bundle.mainWorker}");`], { type: "text/javascript" })
       );
       const worker = new Worker(workerUrl);
       const logger = new duckdb.ConsoleLogger();
       const database = new duckdb.AsyncDuckDB(logger, worker);
-      await database.instantiate(bundle.mainModule, bundle.pthreadWorker);
+      await database.instantiate(
+        bundle.mainModule,
+        bundle.pthreadWorker || null
+      );
       URL.revokeObjectURL(workerUrl);
       const connection = await database.connect();
       try {
@@ -1101,7 +1194,7 @@ export default function PersonalPod() {
       try {
         const { database, connection } = await initDuckDb();
         if (cancelled) return;
-        await hydrateFromPod(connection);
+        await hydrateSessionCache(connection);
         if (cancelled) return;
         setDb(database);
         setConn(connection);
@@ -1112,6 +1205,16 @@ export default function PersonalPod() {
         setSigningMeta(loadSigningMeta());
       } catch (e) {
         console.error("DuckDB init failed:", e);
+        if (isLocalWebApp) {
+          // Browser-local web app: IndexedDB is the source of truth. DuckDB is
+          // optional (Explore/SQL); civic + journal still work without it.
+          if (cancelled) return;
+          setPodStatus("connected");
+          refreshLocalSubmissions();
+          refreshJournalTotals();
+          setSigningMeta(loadSigningMeta());
+          return;
+        }
         setPodStatus("error");
       }
     }
@@ -1127,14 +1230,15 @@ export default function PersonalPod() {
     : DEFAULT_FORUM_FEEDBACK_API;
 
   const loadCooperativeReport = useCallback(async () => {
-    if (!normalizedServerUrl) {
+    const coopTarget = resolveCoopUrl(normalizedServerUrl) || cooperativeBaseUrl();
+    if (!coopTarget) {
       setCoopReportError("Set the cooperative Worker URL in Settings first.");
       return;
     }
     setCoopReportBusy(true);
     setCoopReportError(null);
     try {
-      const res = await fetch(`${normalizedServerUrl}/api/civic/analysis`);
+      const res = await fetch(`${coopTarget}/api/civic/analysis`);
       const raw = await res.text();
       let data = {};
       try {
@@ -1178,7 +1282,8 @@ export default function PersonalPod() {
     }
 
     try {
-      const data = await postCooperativeExport(row, normalizedServerUrl);
+      const coopTarget = resolveCoopUrl(normalizedServerUrl) || cooperativeBaseUrl();
+      const data = await postCooperativeExport(row, coopTarget);
 
       const next = {
         ...row,
@@ -1267,10 +1372,13 @@ export default function PersonalPod() {
       setCivicStatus({
         ok: true,
         text: result.skipped
-          ? `Saved locally and to your Pod. Receipt: ${receiptId}. Cooperative share is off until you opt in.`
-          : `Saved to your Pod and synced. Receipt: ${receiptId}.`,
+          ? `Saved locally. Receipt: ${receiptId}. Cooperative share is off — enable it in Settings to send to the cloud.`
+          : `Saved locally and sent to the cooperative. Receipt: ${receiptId}. Raw is wiped from the cloud after 7 days.`,
       });
       setCivicComment("");
+      if (result.ok && !result.skipped) {
+        loadCooperativeReport().catch(() => {});
+      }
     } else {
       setCivicStatus({
         ok: false,
@@ -1448,7 +1556,7 @@ export default function PersonalPod() {
       {authState === "signed_out" && (
         <SignInOverlay
           defaultPodProvider={DEFAULT_POD_PROVIDER}
-          cooperativeUrl={serverUrl}
+          cooperativeUrl={DEFAULT_COOP_URL}
           onSignedIn={handleSignedIn}
           runBtnStyle={S.runBtn}
         />
@@ -1531,9 +1639,11 @@ export default function PersonalPod() {
             <div style={S.statusDot(podStatus)} />
             <span style={S.statusLabel}>
               {podStatus === "connected"
-                ? "Pod session cache online"
+                ? ownershipMode() === "browser-local" || isAirlockWebApp()
+                  ? "Local session cache online"
+                  : "Pod session cache online"
                 : podStatus === "connecting"
-                  ? "Loading from Pod…"
+                  ? "Loading session cache…"
                   : "Session cache error"}
             </span>
           </div>
@@ -1725,7 +1835,7 @@ export default function PersonalPod() {
                   Cooperative aggregate (edge)
                 </div>
                 <p style={{ fontSize: 11, color: "#8b949e", lineHeight: 1.5, marginBottom: 10 }}>
-                  Opt-in submissions in cooperative D1 are reported with SQL only — counts plus full comments (up to {FORUM_FEEDBACK_MAX_COMMENT_CHARS} chars at submit). No generative model; nothing beyond the ledger is stated.
+                  Opt-in submissions in cooperative D1 are aggregated with SQL only — counts plus category breakdowns. The report refreshes automatically after each sync; tap below to load the latest snapshot.
                 </p>
                 <button
                   type="button"
@@ -1841,8 +1951,8 @@ export default function PersonalPod() {
 
               <button
                 onClick={submitJournalEntry}
-                disabled={journalSending || !journalText.trim() || !conn}
-                style={{ ...S.runBtn(journalSending || !journalText.trim() || !conn), width: "100%", padding: "11px", textAlign: "center" }}
+                disabled={journalSending || !journalText.trim() || (!conn && !isLocalWebApp)}
+                style={{ ...S.runBtn(journalSending || !journalText.trim() || (!conn && !isLocalWebApp)), width: "100%", padding: "11px", textAlign: "center" }}
               >
                 {journalSending ? "Saving…" : "Save to my Pod"}
               </button>
@@ -2127,7 +2237,11 @@ export default function PersonalPod() {
               <div style={{ fontSize: 16, fontWeight: 700, color: "#e6edf3", marginBottom: 4 }}>Pod &amp; Connection</div>
               <div style={{ fontSize: 12, color: "#8b949e", marginBottom: 12, lineHeight: 1.5 }}>
                 Signed in as <span style={{ color: "#79c0ff" }}>{memberProfile?.webId || getSolidSession().webId || "Pod user"}</span>.
-                Data is stored in your Personal Pod (Cloudflare Durable Object); this browser keeps a temporary cache only.
+                {ownershipMode() === "browser-local" || isAirlockWebApp() ? (
+                  <> Your raw data lives in this browser&apos;s local store. Download a copy regularly — clearing site data erases it. Cooperative cloud keeps only aggregates after 7 days.</>
+                ) : (
+                  <> Data is stored in your Personal Pod (Cloudflare Durable Object); this browser keeps a temporary cache only.</>
+                )}
               </div>
               <button
                 type="button"
@@ -2145,7 +2259,37 @@ export default function PersonalPod() {
               >
                 Forget this device (delete key)
               </button>
-              <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 12, marginBottom: 12 }}><input type="checkbox" checked={shareWithCooperative} onChange={(e) => { setShareWithCooperative(e.target.checked); localStorage.setItem("forum.shareWithCooperative", e.target.checked ? "1" : "0"); }} />Opt-in cooperative share</label>
+              <label style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 12, marginBottom: 12 }}><input type="checkbox" checked={shareWithCooperative} onChange={(e) => { setShareWithCooperative(e.target.checked); localStorage.setItem("forum.shareWithCooperative", e.target.checked ? "1" : "0"); }} />Opt-in cooperative share (sends to Cloudflare for aggregation; raw wiped after 7 days)</label>
+
+              <div style={{ marginTop: 8, marginBottom: 16, padding: "12px 14px", border: "1px solid #21262d", borderRadius: 8, background: "#0d1117" }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#e6edf3", marginBottom: 8 }}>Your data, your copy</div>
+                <div style={{ fontSize: 11, color: "#8b949e", lineHeight: 1.55, marginBottom: 10 }}>
+                  Download everything stored in this browser — submissions, journal entries, and insights — as a JSON file.
+                  This is your durable backup. The cooperative cloud never keeps your raw text permanently.
+                </div>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      const payload = await downloadLocalDataExport();
+                      setLocalExportStatus({
+                        ok: true,
+                        text: `Downloaded ${payload.data.civic_submissions.length} submission(s), ${payload.data.raw_submissions.length} journal row(s). Keep this file safe.`,
+                      });
+                    } catch (e) {
+                      setLocalExportStatus({ ok: false, text: e.message });
+                    }
+                  }}
+                  style={{ ...S.runBtn(false), padding: "8px 12px", fontSize: 11, marginBottom: 8 }}
+                >
+                  Download my data (JSON)
+                </button>
+                {localExportStatus && (
+                  <div style={{ padding: "8px 10px", borderRadius: 6, fontSize: 11, background: localExportStatus.ok ? "#122119" : "#3d1c1c", border: `1px solid ${localExportStatus.ok ? "#2ea04330" : "#6e3030"}`, color: localExportStatus.ok ? "#3fb950" : "#f85149" }}>
+                    {localExportStatus.text}
+                  </div>
+                )}
+              </div>
 
               <div style={{ marginTop: 8, marginBottom: 16, padding: "12px 14px", border: "1px solid #21262d", borderRadius: 8, background: "#0d1117" }}>
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
@@ -2270,11 +2414,147 @@ export default function PersonalPod() {
                 )}
               </div>
 
-              <label style={{ fontSize: 11, color: "#8b949e", display: "block", marginBottom: 6 }}>Cooperative bridge URL</label>
+              <div style={{ marginTop: 8, marginBottom: 16, padding: "12px 14px", border: "1px solid #21262d", borderRadius: 8, background: "#0d1117" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#e6edf3" }}>Account recovery phrase</div>
+                  {recoveryEnrollment.enrolled ? (
+                    <span style={S.tag("#3fb950")}>enrolled</span>
+                  ) : (
+                    <span style={S.tag("#d29922")}>not set</span>
+                  )}
+                </div>
+                <div style={{ fontSize: 11, color: "#8b949e", lineHeight: 1.55, marginBottom: 10 }}>
+                  A 12-word recovery phrase lets you restore your cooperative identity and proof-of-submissions if you lose this device.
+                  <strong style={{ color: "#d29922" }}> It does not recover raw comment text</strong> — keep your local export for that.
+                  The phrase never leaves this device; only a derived public key is enrolled.
+                </div>
+                {recoveryEnrollment.enrolled && recoveryEnrollment.publicKeyHex && (
+                  <div style={{ fontSize: 10, color: "#8b949e", lineHeight: 1.5, marginBottom: 10 }}>
+                    Recovery key: <code style={{ color: "#79c0ff" }}>{recoveryEnrollment.publicKeyHex.slice(0, 18)}…</code>
+                  </div>
+                )}
+                {!recoveryPhraseShown && !recoveryEnrollment.enrolled && (
+                  <button
+                    type="button"
+                    disabled={recoveryBusy}
+                    onClick={() => {
+                      const phrase = generateRecoveryPhrase();
+                      setRecoveryPhraseShown(phrase);
+                      setRecoveryConfirmInput("");
+                      setRecoveryStatus(null);
+                    }}
+                    style={{ ...S.runBtn(recoveryBusy), padding: "8px 12px", fontSize: 11 }}
+                  >
+                    Generate recovery phrase
+                  </button>
+                )}
+                {recoveryPhraseShown && !recoveryEnrollment.enrolled && (
+                  <>
+                    <div style={{ fontSize: 11, color: "#f0b72f", marginBottom: 8, lineHeight: 1.5 }}>
+                      Write these 12 words down and store them offline. They are shown once and cannot be retrieved later.
+                    </div>
+                    <textarea
+                      readOnly
+                      value={recoveryPhraseShown}
+                      onFocus={(e) => e.target.select()}
+                      style={{ ...S.chatInput, width: "100%", minHeight: 64, marginBottom: 8, boxSizing: "border-box", fontSize: 12, fontFamily: "monospace" }}
+                    />
+                    <label style={{ fontSize: 11, color: "#8b949e", display: "block", marginBottom: 6 }}>
+                      Re-type the phrase to confirm you saved it
+                    </label>
+                    <textarea
+                      value={recoveryConfirmInput}
+                      onChange={(e) => setRecoveryConfirmInput(e.target.value)}
+                      placeholder="Enter the 12 words…"
+                      style={{ ...S.chatInput, width: "100%", minHeight: 64, marginBottom: 8, boxSizing: "border-box", fontSize: 12, fontFamily: "monospace" }}
+                    />
+                    <button
+                      type="button"
+                      disabled={recoveryBusy || recoveryConfirmInput.trim().toLowerCase() !== recoveryPhraseShown.trim().toLowerCase()}
+                      onClick={async () => {
+                        setRecoveryBusy(true);
+                        setRecoveryStatus(null);
+                        try {
+                          const keyPair = deriveRecoveryKeyPair(recoveryPhraseShown);
+                          await enrollRecoveryPhrase(keyPair);
+                          setRecoveryEnrollment(loadRecoveryEnrollment());
+                          setRecoveryPhraseShown("");
+                          setRecoveryConfirmInput("");
+                          setRecoveryStatus({
+                            ok: true,
+                            text: "Recovery phrase enrolled. Your cooperative identity can be restored with these words.",
+                          });
+                        } catch (e) {
+                          setRecoveryStatus({ ok: false, text: e.message });
+                        } finally {
+                          setRecoveryBusy(false);
+                        }
+                      }}
+                      style={{ ...S.runBtn(recoveryBusy), padding: "8px 12px", fontSize: 11 }}
+                    >
+                      {recoveryBusy ? "Enrolling…" : "Confirm and enroll"}
+                    </button>
+                  </>
+                )}
+                {recoveryStatus && (
+                  <div style={{ marginTop: 10, padding: "8px 10px", borderRadius: 6, fontSize: 11, background: recoveryStatus.ok ? "#122119" : "#3d1c1c", border: `1px solid ${recoveryStatus.ok ? "#2ea04330" : "#6e3030"}`, color: recoveryStatus.ok ? "#3fb950" : "#f85149" }}>
+                    {recoveryStatus.text}
+                  </div>
+                )}
+              </div>
+
+              <div style={{ marginTop: 8, marginBottom: 16, padding: "12px 14px", border: "1px solid #21262d", borderRadius: 8, background: "#0d1117" }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#e6edf3", marginBottom: 8 }}>Verify deletion (cloud is ephemeral)</div>
+                <div style={{ fontSize: 11, color: "#8b949e", lineHeight: 1.55, marginBottom: 10 }}>
+                  After the 7-day cooperative window, raw text is wiped from the Forum. These receipt proofs show what the cloud retained — not your comment text.
+                </div>
+                {recoveryReceipts.length ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 200, overflowY: "auto", marginBottom: 10 }}>
+                    {recoveryReceipts.map((row) => (
+                      <div key={row.receipt_id} style={{ fontSize: 11, color: "#c9d1d9", lineHeight: 1.45, borderTop: "1px solid #161b22", paddingTop: 8 }}>
+                        <div style={{ color: "#79c0ff" }}>{row.receipt_id}</div>
+                        <div style={{ color: "#8b949e", fontFamily: "monospace", fontSize: 10 }}>
+                          sha256: {(row.payload_sha256 || "").slice(0, 16)}…
+                        </div>
+                        <div style={{ color: row.wiped_at ? "#3fb950" : "#d29922" }}>
+                          {row.wiped_at ? `Wiped from coop: ${row.wiped_at}` : "Still in cooperative raw window"}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 11, color: "#484f58", marginBottom: 10, lineHeight: 1.45 }}>
+                    No recovery receipts yet. Enroll a recovery phrase and submit to the cooperative, or recover with your phrase after losing a device.
+                  </div>
+                )}
+                <button
+                  type="button"
+                  disabled={!recoveryReceipts.length}
+                  onClick={async () => {
+                    try {
+                      const updated = [];
+                      for (const row of recoveryReceipts) {
+                        const proof = await fetchDeletionReceipt(row.receipt_id);
+                        updated.push(proof ? { ...row, ...proof } : row);
+                      }
+                      setRecoveryReceipts(updated);
+                      localStorage.setItem("forum.recoveryReceipts", JSON.stringify(updated));
+                      setRecoveryStatus({ ok: true, text: "Deletion proof status refreshed." });
+                    } catch (e) {
+                      setRecoveryStatus({ ok: false, text: e.message });
+                    }
+                  }}
+                  style={{ ...S.runBtn(false), padding: "8px 12px", fontSize: 11 }}
+                >
+                  Refresh deletion proofs
+                </button>
+              </div>
+
+              <label style={{ fontSize: 11, color: "#8b949e", display: "block", marginBottom: 6 }}>Cooperative worker URL</label>
               <input
                 value={serverUrl}
                 onChange={(e) => setServerUrl(e.target.value)}
-                placeholder="https://pod.yourcommunity.forum"
+                placeholder="https://coop.yourcommunity.forum"
                 style={{ ...S.chatInput, width: "100%", marginBottom: 12, boxSizing: "border-box" }}
               />
               <button

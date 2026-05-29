@@ -24,8 +24,8 @@ android {
         applicationId "forum.personalpod"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 6
-        versionName "secure-pod-v1.8-security"
+        versionCode 8
+        versionName "0.1.2-sqlite-bundled"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.

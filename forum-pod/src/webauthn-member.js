@@ -54,6 +54,29 @@ function buildPilotProfile(reason) {
   return { credential: null, credentialId, profile, fallback: true };
 }
 
+/**
+ * Native (Capacitor) and embedded WebView (Tauri/wry) Pods are local-first
+ * by design — H16 architecture says the data lives in on-device SQLite (or
+ * the bundled localhost workerd, in Tauri's case). There is no remote
+ * cooperative airlock to authenticate against, so generating a local
+ * device credential is the *intended* flow, not a fallback.
+ *
+ * The credential is prefixed `local-` so the cooperative side can clearly
+ * distinguish it from `pilot-` (kept for old web-build A/B testing) and
+ * from real `webauthn-verified` credentials.
+ */
+export function buildLocalDeviceProfile() {
+  const credentialId = `local-${randomCredentialId()}`;
+  const profile = {
+    credential_id: credentialId,
+    registered_at: new Date().toISOString(),
+    auth_mode: "local-device",
+  };
+  saveMemberProfile(profile);
+  setPilotUnlock(credentialId);
+  return { credential: null, credentialId, profile, fallback: false };
+}
+
 function workerBase(cooperativeBaseUrl) {
   return (cooperativeBaseUrl || import.meta.env.VITE_SERVER_URL || "").replace(/\/$/, "");
 }

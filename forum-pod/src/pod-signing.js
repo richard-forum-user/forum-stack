@@ -1,4 +1,12 @@
-import { loadSigningMeta, saveMemberProfile, saveSigningMeta, loadMemberProfile } from "./member-store.js";
+import {
+  loadSigningMeta,
+  saveMemberProfile,
+  saveSigningMeta,
+  loadMemberProfile,
+  loadSigningPrivateJwk,
+  saveSigningPrivateJwk,
+  clearSigningKeyStorage,
+} from "./member-store.js";
 import { deriveBoundSessionId } from "./session-id.js";
 
 function canonicalise(obj) {
@@ -49,8 +57,64 @@ export async function migrateLegacySigningKey() {
   return true;
 }
 
+/**
+ * Re-arm the in-memory signing key from the locally-persisted private JWK.
+ * Returns true if the volatile key is now available. This is what makes
+ * "sign back in" work after a reload / session-lock for device-owned Pods.
+ */
+async function restoreVolatileSigningKey() {
+  if (volatileSigningPrivateKey) return true;
+  const jwk = loadSigningPrivateJwk();
+  if (!jwk) return false;
+  try {
+    volatileSigningPrivateKey = await crypto.subtle.importKey(
+      "jwk",
+      jwk,
+      { name: "Ed25519" },
+      false,
+      ["sign"]
+    );
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function generateAndPersistSigningKey() {
+  // Extractable so the private JWK can be persisted locally (device-owned key).
+  const keyPair = await crypto.subtle.generateKey(
+    { name: "Ed25519" },
+    true,
+    ["sign", "verify"]
+  );
+  volatileSigningPrivateKey = keyPair.privateKey;
+  const publicJwk = await crypto.subtle.exportKey("jwk", keyPair.publicKey);
+  const privateJwk = await crypto.subtle.exportKey("jwk", keyPair.privateKey);
+  const rawPub = Uint8Array.from(atob(publicJwk.x.replace(/-/g, "+").replace(/_/g, "/")), (c) =>
+    c.charCodeAt(0)
+  );
+  const publicKeyHex = bytesToHex(rawPub);
+  const sessionId = await deriveBoundSessionId(publicKeyHex);
+  const meta = {
+    sessionId,
+    publicKeyHex,
+    publicJwk,
+    createdAt: Date.now(),
+  };
+  saveSigningMeta(meta);
+  saveSigningPrivateJwk(privateJwk);
+  const profile = loadMemberProfile();
+  if (profile) {
+    saveMemberProfile({ ...profile, sessionId });
+  }
+  return meta;
+}
+
 export async function ensurePodSigningKey(_legacySessionHint) {
   await migrateLegacySigningKey();
+  if (!volatileSigningPrivateKey) {
+    await restoreVolatileSigningKey();
+  }
   const existing = loadSigningMeta();
   if (existing?.publicKeyHex && volatileSigningPrivateKey) {
     const sessionId = await deriveBoundSessionId(existing.publicKeyHex);
@@ -69,30 +133,18 @@ export async function ensurePodSigningKey(_legacySessionHint) {
       "Signing key is locked. Unlock with your passkey to sign requests."
     );
   }
-  const keyPair = await crypto.subtle.generateKey(
-    { name: "Ed25519" },
-    false,
-    ["sign", "verify"]
-  );
-  volatileSigningPrivateKey = keyPair.privateKey;
-  const publicJwk = await crypto.subtle.exportKey("jwk", keyPair.publicKey);
-  const rawPub = Uint8Array.from(atob(publicJwk.x.replace(/-/g, "+").replace(/_/g, "/")), (c) =>
-    c.charCodeAt(0)
-  );
-  const publicKeyHex = bytesToHex(rawPub);
-  const sessionId = await deriveBoundSessionId(publicKeyHex);
-  const meta = {
-    sessionId,
-    publicKeyHex,
-    publicJwk,
-    createdAt: Date.now(),
-  };
-  saveSigningMeta(meta);
-  const profile = loadMemberProfile();
-  if (profile) {
-    saveMemberProfile({ ...profile, sessionId });
-  }
-  return meta;
+  return generateAndPersistSigningKey();
+}
+
+/**
+ * Forcibly mint a fresh signing key, discarding any stale meta. Used to
+ * recover a device-owned Pod whose private key was never persisted (e.g. a
+ * Pod created by an older build before local key persistence existed). The
+ * new key yields a new sessionId, so the on-device / trial Pod starts clean.
+ */
+export async function regenerateSigningKey() {
+  clearSigningKeyStorage();
+  return generateAndPersistSigningKey();
 }
 
 export async function signBundle(payload, _sessionHint) {

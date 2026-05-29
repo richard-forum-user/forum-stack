@@ -17,63 +17,37 @@
  * Response.
  */
 
-import { clearSigningMemory, loadMemberProfile, loadSigningMeta, saveMemberProfile } from "./member-store.js";
-import { ensurePodSigningKey, signBundle } from "./pod-signing.js";
-import { enrichSignedEnvelope } from "./signing-envelope.js";
+import { clearSigningMemory, loadMemberProfile, saveMemberProfile } from "./member-store.js";
+import { ensurePodSigningKey } from "./pod-signing.js";
 import { clearUnlockToken, hasActiveUnlock } from "./unlock-session.js";
+import { podRpc as adapterPodRpc, getPodPlatform, ownershipMode } from "./pod-adapter.js";
+import { httpProviderUrl, setHttpProviderUrl } from "./pod-adapter-http.js";
 
 const SESSION_KEY = "forum.solidSession";
 
 /**
- * Pod RPC base URL. We always prefer the build-time VITE_SERVER_URL
- * (the Cloudflare Worker that owns the PersonalPodDO binding) because
- * not every host that serves the PWA also routes /api/pod/* to that
- * Worker. For example `airlock.yourcommunity.forum` may have a
- * Cloudflare Worker Route pattern of `airlock.yourcommunity.forum/pod*`
- * that matches the static assets but does not match /api/pod, so
- * same-origin RPCs would 404 before reaching the Worker.
- *
- * `forum.podProviderUrl` in localStorage is only honoured if the
- * value still points at the configured Worker host — anything else is
- * treated as stale (e.g. a leftover https://pod.yourcommunity.forum
- * from the old Solid/CSS build) and ignored.
+ * Pod URL for HTTP transports. On Capacitor (mobile) the Pod runs
+ * in-process so this returns "local://forum_personal_pod" purely for
+ * display; the RPC layer (`pod-adapter.js`) never calls it then.
  */
 export function getPodProviderUrl() {
-  const fromEnv = (
-    import.meta.env.VITE_SERVER_URL ||
-    import.meta.env.VITE_POD_PROVIDER_URL ||
-    ""
-  ).replace(/\/$/, "");
-  if (fromEnv) {
-    try {
-      const envHost = new URL(fromEnv).host;
-      const stored = (localStorage.getItem("forum.podProviderUrl") || "").replace(
-        /\/$/,
-        ""
-      );
-      if (stored) {
-        try {
-          if (new URL(stored).host === envHost) return stored;
-        } catch {
-          /* malformed override — fall through to env */
-        }
-      }
-    } catch {
-      /* malformed VITE_SERVER_URL — fall through to literal value */
-    }
-    return fromEnv;
+  const platform = getPodPlatform();
+  if (platform === "android" || platform === "ios" || platform === "capacitor") {
+    return "local://forum_personal_pod";
   }
-  return (
-    (localStorage.getItem("forum.podProviderUrl") || "").replace(/\/$/, "") ||
-    (typeof window !== "undefined" ? window.location.origin : "")
-  );
+  return httpProviderUrl();
 }
 
 export function setPodProviderUrl(url) {
-  localStorage.setItem(
-    "forum.podProviderUrl",
-    (url || "").replace(/\/$/, "")
-  );
+  setHttpProviderUrl(url);
+}
+
+export function getPodOwnershipMode() {
+  return ownershipMode();
+}
+
+export function getPodRuntimePlatform() {
+  return getPodPlatform();
 }
 
 export function loadSolidSessionMeta() {
@@ -141,57 +115,16 @@ export function getSolidSession() {
 }
 
 /**
- * Resolve the session id we sign Pod RPCs with. We prefer `webId` so
- * the value is stable once the user has been provisioned, falling back
- * to `credential_id` for pre-provision calls.
- */
-function resolveSessionId() {
-  const meta = loadSolidSessionMeta();
-  if (meta?.sessionId) return meta.sessionId;
-  const signing = loadSigningMeta();
-  if (signing?.sessionId) return signing.sessionId;
-  const profile = loadMemberProfile();
-  return profile?.sessionId || null;
-}
-
-/**
- * Send a signed Pod RPC to the Worker, which forwards to the user's
- * PersonalPodDO.
+ * Send a Pod RPC. Routed through `pod-adapter.js` so the same UI works
+ * on desktop (HTTP to workerd), mobile (in-process Capacitor SQLite),
+ * and the trial pod (HTTP to airlock.yourcommunity.forum).
  *
  *   verb: "PUT" | "LIST" | "GET" | "PROVISION"
  *   path: "/civic/submissions/abc", "/journal/raw", etc.
  *   data: the JSON body to PUT (or empty for GET/LIST/PROVISION)
  */
 export async function podRpc(verb, path, data = null) {
-  const sessionId = resolveSessionId();
-  if (!sessionId) {
-    throw new Error("Sign in to your Pod first.");
-  }
-  const payload = { verb, path, data };
-  const signed = enrichSignedEnvelope(await signBundle(payload, sessionId));
-  const base = getPodProviderUrl();
-  const url = `${base}/api/pod${path === "/" ? "" : path}`;
-  let res;
-  try {
-    res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(signed),
-    });
-  } catch (e) {
-    throw new Error(`Pod RPC network error for ${url}: ${e.message}`, { cause: e });
-  }
-  let body = null;
-  try {
-    body = await res.json();
-  } catch {
-    /* tolerate non-JSON */
-  }
-  if (!res.ok) {
-    const reason = body?.reason || body?.error || res.statusText;
-    throw new Error(`Pod RPC ${verb} ${path} failed (${res.status}): ${reason}`);
-  }
-  return body;
+  return adapterPodRpc(verb, path, data);
 }
 
 /**

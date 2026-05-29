@@ -9,6 +9,12 @@
 import { POLICY_VERSION } from "./civic-vocab.js";
 import { loadMemberProfile } from "./member-store.js";
 import { podRpc } from "./solid-session.js";
+import { ownershipMode } from "./pod-adapter.js";
+
+function skipsCloudPodWrite() {
+  const mode = ownershipMode();
+  return mode === "browser-local" || mode === "local-device";
+}
 
 function requirePodSession() {
   const profile = loadMemberProfile();
@@ -22,6 +28,9 @@ export async function writeCivicSubmissionToPod(row) {
   requirePodSession();
   const id = row.receipt_id;
   if (!id) throw new Error("civic submission missing receipt_id");
+  if (skipsCloudPodWrite()) {
+    return { ok: true, id, storage: "local" };
+  }
   await podRpc("PUT", `/civic/submissions/${encodeURIComponent(id)}`, {
     zip_code: row.zip_code || null,
     kind: row.kind || null,
@@ -46,6 +55,9 @@ export async function writeJournalEntryToPod(row) {
   requirePodSession();
   const id = row.submission_id;
   if (!id) throw new Error("journal entry missing submission_id");
+  if (skipsCloudPodWrite()) {
+    return { ok: true, id, storage: "local" };
+  }
   await podRpc("PUT", `/journal/raw/${encodeURIComponent(id)}`, {
     submitted_at: row.submitted_at || new Date().toISOString(),
     raw_text: row.raw_text || "",
@@ -62,6 +74,9 @@ export async function writeBehaviorToPod(row) {
   requirePodSession();
   const id = row.behavior_id;
   if (!id) throw new Error("behavior missing behavior_id");
+  if (skipsCloudPodWrite()) {
+    return { ok: true, id, storage: "local" };
+  }
   await podRpc("PUT", `/journal/behaviors/${encodeURIComponent(id)}`, {
     submission_id: row.submission_id || null,
     category: row.category || "",
@@ -80,6 +95,9 @@ export async function writeTraitToPod(row) {
   requirePodSession();
   const id = row.psycho_id;
   if (!id) throw new Error("trait missing psycho_id");
+  if (skipsCloudPodWrite()) {
+    return { ok: true, id, storage: "local" };
+  }
   await podRpc("PUT", `/journal/traits/${encodeURIComponent(id)}`, {
     submission_id: row.submission_id || null,
     category: row.category || "",

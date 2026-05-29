@@ -1,6 +1,7 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import PersonalPod from './pod-ui.jsx' // Import your pod component
+import PersonalPod from './pod-ui.jsx'
+import TrialPodBanner from './trial-pod-banner.jsx'
 import './index.css'
 import { installSessionLock } from './session-lock.js'
 import { migrateLegacySigningKey } from './pod-signing.js'
@@ -10,6 +11,7 @@ migrateLegacySigningKey().catch(() => {})
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
+    <TrialPodBanner />
     <PersonalPod />
   </React.StrictMode>,
 )

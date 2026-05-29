@@ -9,7 +9,9 @@
 |------|----------|-----------|
 | Passkey credential id | Client + D1 WebAuthn tables | Until account deletion |
 | Pod journal, submissions, assistant | PersonalPodDO + encrypted local cache | Until sign-out wipe / member request |
-| Opt-in forum feedback | D1 `forum_feedback` | Until cooperative wipe policy |
+| Opt-in forum feedback | D1 `forum_feedback` | Max **7 days** after report publish (`contest_window_ends_at`), then hard-deleted |
+| Contest claims | D1 `forum_contest_claims` | Until resolved + row wipe |
+| Membership JWT audit | D1 `coop_memberships` | JWT TTL (default 24h) + revocation |
 | Salted member pseudonym | D1 `email_hash` column | Per cycle salt rotation |
 | AI usage counters | D1 `ai_chat_quota` | Daily buckets |
 
@@ -26,7 +28,7 @@
 ## Data subject rights
 
 - Export: Pod UI device settings (public metadata only; keys non-exportable).
-- Erasure: sign-out + cooperative wipe request; D1 row `wiped_at` when implemented.
+- Erasure: sign-out wipes Pod DO; cooperative rows auto-delete after contest window unless frozen by contest.
 
 ## Cross-border
 

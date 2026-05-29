@@ -3,6 +3,12 @@ import { clearVolatileSigningKey } from "./pod-signing.js";
 const MEMBER_KEY = "forum.member";
 const SIGNING_KEY = "forum.podSigning";
 const WRAPPED_SIGNING_KEY = "forum.podSigning.wrapped";
+// Local-first signing key persistence. The Personal Pod is device-owned
+// (on-device SQLite on mobile, a standalone trial/airlock DO in the browser),
+// so the Ed25519 signing key lives on the device. Persisting the private JWK
+// here lets the key survive a reload / session-lock so the member can sign
+// back in without dead-ending on "Signing key is locked".
+const SIGNING_PRIV_KEY = "forum.podSigning.priv";
 
 const EXPORT_KIND = "forum-personal-pod-device-key-v1";
 const EXPORT_KIND_V2 = "forum-personal-pod-device-key-v2";
@@ -26,6 +32,32 @@ export function clearMemberProfile() {
   localStorage.removeItem(MEMBER_KEY);
   localStorage.removeItem(SIGNING_KEY);
   localStorage.removeItem(WRAPPED_SIGNING_KEY);
+  localStorage.removeItem(SIGNING_PRIV_KEY);
+  clearVolatileSigningKey();
+}
+
+export function saveSigningPrivateJwk(jwk) {
+  if (!jwk) return;
+  try {
+    localStorage.setItem(SIGNING_PRIV_KEY, JSON.stringify(jwk));
+  } catch {
+    /* storage full / unavailable — key stays in-memory only this session */
+  }
+}
+
+export function loadSigningPrivateJwk() {
+  try {
+    const raw = localStorage.getItem(SIGNING_PRIV_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Drop the persisted signing key material (meta + private JWK). */
+export function clearSigningKeyStorage() {
+  localStorage.removeItem(SIGNING_KEY);
+  localStorage.removeItem(SIGNING_PRIV_KEY);
   clearVolatileSigningKey();
 }
 

@@ -1,4 +1,4 @@
-const CACHE_NAME = "forum-pod-v2-sql-only";
+const CACHE_NAME = "forum-pod-v4-webapp-local";
 const APP_SHELL = [
   "./",
   "./manifest.webmanifest",

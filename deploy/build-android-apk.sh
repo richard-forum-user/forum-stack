@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-POD_DIR="${FORUM_POD_DIR:-$HOME/Desktop/forum-pod}"
+POD_DIR="${FORUM_POD_DIR:-$HOME/Desktop/forum-stack/forum-pod}"
 ANDROID_HOME="${ANDROID_HOME:-$HOME/android-sdk}"
 
 cd "$POD_DIR"

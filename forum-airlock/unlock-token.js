@@ -142,3 +142,11 @@ export async function verifyUnlockToken(env, token, bundleSignature, db) {
 export function isPilotCredentialId(credentialId) {
   return typeof credentialId === 'string' && credentialId.startsWith('pilot-');
 }
+
+/** Browser-local / recovered Pods — no WebAuthn unlock token, Ed25519 signing only. */
+export function isLocalDeviceCredentialId(credentialId) {
+  return (
+    typeof credentialId === 'string' &&
+    (credentialId.startsWith('local-') || credentialId.startsWith('recovered-'))
+  );
+}
