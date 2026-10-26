@@ -9,3 +9,8 @@ kv_namespaces = [
 routes = [
   { pattern = "forum-egress.yourcommunity.forum", custom_domain = true }
 ]
+
+[vars]
+# Days to keep each report_<timestamp> snapshot in KV ("latest" is kept).
+# Set to 0 to keep indefinitely.
+REPORT_TTL_DAYS = "90"

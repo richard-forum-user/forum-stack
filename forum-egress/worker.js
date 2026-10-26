@@ -1,5 +1,16 @@
 import { secretsEqual } from './secret-compare.js';
 
+/** Remove any per-row submission data from report metadata. */
+function stripRowLevel(metadata) {
+  if (!metadata || typeof metadata !== "object") return metadata;
+  const out = { ...metadata };
+  if (out.ledger && typeof out.ledger === "object") {
+    const { ledger: _rows, ...aggregate } = out.ledger;
+    out.ledger = aggregate;
+  }
+  return out;
+}
+
 export default {
   async fetch(request, env) {
     if (request.method === "GET") {
@@ -57,10 +68,15 @@ export default {
       console.log(`Generated at: ${payload.metadata?.timestamp}`);
 
       if (env.FORUM_REPORTS) {
-        const key = `report_${payload.metadata.timestamp}`;
-        await env.FORUM_REPORTS.put(key, JSON.stringify(payload));
-        if (payload.metadata?.status !== "review") {
-          await env.FORUM_REPORTS.put("latest", JSON.stringify(payload));
+        // Defence in depth: never store per-row ledger data, even if an older
+        // pipeline build sends it.
+        const stored = { metadata: stripRowLevel(payload.metadata), report: payload.report };
+        const key = `report_${stored.metadata?.timestamp}`;
+        const ttlDays = Number(env.REPORT_TTL_DAYS || "90");
+        const putOpts = ttlDays > 0 ? { expirationTtl: Math.max(60, Math.round(ttlDays * 86400)) } : undefined;
+        await env.FORUM_REPORTS.put(key, JSON.stringify(stored), putOpts);
+        if (stored.metadata?.status !== "review") {
+          await env.FORUM_REPORTS.put("latest", JSON.stringify(stored));
         }
       }
 

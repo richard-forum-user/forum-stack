@@ -54,6 +54,34 @@ async function verifyAirlock(request, env) {
   return secretsEqual(secret, env.AIRLOCK_SECRET);
 }
 
+/**
+ * Aggregate-only view of a ledger: counts, categories, ZIP-3 prefixes and the
+ * SQL used. Per-row fields (receipt_id, full ZIP, timestamps, comments) are
+ * dropped so nothing row-level is stored in civic_analysis_reports, pushed to
+ * egress KV, or returned by public GET routes. Those rows exist only in
+ * forum_feedback and are covered by the 7-day hard delete.
+ */
+export function aggregateLedgerSummary(ledger) {
+  if (!ledger || typeof ledger !== 'object') return null;
+  return {
+    total: ledger.total ?? null,
+    distinctParticipants: ledger.distinctParticipants ?? null,
+    byCategory: Array.isArray(ledger.byCategory) ? ledger.byCategory : [],
+    zipPrefixCounts: ledger.zipPrefixCounts || {},
+    sql: ledger.sql || undefined,
+    maxCommentChars: ledger.maxCommentChars ?? undefined,
+    rowCount: Array.isArray(ledger.ledger) ? ledger.ledger.length : undefined,
+  };
+}
+
+/** Strip any per-row ledger from report metadata (also cleans older reports). */
+export function sanitizeReportMetadata(metadata) {
+  if (!metadata || typeof metadata !== 'object') return metadata;
+  const out = { ...metadata };
+  if (out.ledger) out.ledger = aggregateLedgerSummary(out.ledger);
+  return out;
+}
+
 /** Redact direct identifiers in published text; do not truncate length. */
 export function redactIdentifiers(text) {
   if (!text) return '';
@@ -252,7 +280,10 @@ async function pushReportToEgress(env, payload) {
         'Content-Type': 'application/json',
         'X-Forum-Secret': secret,
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        metadata: sanitizeReportMetadata(payload.metadata),
+        report: payload.report,
+      }),
     });
     const text = await res.text();
     return { pushed: res.ok, status: res.status, body: text.slice(0, 200) };
@@ -299,7 +330,7 @@ export async function runCivicAnalysis(env, options = {}) {
     disclaimer:
       'This report lists only what is in cooperative D1 forum_feedback. ' +
       'It is not a census. No generative model is used.',
-    ledger,
+    ledger: aggregateLedgerSummary(ledger),
   };
 
   const payload = { metadata, report: reportText };
@@ -368,6 +399,7 @@ export async function getLatestAnalysisReport(db) {
   } catch {
     metadata = {};
   }
+  metadata = sanitizeReportMetadata(metadata);
   return {
     metadata,
     report: row.report_text,
@@ -407,6 +439,11 @@ export async function handleCivicAnalysisRoute(request, env, url) {
   }
 
   if (request.method === 'GET' && path === `${ANALYSIS_PREFIX}/ledger`) {
+    // Row-level ledger (receipt_id, full ZIP, timestamps, optional comments)
+    // is operator-only. Public consumers use the aggregate report.
+    if (!(await verifyAirlock(request, env))) {
+      return jsonResponse({ error: 'Unauthorized' }, 401);
+    }
     const ledger = await collectLedgerFromD1(env.DB, env);
     return jsonResponse({
       source: 'forum_feedback',
