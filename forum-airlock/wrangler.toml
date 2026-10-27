@@ -11,6 +11,11 @@ ALLOW_DEV_CIVIC_PUBLISH = "0"
 CIVIC_PUBLISH_VERBATIM_COMMENTS = "0"
 MEMBERSHIP_ISSUER = "https://coop.yourcommunity.forum"
 MEMBERSHIP_TTL_SEC = "86400"
+# Paid membership (assurance tiers). Price is a one-time Stripe Price ID.
+PAID_MEMBERSHIP_DAYS = "365"
+MAX_PAID_KEYS_PER_CARD = "2"
+# STRIPE_MEMBERSHIP_PRICE_ID = "price_..."
+# MEMBERSHIP_SUCCESS_URL / MEMBERSHIP_CANCEL_URL default to <issuer>/pod/?membership=...
 # Set FORUM_AUTO_EDGE_ANALYSIS = "1" to re-run analysis after each forum feedback ingest.
 # Set ALLOW_DEV_MEMBERSHIP = "1" only on staging (skips JWT signing when keys absent).
 

@@ -144,3 +144,32 @@ export async function postForumFeedback(row, coopUrlOverride) {
 
 /** v1.4 alias. */
 export const postCooperativeExport = postForumFeedback;
+
+/**
+ * Start a paid cooperative membership for THIS pod's signing key.
+ * The coop records the key as paid after Stripe confirms payment; later
+ * submissions signed by this key are counted in the "paid" assurance tier
+ * (or "paid_zip_match" when the card-confirmed billing ZIP matches).
+ * Redirects the browser to Stripe Checkout.
+ *
+ * @param {string} turnstileToken  Cloudflare Turnstile token from the page.
+ */
+export async function startPaidMembershipCheckout(turnstileToken, coopUrlOverride) {
+  const base = (coopUrlOverride || cooperativeBaseUrl()).replace(/\/$/, "");
+  const meta = await ensurePodSigningKey();
+  const signed = await signBundle(
+    { action: "paid_membership_checkout", turnstile_token: turnstileToken || null },
+    meta.sessionId
+  );
+  const res = await fetch(`${base}/membership/checkout`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(signed),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || !data.url) {
+    throw new Error(data.error || `Checkout failed (${res.status})`);
+  }
+  window.location.assign(data.url);
+  return data;
+}

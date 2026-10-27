@@ -14,6 +14,7 @@ import {
   FORUM_FEEDBACK_MAX_COMMENT_CHARS,
   clampForumFeedbackComment,
 } from './feedback-limits.js';
+import { TIERS, TIER_LABELS, ensureAssuranceSchema } from './assurance.js';
 import { secretsEqual } from './secret-compare.js';
 
 const ANALYSIS_PREFIX = '/api/civic/analysis';
@@ -34,6 +35,9 @@ const SQL_SOURCES = {
   byCategory: `SELECT category_code, category_label, kind, COUNT(*) AS n
     FROM forum_feedback WHERE ${LEDGER_WHERE}
     GROUP BY category_code, category_label, kind ORDER BY n DESC`,
+  byTier: `SELECT COALESCE(assurance_tier, 'unverified') AS tier,
+    COUNT(*) AS n, COUNT(DISTINCT email_hash) AS participants
+    FROM forum_feedback WHERE ${LEDGER_WHERE} GROUP BY tier`,
   byZip: `SELECT zip_code, COUNT(*) AS n FROM forum_feedback
     WHERE ${LEDGER_WHERE} AND zip_code IS NOT NULL AND zip_code != ''
     GROUP BY zip_code ORDER BY n DESC`,
@@ -68,6 +72,7 @@ export function aggregateLedgerSummary(ledger) {
     distinctParticipants: ledger.distinctParticipants ?? null,
     byCategory: Array.isArray(ledger.byCategory) ? ledger.byCategory : [],
     zipPrefixCounts: ledger.zipPrefixCounts || {},
+    byTier: ledger.byTier || undefined,
     sql: ledger.sql || undefined,
     maxCommentChars: ledger.maxCommentChars ?? undefined,
     rowCount: Array.isArray(ledger.ledger) ? ledger.ledger.length : undefined,
@@ -120,6 +125,7 @@ export async function ensureAnalysisSchema(db) {
  * Read the cooperative ledger from D1 — full comment text per row.
  */
 export async function collectLedgerFromD1(db, env = null) {
+  await ensureAssuranceSchema(db);
   const totalRow = await db.prepare(SQL_SOURCES.total).first();
   const total = Number(totalRow?.n || 0);
 
@@ -129,6 +135,14 @@ export async function collectLedgerFromD1(db, env = null) {
 
   const byCategory = (await db.prepare(SQL_SOURCES.byCategory).all()).results || [];
   const byZip = (await db.prepare(SQL_SOURCES.byZip).all()).results || [];
+  const tierRows = (await db.prepare(SQL_SOURCES.byTier).all()).results || [];
+  const byTier = {};
+  for (const t of TIERS) byTier[t] = { submissions: 0, participants: 0 };
+  for (const r of tierRows) {
+    const key = TIERS.includes(r.tier) ? r.tier : 'unverified';
+    byTier[key].submissions += Number(r.n || 0);
+    byTier[key].participants += Number(r.participants || 0);
+  }
 
   const zipPrefixCounts = {};
   for (const row of byZip) {
@@ -166,6 +180,7 @@ export async function collectLedgerFromD1(db, env = null) {
       count: Number(r.n || 0),
     })),
     zipPrefixCounts,
+    byTier,
     ledger,
     sql: SQL_SOURCES,
     maxCommentChars: FORUM_FEEDBACK_MAX_COMMENT_CHARS,
@@ -187,6 +202,20 @@ export function buildFaithfulReport(ledger, reportId) {
   lines.push('');
   lines.push(`Total submissions: ${ledger.total}`);
   lines.push(`Distinct participant hashes: ${ledger.distinctParticipants}`);
+  lines.push('');
+  lines.push('### By assurance tier');
+  lines.push(
+    '_Tier is assigned by the cooperative at ingest from its own payment records; ' +
+      'participants cannot set it. No tier involves a government ID check._'
+  );
+  if (ledger.byTier) {
+    for (const t of TIERS) {
+      const v = ledger.byTier[t] || { submissions: 0, participants: 0 };
+      lines.push(`- ${TIER_LABELS[t]}: ${v.submissions} submission(s), ${v.participants} participant(s)`);
+    }
+  } else {
+    lines.push('- (tier data unavailable)');
+  }
   lines.push('');
   lines.push('### By category');
   if (!ledger.byCategory.length) {

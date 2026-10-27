@@ -18,6 +18,7 @@ import { handleCivicContestRoute } from './civic-contest.js';
 import { clampForumFeedbackComment } from './feedback-limits.js';
 import { handleMembershipRoute, handleCoopWebSocket } from './membership.js';
 import { secretsEqual } from './secret-compare.js';
+import { ensureAssuranceSchema, tierForSubmission } from './assurance.js';
 import { handleRecoveryRoute, appendRecoveryReceipt } from './recovery-routes.js';
 import { hashFeedbackPayload } from './recovery-crypto.js';
 
@@ -634,6 +635,10 @@ async function handleForumFeedbackAtEdge(request, env) {
   );
   const ingestedAt = new Date().toISOString();
 
+  // Tier comes from coop records (paid key table), never from the payload.
+  await ensureAssuranceSchema(env.DB);
+  const assuranceTier = await tierForSubmission(env.DB, verdict.publicKeyHex, norm.zip_code);
+
   await env.DB.batch([
     env.DB.prepare(`
       INSERT INTO forum_payloads (receipt_id, kind, category_code, encrypted_payload)
@@ -663,8 +668,8 @@ async function handleForumFeedbackAtEdge(request, env) {
          email_hash, domain_hash, web_id, session_id, public_key_hex,
          signature_hex, consent_at, policy_version, encrypted_blob,
          egress_status, vault_status, sync_attempts, last_error, submitted_at,
-         share_status, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         share_status, updated_at, assurance_tier)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON CONFLICT(receipt_id) DO UPDATE SET
         kind = excluded.kind,
         category_code = excluded.category_code,
@@ -681,7 +686,8 @@ async function handleForumFeedbackAtEdge(request, env) {
         last_error = excluded.last_error,
         submitted_at = excluded.submitted_at,
         share_status = excluded.share_status,
-        updated_at = excluded.updated_at
+        updated_at = excluded.updated_at,
+        assurance_tier = excluded.assurance_tier
     `).bind(
       norm.receipt_id,
       norm.kind,
@@ -705,7 +711,8 @@ async function handleForumFeedbackAtEdge(request, env) {
       norm.last_error,
       norm.submitted_at,
       norm.share_status,
-      norm.updated_at
+      norm.updated_at,
+      assuranceTier
     ),
     env.DB.prepare(`
       INSERT INTO forum_deletion_receipts
