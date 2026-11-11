@@ -146,9 +146,10 @@ async function chooseSentence(env, question, rows) {
       {
         role: "system",
         content: [
-          "You are a fact referee. You do not take a side.",
-          "You do not write vote tallies and you do not mention seats.",
-          "Choose the one numbered sentence that answers the question.",
+          "You are an existing model following written instructions for one job.",
+          "Pick the one numbered sentence that answers the question, or null.",
+          "Leave the decision to people. Do not take a side.",
+          "Do not write vote tallies and do not mention seats.",
           "Reply with JSON only: {\"sentence\": <number>} or {\"sentence\": null}.",
           "Use null when none of the sentences contain the answer.",
         ].join(" "),
@@ -160,6 +161,18 @@ async function chooseSentence(env, question, rows) {
   return parseChoice(text, rows.length);
 }
 
+const TANG_CREDIT = {
+  ours: "This worker is ours, kept for this forum.",
+  idea: "It follows Audrey Tang’s public Kami on civic.ai: an existing model, given written instructions, with one job for one place, that people here can correct.",
+  notHers: "It is not her Kami and not her model.",
+  links: [
+    { title: "Set up your own Kami", url: "https://civic.ai/kami/" },
+    { title: "Inside the Kami", url: "https://civic.ai/inside-the-kami/" },
+    { title: "The public skill", url: "https://civic.ai/.well-known/openclaw/SKILL.md" },
+    { title: "pi-kami, her local model", url: "https://pi.audreyt.org/" },
+  ],
+};
+
 function refusal(model, time, sources) {
   return {
     answer: "These sources do not contain that answer.",
@@ -167,6 +180,7 @@ function refusal(model, time, sources) {
     sources,
     model,
     time,
+    credit: TANG_CREDIT,
   };
 }
 
@@ -193,6 +207,7 @@ async function answerQuestion(env, question, sourceUrls) {
     sources: urls,
     model,
     time,
+    credit: TANG_CREDIT,
   };
   const verdict = checkReply(reply);
   if (!verdict.ok) return refusal(model, time, urls);
@@ -212,6 +227,11 @@ async function listCalls(db, host) {
   }));
 }
 
+function creditHtml(credit = TANG_CREDIT) {
+  const links = (credit.links || []).map((link) => `<a href="${esc(link.url)}">${esc(link.title)}</a>`).join(" · ");
+  return `<aside class="credit"><p>${esc(credit.ours || "")} ${esc(credit.idea || "")} ${esc(credit.notHers || "")}</p><p>${links}</p></aside>`;
+}
+
 function renderPage(host, calls, publicPath) {
   const items = calls.map((call) => {
     const record = call.record || {};
@@ -221,41 +241,50 @@ function renderPage(host, calls, publicPath) {
     const sources = (record.sources || []).map((url) => `<li><a href="${esc(url)}">${esc(url)}</a></li>`).join("");
     const body = call.kind === "ask"
       ? `<p>${esc(record.question || "")}</p>`
-      : `<p>${esc(record.answer || "")}</p>${quotes}<ul>${sources}</ul><p>Model: ${esc(record.model || "")}</p><p>Time: <time datetime="${esc(record.time || call.at)}">${esc(record.time || call.at)}</time></p>`;
+      : `<p>${esc(record.answer || "")}</p>${quotes}<ul>${sources}</ul><p>Model: ${esc(record.model || "")}</p><p>Time: <time datetime="${esc(record.time || call.at)}">${esc(record.time || call.at)}</time></p>${creditHtml(record.credit)}`;
     const hide = call.kind === "reply"
       ? `<button type="button" data-hide="${esc(call.id)}">Hide for me</button>`
       : "";
-    return `<article id="call-${esc(call.id)}" data-call="${esc(call.id)}"><p><strong>${call.kind === "ask" ? "Called" : "Referee"}</strong></p>${body}${hide}</article>`;
+    return `<article id="call-${esc(call.id)}" data-call="${esc(call.id)}"><p><strong>${call.kind === "ask" ? "Called" : "Reply"}</strong></p>${body}${hide}</article>`;
   }).join("\n");
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Civic AI referee</title>
+  <title>One job for this forum</title>
   <style>
     body { margin: 0; background: #f3f6f8; color: #152028; font: 16px/1.5 system-ui, sans-serif; }
     main { max-width: 40rem; margin: 0 auto; padding: 16px 16px 64px; }
     a { color: #152028; }
-    article, form { background: #fff; border: 1px solid #1520281a; border-radius: 14px; padding: 16px; margin: 0 0 12px; }
+    article, form, .scope { background: #fff; border: 1px solid #1520281a; border-radius: 14px; padding: 16px; margin: 0 0 12px; }
     textarea, button { font: inherit; }
     textarea { width: 100%; min-height: 5rem; }
     button { margin-top: 8px; }
+    .credit { font-size: 0.95rem; }
     .hidden { display: none; }
   </style>
 </head>
 <body>
 <main>
   <p>Watching ${esc(host)}. Silent until called.</p>
-  <h1>Civic AI referee</h1>
-  <p>Call it with a question. It quotes .gov pages and LegiScan, and it says so when those sources do not contain the answer. It does not browse the open web, write vote tallies, cite a simulated seat, or take a side.</p>
+  <h1>One job for this forum</h1>
+  ${creditHtml()}
+  <section class="scope">
+    <p><strong>One job.</strong> Quote a sentence from a .gov or LegiScan page you name, or say those pages do not contain the answer. The decision stays with people.</p>
+    <p><strong>One place.</strong> This forum, and only the pages you paste. It does not browse the open web.</p>
+    <p><strong>Asked of the model.</strong> Do not take a side, and say so when the pages do not contain the answer. Her setup page says instructions cannot make a model do this every time.</p>
+    <p><strong>Enforced here.</strong> The software reads only .gov and LegiScan. It does not publish a figure that is outside a quote, a vote tally, or a simulated seat. One model answers. No second model checks it. The model id and the time stay on the reply.</p>
+    <p><strong>Kept on the record.</strong> The question stays visible. A correction is a new reply, and the earlier one stays. You can hide a reply for yourself. You cannot delete it for everyone.</p>
+    <p><strong>Left to a group, and not filled in here.</strong> Her page asks a group to name its keepers, a review date, and a paper override ledger. The pantry example there is fictional. This page does not invent those names. Her pi-kami runs on one Mac, with a trace you can replay. This worker runs in the cloud, and the trace is this thread.</p>
+  </section>
   <p>Called from <a href="https://maine.yourcommunity.forum/quote-gov">Maine</a>, <a href="https://nh.yourcommunity.forum/quote-gov">New Hampshire</a>, <a href="https://vermont.yourcommunity.forum/quote-gov">Vermont</a>, and the <a href="https://podlink-ai-test-state.forum-community.workers.dev/quote-gov">test area</a>.</p>
   <section id="thread">${items || "<p>No calls yet.</p>"}</section>
   <form method="post" action="${esc(publicPath)}">
     <label>Question<textarea name="question" required></textarea></label>
     <label>Source URLs, one per line. Only .gov and LegiScan are read.<textarea name="sources" placeholder="https://legislature.maine.gov/legis/bills/display_ps.asp?LD=307&amp;snum=132"></textarea></label>
     <label>Correct an earlier reply by its id. The earlier reply stays.<input name="parent" style="width:100%;font:inherit"></label>
-    <button type="submit">Call the referee</button>
+    <button type="submit">Ask about these pages</button>
   </form>
 </main>
 <script>

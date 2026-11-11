@@ -93,8 +93,22 @@ if (liveUrl) {
   });
   const body = await response.json();
   const verdict = checkReply(body.reply || {});
-  if (!response.ok || !verdict.ok) {
-    failures.push(`live reply: HTTP ${response.status} ${verdict.errors.join("; ")} ${JSON.stringify(body).slice(0, 500)}`);
+  const credit = body.reply?.credit || {};
+  const creditText = [credit.ours, credit.idea, credit.notHers, ...(credit.links || []).map((link) => `${link.title} ${link.url}`)].join(" ");
+  const creditErrors = [];
+  if (!/this worker is ours/i.test(credit.ours || "")) creditErrors.push("credit does not say the worker is ours");
+  if (!/Audrey Tang/.test(credit.idea || "")) creditErrors.push("credit does not name Audrey Tang");
+  if (!/civic\.ai/.test(credit.idea || "")) creditErrors.push("credit does not name civic.ai");
+  if (!/not her Kami/i.test(credit.notHers || "")) creditErrors.push("credit does not say it is not her Kami");
+  if (!/not her model/i.test(credit.notHers || "")) creditErrors.push("credit does not say it is not her model");
+  for (const url of ["https://civic.ai/kami/", "https://civic.ai/inside-the-kami/", "https://pi.audreyt.org/"]) {
+    if (!creditText.includes(url)) creditErrors.push(`credit missing ${url}`);
+  }
+  if (/https?:\/\/(?![^\s]*\.(?:gov|legiscan\.com))/.test(body.reply?.answer || "")) {
+    creditErrors.push("the answer itself carries a non-source URL");
+  }
+  if (!response.ok || !verdict.ok || creditErrors.length) {
+    failures.push(`live reply: HTTP ${response.status} ${verdict.errors.join("; ")} ${creditErrors.join("; ")} ${JSON.stringify(body).slice(0, 500)}`);
   } else {
     console.log(JSON.stringify({ live: { status: response.status, reply: body.reply, verdict } }, null, 2));
   }
