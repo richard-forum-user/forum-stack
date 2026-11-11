@@ -227,9 +227,8 @@ async function listCalls(db, host) {
   }));
 }
 
-function creditHtml(credit = TANG_CREDIT) {
-  const links = (credit.links || []).map((link) => `<a href="${esc(link.url)}">${esc(link.title)}</a>`).join(" · ");
-  return `<aside class="credit"><p>${esc(credit.ours || "")} ${esc(credit.idea || "")} ${esc(credit.notHers || "")}</p><p>${links}</p></aside>`;
+function creditHtml() {
+  return `<p class="credit">This worker is ours. It cites <a href="https://civic.ai/kami/">Audrey Tang’s civic.ai Kami</a> and is not her system.</p>`;
 }
 
 function renderPage(host, calls, publicPath) {
@@ -241,7 +240,7 @@ function renderPage(host, calls, publicPath) {
     const sources = (record.sources || []).map((url) => `<li><a href="${esc(url)}">${esc(url)}</a></li>`).join("");
     const body = call.kind === "ask"
       ? `<p>${esc(record.question || "")}</p>`
-      : `<p>${esc(record.answer || "")}</p>${quotes}<ul>${sources}</ul><p>Model: ${esc(record.model || "")}</p><p>Time: <time datetime="${esc(record.time || call.at)}">${esc(record.time || call.at)}</time></p>${creditHtml(record.credit)}`;
+      : `<p>${esc(record.answer || "")}</p>${quotes}<ul>${sources}</ul><p>Model: ${esc(record.model || "")}</p><p>Time: <time datetime="${esc(record.time || call.at)}">${esc(record.time || call.at)}</time></p>`;
     const hide = call.kind === "reply"
       ? `<button type="button" data-hide="${esc(call.id)}">Hide for me</button>`
       : "";
@@ -270,15 +269,7 @@ function renderPage(host, calls, publicPath) {
   <p>Watching ${esc(host)}. Silent until called.</p>
   <h1>One job for this forum</h1>
   ${creditHtml()}
-  <section class="scope">
-    <p><strong>One job.</strong> Quote a sentence from a .gov or LegiScan page you name, or say those pages do not contain the answer. The decision stays with people.</p>
-    <p><strong>One place.</strong> This forum, and only the pages you paste. It does not browse the open web.</p>
-    <p><strong>Asked of the model.</strong> Do not take a side, and say so when the pages do not contain the answer. Her setup page says instructions cannot make a model do this every time.</p>
-    <p><strong>Enforced here.</strong> The software reads only .gov and LegiScan. It does not publish a figure that is outside a quote, a vote tally, or a simulated seat. One model answers. No second model checks it. The model id and the time stay on the reply.</p>
-    <p><strong>Kept on the record.</strong> The question stays visible. A correction is a new reply, and the earlier one stays. You can hide a reply for yourself. You cannot delete it for everyone.</p>
-    <p><strong>Left to a group, and not filled in here.</strong> Her page asks a group to name its keepers, a review date, and a paper override ledger. The pantry example there is fictional. This page does not invent those names. Her pi-kami runs on one Mac, with a trace you can replay. This worker runs in the cloud, and the trace is this thread.</p>
-  </section>
-  <p>Called from <a href="https://maine.yourcommunity.forum/quote-gov">Maine</a>, <a href="https://nh.yourcommunity.forum/quote-gov">New Hampshire</a>, <a href="https://vermont.yourcommunity.forum/quote-gov">Vermont</a>, and the <a href="https://podlink-ai-test-state.forum-community.workers.dev/quote-gov">test area</a>.</p>
+  <p>It quotes a .gov or LegiScan page you name, or says those pages do not contain the answer.</p>
   <section id="thread">${items || "<p>No calls yet.</p>"}</section>
   <form method="post" action="${esc(publicPath)}">
     <label>Question<textarea name="question" required></textarea></label>
