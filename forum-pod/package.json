@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "vendor:civic-ai": "node scripts/vendor-civic-ai.mjs",
+    "harness:civic-referee": "node scripts/civic-referee-harness.mjs",
     "build": "npm run vendor:civic-ai && vite build",
     "build:pwa": "npm run vendor:civic-ai && VITE_BASE=/pod/ vite build",
     "build:android": "npm run vendor:civic-ai && VITE_BASE=./ vite build && npx cap sync android",
