@@ -139,6 +139,26 @@ Preferred-Languages: en
 Canonical: https://pod.yourcommunity.forum/.well-known/security.txt
 `;
 
+async function civicRefereePage(request, env) {
+  const incoming = new URL(request.url);
+  if (incoming.pathname !== '/quote-gov' && !incoming.pathname.startsWith('/quote-gov/')) return null;
+  if (env.CIVIC_REFEREE) {
+    const suffix = incoming.pathname === '/quote-gov' ? '' : incoming.pathname.slice('/quote-gov'.length);
+    const dest = new URL(`/civic-ai${suffix}${incoming.search}`, 'https://referee.internal/');
+    const headers = new Headers(request.headers);
+    headers.set('x-forum-host', incoming.host);
+    headers.set('x-public-path', '/quote-gov');
+    const init = { method: request.method, headers, redirect: 'manual' };
+    if (request.method !== 'GET' && request.method !== 'HEAD') init.body = await request.arrayBuffer();
+    return env.CIVIC_REFEREE.fetch(new Request(dest.toString(), init));
+  }
+  const src = `https://podlink-civic-referee.forum-community.workers.dev/civic-ai?forum=${encodeURIComponent(incoming.host)}`;
+  const html = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>Civic AI referee</title><style>html,body,iframe{margin:0;border:0;width:100%;height:100%}</style></head><body><iframe title="Civic AI referee" src="${src}"></iframe></body></html>`;
+  return new Response(html, {
+    headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' },
+  });
+}
+
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
@@ -146,6 +166,9 @@ export default {
     if (request.method === 'OPTIONS') {
       return new Response(null, { status: 204, headers: CORS });
     }
+
+    const civicReply = await civicRefereePage(request, env);
+    if (civicReply) return civicReply;
 
     if (url.pathname === '/' && request.method === 'GET') {
       return Response.redirect(`${url.origin}/pod`, 302);

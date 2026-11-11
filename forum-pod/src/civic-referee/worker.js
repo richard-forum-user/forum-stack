@@ -37,8 +37,21 @@ async function ensureSchema(db) {
   `).run();
 }
 
+const FORUM_HOSTS = [
+  "maine.yourcommunity.forum",
+  "nh.yourcommunity.forum",
+  "vermont.yourcommunity.forum",
+  "podlink-ai-test-state.forum-community.workers.dev",
+  "podlink-civic-referee.forum-community.workers.dev",
+];
+
+function claimedForum(request) {
+  const claimed = request.headers.get("x-forum-host") || new URL(request.url).searchParams.get("forum") || "";
+  return FORUM_HOSTS.includes(claimed) ? claimed : "";
+}
+
 function forumHost(request) {
-  return (request.headers.get("x-forum-host") || new URL(request.url).host || "referee").slice(0, 200);
+  return claimedForum(request) || new URL(request.url).host || "referee";
 }
 
 function htmlToText(html) {
@@ -199,7 +212,7 @@ async function listCalls(db, host) {
   }));
 }
 
-function renderPage(host, calls) {
+function renderPage(host, calls, publicPath) {
   const items = calls.map((call) => {
     const record = call.record || {};
     const quotes = (record.quotes || []).map((quote) =>
@@ -236,9 +249,9 @@ function renderPage(host, calls) {
   <p>Watching ${esc(host)}. Silent until called.</p>
   <h1>Civic AI referee</h1>
   <p>Call it with a question. It quotes .gov pages and LegiScan, and it says so when those sources do not contain the answer. It does not browse the open web, write vote tallies, cite a simulated seat, or take a side.</p>
-  <p>Called from <a href="https://maine.yourcommunity.forum/civic-ai">Maine</a>, <a href="https://nh.yourcommunity.forum/civic-ai">New Hampshire</a>, <a href="https://vermont.yourcommunity.forum/civic-ai">Vermont</a>, and the <a href="https://podlink-ai-test-state.forum-community.workers.dev/civic-ai">test area</a>.</p>
+  <p>Called from <a href="https://maine.yourcommunity.forum/quote-gov">Maine</a>, <a href="https://nh.yourcommunity.forum/quote-gov">New Hampshire</a>, <a href="https://vermont.yourcommunity.forum/quote-gov">Vermont</a>, and the <a href="https://podlink-ai-test-state.forum-community.workers.dev/quote-gov">test area</a>.</p>
   <section id="thread">${items || "<p>No calls yet.</p>"}</section>
-  <form method="post" action="/civic-ai">
+  <form method="post" action="${esc(publicPath)}">
     <label>Question<textarea name="question" required></textarea></label>
     <label>Source URLs, one per line. Only .gov and LegiScan are read.<textarea name="sources" placeholder="https://legislature.maine.gov/legis/bills/display_ps.asp?LD=307&amp;snum=132"></textarea></label>
     <label>Correct an earlier reply by its id. The earlier reply stays.<input name="parent" style="width:100%;font:inherit"></label>
@@ -299,13 +312,27 @@ async function handleCall(request, env) {
     `INSERT INTO calls (id, forum_host, created_at, kind, parent_id, body) VALUES (?, ?, ?, 'reply', ?, ?)`
   ).bind(replyId, host, reply.time, askId, JSON.stringify(reply)).run();
   if (type.includes("application/json")) return json({ askId, replyId, reply });
-  return Response.redirect(new URL("/civic-ai", request.url), 303);
+  const calledFrom = request.headers.get("x-forum-host") || "";
+  const headerPath = request.headers.get("x-public-path") || "";
+  const claimed = claimedForum(request);
+  const here = new URL(request.url);
+  let back;
+  if (FORUM_HOSTS.includes(calledFrom) && headerPath) back = `https://${calledFrom}${headerPath}`;
+  else if (claimed && claimed !== here.host) back = `https://${here.host}/civic-ai?forum=${encodeURIComponent(claimed)}`;
+  else back = new URL(headerPath || "/civic-ai", request.url).toString();
+  return Response.redirect(back, 303);
 }
 
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    const path = url.pathname === "/" ? "/civic-ai" : url.pathname;
+    const claimed = claimedForum(request);
+    const headerPath = request.headers.get("x-public-path") || "";
+    const publicPath = headerPath || (claimed && claimed !== url.host ? `/civic-ai?forum=${encodeURIComponent(claimed)}` : "/civic-ai");
+    let path = url.pathname === "/" ? "/civic-ai" : url.pathname;
+    if (path === "/referee" || path.startsWith("/referee/")) path = "/civic-ai" + path.slice("/referee".length);
+    if (path === "/fact-check" || path.startsWith("/fact-check/")) path = "/civic-ai" + path.slice("/fact-check".length);
+    if (path === "/civic-ai/call") path = "/civic-ai";
     if (path === "/civic-ai/status" && request.method === "GET") {
       return json({ silent: true, model: modelId(env) });
     }
@@ -316,7 +343,7 @@ export default {
     if (path === "/civic-ai" && request.method === "GET") {
       await ensureSchema(env.DB);
       const calls = await listCalls(env.DB, forumHost(request));
-      return new Response(renderPage(forumHost(request), calls), {
+      return new Response(renderPage(forumHost(request), calls, publicPath), {
         headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" },
       });
     }
