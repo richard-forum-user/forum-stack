@@ -153,7 +153,7 @@ async function civicRefereePage(request, env) {
     return env.CIVIC_REFEREE.fetch(new Request(dest.toString(), init));
   }
   const src = `https://podlink-civic-referee.forum-community.workers.dev/civic-ai?forum=${encodeURIComponent(incoming.host)}`;
-  const html = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>One job for this forum</title><style>body{margin:0;font:16px/1.5 system-ui,sans-serif;color:#152028}p{margin:0;padding:12px 16px}iframe{border:0;width:100%;height:calc(100vh - 4.5rem)}</style></head><body><p>This worker is ours. It cites <a href="https://civic.ai/kami/">Audrey Tang’s civic.ai Kami</a> and is not her system.</p><iframe title="Fact reply for this forum" src="${src}"></iframe></body></html>`;
+  const html = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><title>One job for this forum</title><style>body{margin:0}iframe{border:0;width:100%;height:100vh}</style></head><body><iframe title="Fact reply for this forum" src="${src}"></iframe></body></html>`;
   return new Response(html, {
     headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' },
   });
