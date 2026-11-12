@@ -24,6 +24,6 @@ npm run vendor:civic-ai
 npm run build
 ```
 
-The Assistant tab is gated in Settings. Conversations stay in this device's
-IndexedDB and are cleared on sign-out; the Worker logs quota and token counts
-only.
+The Assistant tab is gated in Settings. Conversations are stored in the
+Personal Pod and mirrored in this device's IndexedDB. Sign-out clears both.
+The Worker logs quota and token counts only, not the prompt text.

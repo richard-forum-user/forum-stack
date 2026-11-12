@@ -84,10 +84,6 @@ export function pickRpConfig(request, env, body) {
   };
 }
 
-export function getRpConfig(request, env) {
-  return pickRpConfig(request, env, null);
-}
-
 async function ensureWebAuthnSchema(db) {
   await db.batch([
     db.prepare(`
@@ -346,11 +342,4 @@ export async function handleWebAuthnRoute(request, env, url, issueUnlockToken) {
   }
 
   return null;
-}
-
-export async function credentialExists(db, credentialId) {
-  if (!db || !credentialId) return false;
-  await ensureWebAuthnSchema(db);
-  const row = await loadCredential(db, credentialId);
-  return !!row;
 }

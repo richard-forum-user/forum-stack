@@ -307,13 +307,21 @@ async function handleCall(request, env) {
   let sources = [];
   let parent = "";
   const type = request.headers.get("content-type") || "";
+  const rawBytes = await request.arrayBuffer();
+  if (rawBytes.byteLength > 32_000) return json({ error: "payload_too_large" }, 413);
+  const rawText = new TextDecoder().decode(rawBytes);
   if (type.includes("application/json")) {
-    const body = await request.json();
+    let body;
+    try {
+      body = JSON.parse(rawText || "{}");
+    } catch {
+      return json({ error: "invalid_json" }, 400);
+    }
     question = String(body.question || "");
     sources = Array.isArray(body.sources) ? body.sources.map(String) : [];
     parent = String(body.parent || "");
   } else {
-    const form = await request.formData();
+    const form = new URLSearchParams(rawText);
     question = String(form.get("question") || "");
     sources = String(form.get("sources") || "").split(/\s+/).filter(Boolean);
     parent = String(form.get("parent") || "");

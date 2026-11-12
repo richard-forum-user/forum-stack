@@ -18,7 +18,7 @@ export function sourceHostAllowed(hostname) {
 export function urlAllowed(raw) {
   try {
     const url = new URL(raw);
-    if (url.protocol !== "https:" && url.protocol !== "http:") return false;
+    if (url.protocol !== "https:") return false;
     return sourceHostAllowed(url.hostname);
   } catch {
     return false;

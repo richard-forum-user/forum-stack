@@ -390,16 +390,7 @@ export async function handleCivicAnalysisRoute(request, env, url) {
   const path = url.pathname.replace(/\/$/, '') || ANALYSIS_PREFIX;
 
   if (request.method === 'GET' && (path === ANALYSIS_PREFIX || path === `${ANALYSIS_PREFIX}/latest`)) {
-    const ledger = await collectLedgerFromD1(env.DB, env);
-    const minSubmissions = Number(env.CIVIC_ANALYSIS_MIN_SUBMISSIONS || '1');
-    let latest = await getLatestAnalysisReport(env.DB);
-    const snapshotCount = Number(
-      latest?.metadata?.opt_in_count ?? latest?.metadata?.volume ?? 0
-    );
-    if (ledger.total >= minSubmissions && ledger.total > snapshotCount) {
-      await runCivicAnalysis(env, { trigger: 'get_refresh', publish: true });
-      latest = await getLatestAnalysisReport(env.DB);
-    }
+    const latest = await getLatestAnalysisReport(env.DB);
     if (!latest) {
       return jsonResponse({ error: 'No analysis report has been generated yet' }, 404);
     }
