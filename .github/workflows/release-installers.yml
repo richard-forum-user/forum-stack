@@ -93,7 +93,7 @@ jobs:
           mkdir -p desktop/src-tauri/airlock
           for f in secure-worker.js pod-do.js pod-signing-web.js session-binding.js \
             unlock-token.js rate-limit.js do-guards.js webauthn-server.js \
-            feedback-limits.js secret-compare.js member-hash.js membership-verify.js \
+            feedback-limits.js secret-compare.js membership-verify.js \
             membership-routes.js pod-sync.js ai-chat.js civic-ai-system-prompt.js; do
             cp "forum-pod-airlock/$f" "desktop/src-tauri/airlock/"
           done

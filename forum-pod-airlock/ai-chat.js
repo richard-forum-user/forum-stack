@@ -36,23 +36,23 @@ async function assertSessionBinding(bundle) {
 }
 
 async function assertUnlocked(env, bundle) {
-  if (!env.UNLOCK_TOKEN_KEY) {
-    return { ok: true, skipped: true };
-  }
   const deviceCredentialId = bundle.deviceCredentialId || null;
+  if (isLocalDeviceCredentialId(deviceCredentialId)) {
+    return { ok: true, local: true };
+  }
+  if (!env.UNLOCK_TOKEN_KEY) {
+    return { ok: false, reason: 'unlock_not_configured' };
+  }
   if (isPilotCredentialId(deviceCredentialId)) {
     if (env.ALLOW_PILOT_BUNDLES === '1') {
       return { ok: true, pilot: true };
     }
     return { ok: false, reason: 'pilot_bundles_disabled' };
   }
-  if (isLocalDeviceCredentialId(deviceCredentialId)) {
-    return { ok: true, local: true };
-  }
   if (!deviceCredentialId) {
     return { ok: false, reason: 'missing_device_credential_id' };
   }
-  const verdict = await verifyUnlockToken(env, bundle.unlockToken);
+  const verdict = await verifyUnlockToken(env, bundle.unlockToken, bundle.signature, env.DB);
   if (!verdict.ok) {
     return verdict;
   }

@@ -48,12 +48,12 @@ async function assertSessionBinding(bundle) {
 }
 
 async function assertUnlocked(env, bundle) {
-  if (!env.UNLOCK_TOKEN_KEY) {
-    return { ok: true, skipped: true };
-  }
   const deviceCredentialId = bundle.deviceCredentialId || null;
   if (isLocalDeviceCredentialId(deviceCredentialId)) {
     return { ok: true, local_device: true };
+  }
+  if (!env.UNLOCK_TOKEN_KEY) {
+    return { ok: false, reason: 'unlock_not_configured' };
   }
   if (isPilotCredentialId(deviceCredentialId)) {
     if (env.ALLOW_PILOT_BUNDLES === '1') {
@@ -109,10 +109,14 @@ export default {
     }
 
     if (url.pathname.startsWith('/membership')) {
+      const rlMember = await applyIngressRateLimit(request, env, 'membership', 30, 60_000);
+      if (rlMember) return rlMember;
       return handleMembershipRoute(request, env, url);
     }
 
     if (url.pathname.startsWith('/api/recovery')) {
+      const rlRecovery = await applyIngressRateLimit(request, env, 'recovery', 20, 60_000);
+      if (rlRecovery) return rlRecovery;
       return handleRecoveryRoute(request, env, url);
     }
 
@@ -125,6 +129,8 @@ export default {
       url.pathname === '/api/forum/feedback/status' ||
       url.pathname === '/api/forum/feedback/receipt'
     ) {
+      const rlContest = await applyIngressRateLimit(request, env, 'civic_contest', 30, 60_000);
+      if (rlContest) return rlContest;
       return handleCivicContestRoute(request, env, url);
     }
 
@@ -179,12 +185,23 @@ export default {
     }
 
     if (url.pathname === '/api/register-member' && request.method === 'POST') {
+      const rlReg = await applyIngressRateLimit(request, env, 'register_member', 20, 60_000);
+      if (rlReg) return rlReg;
       if (!env.DB) {
         return jsonResponse({ error: 'D1 binding DB is not configured' }, 503);
       }
+      let raw;
+      try {
+        raw = await request.text();
+      } catch {
+        return jsonResponse({ error: 'invalid_json' }, 400);
+      }
+      if (raw.length > 8192) {
+        return jsonResponse({ error: 'payload_too_large' }, 413);
+      }
       let data;
       try {
-        data = await request.json();
+        data = JSON.parse(raw);
       } catch {
         return jsonResponse({ error: 'invalid_json' }, 400);
       }
@@ -193,7 +210,12 @@ export default {
     }
 
     if (url.pathname === '/api/register-signing-key' && request.method === 'POST') {
+      const rlKey = await applyIngressRateLimit(request, env, 'register_signing_key', 20, 60_000);
+      if (rlKey) return rlKey;
       const body = await request.text();
+      if (body.length > 4096) {
+        return jsonResponse({ error: 'payload_too_large' }, 413);
+      }
       let data;
       try {
         data = JSON.parse(body);
@@ -206,6 +228,12 @@ export default {
           { error: 'session_id or web_id and public_key_hex required' },
           400
         );
+      }
+      if (!/^[0-9a-fA-F]{64}$/.test(String(data.public_key_hex))) {
+        return jsonResponse({ error: 'invalid_public_key_hex' }, 400);
+      }
+      if (String(sid).length > 80) {
+        return jsonResponse({ error: 'session_id_too_long' }, 400);
       }
       const expectedSid = await expectedSessionIdFromPubkey(data.public_key_hex);
       if (expectedSid && sid !== expectedSid && data.session_id !== expectedSid) {
@@ -470,14 +498,26 @@ async function ensureForumD1Schema(db) {
 }
 
 async function registerForumMember(db, data = {}) {
-  const credentialId = data.credential_id;
-  const publicKey = data.public_key;
-  const webId = data.web_id || null;
-  const sessionId = data.session_id || null;
-  const publicKeyHex = data.public_key_hex || null;
+  const credentialId = data.credential_id == null ? '' : String(data.credential_id);
+  const publicKey = data.public_key == null ? '' : String(data.public_key);
+  const webId = data.web_id ? String(data.web_id) : null;
+  const sessionId = data.session_id ? String(data.session_id) : null;
+  const publicKeyHex = data.public_key_hex ? String(data.public_key_hex) : null;
 
   if (!credentialId || !publicKey) {
     return { status: 400, body: { error: 'Missing WebAuthn parameters' } };
+  }
+  if (credentialId.length > 512 || publicKey.length > 4096) {
+    return { status: 400, body: { error: 'field_too_long' } };
+  }
+  if (webId && webId.length > 256) {
+    return { status: 400, body: { error: 'field_too_long' } };
+  }
+  if (sessionId && sessionId.length > 80) {
+    return { status: 400, body: { error: 'field_too_long' } };
+  }
+  if (publicKeyHex && !/^[0-9a-fA-F]{64}$/.test(publicKeyHex)) {
+    return { status: 400, body: { error: 'invalid_public_key_hex' } };
   }
 
   await ensureForumD1Schema(db);
@@ -553,9 +593,18 @@ async function handleForumFeedbackAtEdge(request, env) {
     return { status: 500, body: { message: 'D1 binding DB is not configured' } };
   }
 
+  let raw;
+  try {
+    raw = await request.text();
+  } catch {
+    return { status: 400, body: { message: 'invalid_json' } };
+  }
+  if (raw.length > 65_536) {
+    return { status: 413, body: { message: 'payload_too_large' } };
+  }
   let outer;
   try {
-    outer = await request.json();
+    outer = JSON.parse(raw);
   } catch {
     return { status: 400, body: { message: 'invalid_json' } };
   }
@@ -618,6 +667,12 @@ async function handleForumFeedbackAtEdge(request, env) {
   }
   if (!norm.receipt_id || !norm.comment) {
     return { status: 400, body: { message: 'receipt_id and comment are required' } };
+  }
+  if (String(norm.receipt_id).length > 64) {
+    return { status: 400, body: { message: 'receipt_id_too_long' } };
+  }
+  if (norm.zip_code && String(norm.zip_code).length > 16) {
+    return { status: 400, body: { message: 'zip_code_too_long' } };
   }
 
   const webId = payload.webId || verdict.sessionId;

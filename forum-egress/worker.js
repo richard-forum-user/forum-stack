@@ -52,14 +52,33 @@ export default {
     }
 
     try {
-      const payload = await request.json();
-      console.log(`Received report for: ${payload.metadata?.project}`);
-      console.log(`Generated at: ${payload.metadata?.timestamp}`);
+      const raw = await request.text();
+      if (raw.length > 1_000_000) {
+        return new Response(JSON.stringify({ error: "payload_too_large" }), {
+          status: 413,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+      const payload = JSON.parse(raw);
+      const metadata = payload?.metadata;
+      const timestamp = metadata?.timestamp;
+      if (!metadata || typeof timestamp !== "string" || timestamp.length > 64 || !payload.report) {
+        return new Response(JSON.stringify({ error: "invalid_report" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+      if (typeof payload.report !== "string" || payload.report.length > 900_000) {
+        return new Response(JSON.stringify({ error: "invalid_report" }), {
+          status: 400,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
 
       if (env.FORUM_REPORTS) {
-        const key = `report_${payload.metadata.timestamp}`;
+        const key = `report_${timestamp.replace(/[^0-9A-Za-z:._+-]/g, "_")}`;
         await env.FORUM_REPORTS.put(key, JSON.stringify(payload));
-        if (payload.metadata?.status !== "review") {
+        if (metadata.status !== "review") {
           await env.FORUM_REPORTS.put("latest", JSON.stringify(payload));
         }
       }
@@ -72,10 +91,9 @@ export default {
         status: 200,
         headers: { "Content-Type": "application/json" }
       });
-    } catch (err) {
+    } catch {
       return new Response(JSON.stringify({
-        error: "Failed to process payload",
-        details: err.message
+        error: "Failed to process payload"
       }), {
         status: 400,
         headers: { "Content-Type": "application/json" }

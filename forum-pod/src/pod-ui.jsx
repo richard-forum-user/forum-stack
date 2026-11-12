@@ -1835,7 +1835,7 @@ export default function PersonalPod() {
                   Cooperative aggregate (edge)
                 </div>
                 <p style={{ fontSize: 11, color: "#8b949e", lineHeight: 1.5, marginBottom: 10 }}>
-                  Opt-in submissions in cooperative D1 are aggregated with SQL only — counts plus category breakdowns. The report refreshes automatically after each sync; tap below to load the latest snapshot.
+                  Opt-in submissions in cooperative D1 are aggregated with SQL only — counts plus category breakdowns. A new snapshot is built when a submission is accepted. Tap below to load the latest one.
                 </p>
                 <button
                   type="button"

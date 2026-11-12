@@ -9,7 +9,7 @@ public cooperative summaries. Personal Pod data is never read for this path.
 | Principle | Implementation |
 |-----------|----------------|
 | Single source of truth | D1 `forum_feedback` only |
-| Full context | Every row’s full `comment` (after identifier redaction) |
+| Full context | Counts, categories, and ZIP prefixes. Verbatim comments only when `CIVIC_PUBLISH_VERBATIM_COMMENTS` is `"1"` |
 | No hallucination | **No Workers AI** — no narrative synthesis, sentiment, or bridging scores |
 | Length cap | **Pod** enforces `FORUM_FEEDBACK_MAX_COMMENT_CHARS` (2000); Worker clamps again on ingest |
 | Cannot answer faithfully | Report states that explicitly when counts are low or a metric is not in SQL |
@@ -25,7 +25,7 @@ public cooperative summaries. Personal Pod data is never read for this path.
 ### Run analysis (operator)
 
 ```bash
-curl -sS -X POST "https://secure-worker.forum-community.workers.dev/api/civic/analysis/run" \
+curl -sS -X POST "https://coop.yourcommunity.forum/api/civic/analysis/run" \
   -H "Content-Type: application/json" \
   -H "X-Airlock-Secret: $AIRLOCK_SECRET" \
   -d '{"trigger":"manual","publish":true}'
@@ -33,7 +33,7 @@ curl -sS -X POST "https://secure-worker.forum-community.workers.dev/api/civic/an
 
 ### Publish latest to forum-egress Worker
 
-Set secrets on `secure-worker`:
+Set secrets on the `coop-pipeline` worker (`forum-airlock/`):
 
 ```bash
 npx wrangler secret put FORUM_EGRESS_URL   # e.g. https://forum-egress.yourcommunity.forum
@@ -65,7 +65,7 @@ D1 `forum_feedback`.
 ## What the report contains
 
 1. SQL aggregate counts (total, distinct participant hashes, by category, ZIP prefixes).
-2. **Full submission ledger** — one section per `receipt_id` with verbatim comment text.
+2. **Submission index** — receipt ids and counts. Verbatim comment text is included only when `CIVIC_PUBLISH_VERBATIM_COMMENTS` is `"1"`.
 3. The exact SQL queries used (reproducible).
 4. A **faithfulness boundary** section listing what cannot be claimed from D1 alone.
 
@@ -84,4 +84,4 @@ Published reports include opt-in cooperative comments (length-capped at submit).
 | `ALLOW_DEV_CIVIC_PUBLISH` | `0` | Deprecated; dev-push endpoint removed |
 | `FORUM_FEEDBACK_MAX_COMMENT_CHARS` | `2000` (code) | Documented in `feedback-limits.js` / `civic-vocab.js` |
 
-Workers AI (`[ai]` binding) is **not** used by civic analysis. The binding remains for other features (e.g. Kami chat proxy).
+Workers AI is not used by civic analysis. This worker has no `[ai]` binding. Kami chat is the separate Pod worker, which proxies signed chat to the cooperative GPU.

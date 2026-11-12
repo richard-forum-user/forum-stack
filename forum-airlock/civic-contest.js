@@ -4,7 +4,6 @@
 
 import { verifySignedBundle } from './pod-signing-web.js';
 import { sessionIdMatchesPubkey } from './session-binding.js';
-import { secretsEqual } from './secret-compare.js';
 
 const CORS = {
   'Access-Control-Allow-Origin': '*',
@@ -31,6 +30,9 @@ export async function handleCivicContestRoute(request, env, url) {
     if (!receiptId || !env.DB) {
       return json({ error: 'receipt_id required' }, 400);
     }
+    if (receiptId.length > 64) {
+      return json({ error: 'field_too_long' }, 400);
+    }
     const row = await env.DB.prepare(
       `SELECT receipt_id, payload_sha256, ingested_at, report_id, wiped_at
        FROM forum_deletion_receipts WHERE receipt_id = ?`
@@ -47,6 +49,9 @@ export async function handleCivicContestRoute(request, env, url) {
     const receiptId = url.searchParams.get('receipt_id');
     if (!receiptId || !env.DB) {
       return json({ error: 'receipt_id required' }, 400);
+    }
+    if (receiptId.length > 64) {
+      return json({ error: 'field_too_long' }, 400);
     }
     const row = await env.DB.prepare(
       `SELECT receipt_id, egress_status, contest_window_ends_at, wiped_at
@@ -84,9 +89,18 @@ export async function handleCivicContestRoute(request, env, url) {
     return json({ error: 'D1 not configured' }, 503);
   }
 
+  let raw;
+  try {
+    raw = await request.text();
+  } catch {
+    return json({ error: 'invalid_json' }, 400);
+  }
+  if (raw.length > 16_384) {
+    return json({ error: 'payload_too_large' }, 413);
+  }
   let outer;
   try {
-    outer = await request.json();
+    outer = JSON.parse(raw);
   } catch {
     return json({ error: 'invalid_json' }, 400);
   }
@@ -101,11 +115,34 @@ export async function handleCivicContestRoute(request, env, url) {
   }
 
   const payload = verdict.payload || outer;
-  const reportId = payload.report_id;
-  const receiptId = payload.receipt_id;
-  const claimText = payload.claim_text;
+  const reportId = payload.report_id == null ? '' : String(payload.report_id);
+  const receiptId = payload.receipt_id == null ? '' : String(payload.receipt_id);
+  const claimText = payload.claim_text == null ? '' : String(payload.claim_text).trim();
   if (!reportId || !receiptId || !claimText) {
     return json({ error: 'report_id, receipt_id, claim_text required' }, 400);
+  }
+  if (reportId.length > 80 || receiptId.length > 64 || claimText.length > 2000) {
+    return json({ error: 'field_too_long' }, 400);
+  }
+
+  const row = await env.DB.prepare(
+    `SELECT receipt_id, public_key_hex, contest_window_ends_at, wiped_at
+     FROM forum_feedback WHERE receipt_id = ?`
+  )
+    .bind(receiptId)
+    .first();
+  if (!row) {
+    return json({ error: 'receipt_not_found' }, 404);
+  }
+  if (row.wiped_at) {
+    return json({ error: 'already_wiped' }, 409);
+  }
+  if (!row.public_key_hex || row.public_key_hex !== verdict.publicKeyHex) {
+    return json({ error: 'receipt_owner_mismatch' }, 403);
+  }
+  const nowSql = new Date().toISOString().slice(0, 19).replace('T', ' ');
+  if (!row.contest_window_ends_at || row.contest_window_ends_at <= nowSql) {
+    return json({ error: 'contest_window_closed' }, 409);
   }
 
   const claimId = crypto.randomUUID();

@@ -7,6 +7,7 @@
  */
 
 import { canonicalise } from './recovery-crypto.js';
+import { secretsEqual } from './secret-compare.js';
 
 const REBIND_TTL_MS = 15 * 60 * 1000;
 const CHALLENGE_TTL_MS = 5 * 60 * 1000;
@@ -147,7 +148,7 @@ export class RecoveryDO {
       return json({ error: 'recovery_identity_mismatch' }, 409);
     }
     const challenge = record.pending_challenge;
-    if (!challenge || challenge.nonce !== nonce) {
+    if (!challenge || !(await secretsEqual(nonce, challenge.nonce))) {
       return json({ error: 'invalid_challenge' }, 401);
     }
     if (Date.now() > challenge.expires_at) {
@@ -205,7 +206,7 @@ export class RecoveryDO {
     const { rebind_token, new_device_pubkey_hex } = body || {};
     const record = await this.loadState();
     const pending = record.pending_rebind;
-    if (!pending || pending.token !== rebind_token) {
+    if (!pending || !(await secretsEqual(rebind_token, pending.token))) {
       return json({ error: 'invalid_rebind_token' }, 401);
     }
     if (Date.now() > pending.expires_at) {

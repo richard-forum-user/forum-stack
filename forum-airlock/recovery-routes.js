@@ -9,7 +9,7 @@
  */
 
 import { verifySignedBundle } from './pod-signing-web.js';
-import { sessionIdMatchesPubkey } from './session-binding.js';
+import { expectedSessionIdFromPubkey, sessionIdMatchesPubkey } from './session-binding.js';
 import {
   canonicalise,
   recoveryIdFromPubHex,
@@ -27,6 +27,26 @@ function json(body, status = 200) {
     status,
     headers: { 'Content-Type': 'application/json', ...CORS },
   });
+}
+
+const MAX_RECOVERY_BODY = 16_384;
+const ED25519_HEX = /^[0-9a-fA-F]{64}$/;
+
+async function readRecoveryJson(request) {
+  let text;
+  try {
+    text = await request.text();
+  } catch {
+    return { error: json({ error: 'invalid_json' }, 400) };
+  }
+  if (text.length > MAX_RECOVERY_BODY) {
+    return { error: json({ error: 'payload_too_large' }, 413) };
+  }
+  try {
+    return { body: text ? JSON.parse(text) : {} };
+  } catch {
+    return { error: json({ error: 'invalid_json' }, 400) };
+  }
 }
 
 async function recoveryStub(env, recoveryPubHex) {
@@ -117,6 +137,9 @@ export async function handleRecoveryRoute(request, env, url) {
     if (!recoveryPubHex || !env.RECOVERY) {
       return json({ error: 'recovery_pub_hex required' }, 400);
     }
+    if (!ED25519_HEX.test(recoveryPubHex)) {
+      return json({ error: 'invalid_recovery_pub_hex' }, 400);
+    }
     const stub = await recoveryStub(env, recoveryPubHex);
     const res = await stub.fetch(new Request('https://recovery-do/status'));
     const data = await res.json();
@@ -124,15 +147,15 @@ export async function handleRecoveryRoute(request, env, url) {
   }
 
   if (path === '/api/recovery/challenge' && request.method === 'POST') {
-    let body;
-    try {
-      body = await request.json();
-    } catch {
-      return json({ error: 'invalid_json' }, 400);
-    }
+    const read = await readRecoveryJson(request);
+    if (read.error) return read.error;
+    const body = read.body;
     const { recovery_pub_hex } = body || {};
     if (!recovery_pub_hex) {
       return json({ error: 'recovery_pub_hex required' }, 400);
+    }
+    if (!ED25519_HEX.test(recovery_pub_hex)) {
+      return json({ error: 'invalid_recovery_pub_hex' }, 400);
     }
     const { status, body: data } = await callRecoveryDo(env, recovery_pub_hex, '/challenge', {
       recovery_pub_hex,
@@ -141,12 +164,9 @@ export async function handleRecoveryRoute(request, env, url) {
   }
 
   if (path === '/api/recovery/recover' && request.method === 'POST') {
-    let body;
-    try {
-      body = await request.json();
-    } catch {
-      return json({ error: 'invalid_json' }, 400);
-    }
+    const read = await readRecoveryJson(request);
+    if (read.error) return read.error;
+    const body = read.body;
     const {
       recovery_pub_hex,
       nonce,
@@ -158,6 +178,9 @@ export async function handleRecoveryRoute(request, env, url) {
         { error: 'recovery_pub_hex, nonce, recovery_signature, recovery_timestamp required' },
         400
       );
+    }
+    if (!ED25519_HEX.test(recovery_pub_hex) || String(nonce).length > 80 || String(recovery_signature).length > 256) {
+      return json({ error: 'invalid_recovery_fields' }, 400);
     }
 
     const message = {
@@ -191,12 +214,9 @@ export async function handleRecoveryRoute(request, env, url) {
   }
 
   if (path === '/api/recovery/rebind' && request.method === 'POST') {
-    let body;
-    try {
-      body = await request.json();
-    } catch {
-      return json({ error: 'invalid_json' }, 400);
-    }
+    const read = await readRecoveryJson(request);
+    if (read.error) return read.error;
+    const body = read.body;
     const {
       recovery_pub_hex,
       rebind_token,
@@ -208,6 +228,18 @@ export async function handleRecoveryRoute(request, env, url) {
         { error: 'recovery_pub_hex, rebind_token, new_device_pubkey_hex required' },
         400
       );
+    }
+    if (!ED25519_HEX.test(recovery_pub_hex) || !ED25519_HEX.test(new_device_pubkey_hex)) {
+      return json({ error: 'invalid_public_key_hex' }, 400);
+    }
+    if (String(rebind_token).length > 80) {
+      return json({ error: 'field_too_long' }, 400);
+    }
+    if (new_session_id) {
+      const expected = await expectedSessionIdFromPubkey(new_device_pubkey_hex);
+      if (!expected || new_session_id !== expected) {
+        return json({ error: 'session_id must match pubkey binding' }, 400);
+      }
     }
 
     const { status, body: data } = await callRecoveryDo(env, recovery_pub_hex, '/consume-rebind', {
@@ -252,12 +284,9 @@ export async function handleRecoveryRoute(request, env, url) {
   }
 
   if (path === '/api/recovery/enroll' && request.method === 'POST') {
-    let outer;
-    try {
-      outer = await request.json();
-    } catch {
-      return json({ error: 'invalid_json' }, 400);
-    }
+    const read = await readRecoveryJson(request);
+    if (read.error) return read.error;
+    const outer = read.body;
 
     const binding = await sessionIdMatchesPubkey(outer.sessionId, outer.publicKeyHex);
     if (!binding) {
@@ -282,6 +311,9 @@ export async function handleRecoveryRoute(request, env, url) {
         },
         400
       );
+    }
+    if (!ED25519_HEX.test(recoveryPubHex) || String(recoverySignature).length > 256) {
+      return json({ error: 'invalid_recovery_fields' }, 400);
     }
 
     const linkMessage = {

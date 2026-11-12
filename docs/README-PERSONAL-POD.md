@@ -12,12 +12,15 @@ For Android APK packaging, see `README-ANDROID-APP.md`. For Solid/CSS operations
 
 ## What Runs Where
 
-- `forum-pod`: browser/PWA personal pod. It stores civic submissions in IndexedDB, hydrates DuckDB from that storage on startup, and lets the AI agent query local rows.
-- `forum-airlock`: cooperative API listener. It receives synced submissions and writes an encrypted ledger entry.
-- `forum-ai`: local analysis pipeline. It decrypts with `FERNET_KEY`, classifies through Ollama, aggregates, and optionally pushes to egress.
-- `forum-egress`: Cloudflare Worker receiver for aggregate reports.
+- `forum-pod`: browser/PWA personal pod. Civic submissions stay in IndexedDB. The Explore tab runs SQL on the device. The assistant does not read those rows.
+- `forum-airlock`: cooperative Worker (`coop-pipeline`). It receives signed opt-in feedback into D1. It is not the archived Node listener.
+- `forum-pod-airlock`: Pod Worker (`secure-worker`) for the PWA, WebAuthn, and Personal Pod data.
+- `forum-egress`: Cloudflare Worker that serves the published aggregate report.
+- The old on-prem `forum-ai` listener and Ollama classify loop are under `archive/forum-on-prem/`. They are not the live report path.
 
-## Server Setup
+## Archived on-prem setup
+
+The steps below are the archived on-prem listener. Do not use them for the live cooperative. Deploy `forum-airlock` and `forum-pod-airlock` with Wrangler, as the root README describes.
 
 1. Create local config:
 
