@@ -1,8 +1,8 @@
 /**
  * PersonalPodDO — one Durable Object per device credential. Holds the
- * user's private Pod data (civic submissions, journal entries, behaviors,
- * traits, email proof) in SQLite. The Worker authenticates each request
- * against the Ed25519 device key registered on first use (TOFU).
+ * user's private Pod data (civic submissions and email proof) in SQLite.
+ * The Worker authenticates each request against the Ed25519 device key
+ * registered on first use (TOFU).
  *
  * Wire model: every request is a signed bundle (see pod-signing-web.js).
  * The payload is `{ verb, path, data }`. The DO dispatches on verb+path
@@ -72,45 +72,6 @@ export class PersonalPodDO {
         share_status TEXT,
         consent_at TEXT,
         policy_version TEXT,
-        updated_at TEXT
-      );
-
-      CREATE TABLE IF NOT EXISTS journal_entries (
-        submission_id TEXT PRIMARY KEY,
-        submitted_at TEXT,
-        raw_text TEXT,
-        source_context TEXT,
-        user_category_id TEXT,
-        user_category_label TEXT,
-        processing_status TEXT,
-        lexicon_version TEXT,
-        updated_at TEXT
-      );
-
-      CREATE TABLE IF NOT EXISTS behaviors (
-        behavior_id TEXT PRIMARY KEY,
-        submission_id TEXT,
-        category TEXT,
-        action TEXT,
-        entity TEXT,
-        metadata_json TEXT,
-        source TEXT,
-        confidence REAL,
-        reviewed INTEGER,
-        created_at TEXT,
-        updated_at TEXT
-      );
-
-      CREATE TABLE IF NOT EXISTS traits (
-        psycho_id TEXT PRIMARY KEY,
-        submission_id TEXT,
-        category TEXT,
-        attribute TEXT,
-        sentiment REAL,
-        source TEXT,
-        confidence REAL,
-        reviewed INTEGER,
-        created_at TEXT,
         updated_at TEXT
       );
 
@@ -315,9 +276,6 @@ export class PersonalPodDO {
     if (ageMs >= graceMs) {
       const tables = [
         "civic_submissions",
-        "journal_entries",
-        "behaviors",
-        "traits",
         "email_proof",
         "assistant_messages",
         "pod_events",
@@ -389,102 +347,6 @@ export class PersonalPodDO {
           `SELECT * FROM civic_submissions ORDER BY COALESCE(submitted_at, '') DESC`
         )
         .toArray();
-      return { status: 200, body: { rows } };
-    }
-
-    // journal_entries
-    if (verb === "PUT" && path.startsWith("/journal/raw/")) {
-      const id = path.slice("/journal/raw/".length);
-      if (!id) return { status: 400, body: { error: "missing_id" } };
-      this.sql.exec(
-        `INSERT OR REPLACE INTO journal_entries
-         (submission_id, submitted_at, raw_text, source_context, user_category_id,
-          user_category_label, processing_status, lexicon_version, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        id,
-        data.submitted_at || now,
-        data.raw_text || "",
-        data.source_context || "journal",
-        data.user_category_id || null,
-        data.user_category_label || null,
-        data.processing_status || "unprocessed",
-        data.lexicon_version || null,
-        now
-      );
-      return { status: 200, body: { ok: true, id } };
-    }
-
-    if (verb === "LIST" && path === "/journal/raw") {
-      const rows = this.sql
-        .exec(
-          `SELECT * FROM journal_entries ORDER BY COALESCE(submitted_at, '') DESC`
-        )
-        .toArray();
-      return { status: 200, body: { rows } };
-    }
-
-    // behaviors
-    if (verb === "PUT" && path.startsWith("/journal/behaviors/")) {
-      const id = path.slice("/journal/behaviors/".length);
-      if (!id) return { status: 400, body: { error: "missing_id" } };
-      this.sql.exec(
-        `INSERT OR REPLACE INTO behaviors
-         (behavior_id, submission_id, category, action, entity, metadata_json,
-          source, confidence, reviewed, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        id,
-        data.submission_id || null,
-        data.category || "",
-        data.action || null,
-        data.entity || null,
-        data.metadata_json || null,
-        data.source || "rule:v1",
-        Number(data.confidence ?? 0),
-        data.reviewed ? 1 : 0,
-        data.created_at || now,
-        now
-      );
-      return { status: 200, body: { ok: true, id } };
-    }
-
-    if (verb === "LIST" && path === "/journal/behaviors") {
-      const rows = this.sql
-        .exec(
-          `SELECT * FROM behaviors ORDER BY COALESCE(created_at, '') DESC`
-        )
-        .toArray()
-        .map((r) => ({ ...r, reviewed: !!r.reviewed }));
-      return { status: 200, body: { rows } };
-    }
-
-    // traits
-    if (verb === "PUT" && path.startsWith("/journal/traits/")) {
-      const id = path.slice("/journal/traits/".length);
-      if (!id) return { status: 400, body: { error: "missing_id" } };
-      this.sql.exec(
-        `INSERT OR REPLACE INTO traits
-         (psycho_id, submission_id, category, attribute, sentiment, source,
-          confidence, reviewed, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        id,
-        data.submission_id || null,
-        data.category || "",
-        data.attribute || "",
-        data.sentiment != null ? Number(data.sentiment) : null,
-        data.source || "rule:v1",
-        Number(data.confidence ?? 0),
-        data.reviewed ? 1 : 0,
-        data.created_at || now,
-        now
-      );
-      return { status: 200, body: { ok: true, id } };
-    }
-
-    if (verb === "LIST" && path === "/journal/traits") {
-      const rows = this.sql
-        .exec(`SELECT * FROM traits ORDER BY COALESCE(created_at, '') DESC`)
-        .toArray()
-        .map((r) => ({ ...r, reviewed: !!r.reviewed }));
       return { status: 200, body: { rows } };
     }
 

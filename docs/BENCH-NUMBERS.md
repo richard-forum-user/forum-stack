@@ -31,7 +31,7 @@
 ## Durable Objects
 
 - 1 DO per active `sessionId`
-- Storage: journal + assistant; target < 1 MB / user for beta
+- Storage: assistant; target < 1 MB / user for beta
 
 ## Action items
 

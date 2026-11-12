@@ -57,8 +57,8 @@ Public HTML: `GET https://forum-egress.yourcommunity.forum/` (KV key `latest`).
 
 ## Legacy on-prem pipeline
 
-The legacy on-prem timer and Python pipeline are archived under
-`archive/forum-on-prem/`. Do not re-enable them for the live report path:
+The legacy on-prem timer and Python pipeline moved to the Roadmap repo
+(`forum-stack/archive/forum-on-prem/`). Do not re-enable them for the live report path:
 they read local `forum_inbound.db`, while the cooperative ledger now lives in
 D1 `forum_feedback`.
 

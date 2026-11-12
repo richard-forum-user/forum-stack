@@ -238,7 +238,7 @@ export default function Assistant({ webId }) {
           It can discuss the 6-Pack of Care, civic concepts, and how this Pod works. Answers about
           current events, elections, or “what happened recently” may be wrong or outdated. It does{" "}
           <strong>not</strong> see your Pod data — use the <strong>Explore</strong> tab for your
-          submissions, journal, behaviors, or traits. Conversations live in your Personal Pod (this
+          submissions. Conversations live in your Personal Pod (this
           device caches them) and are removed on <strong>Stop and forget</strong> or sign-out. The
           cooperative edge logs counts only, not chat text.
         </div>

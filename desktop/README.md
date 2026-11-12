@@ -14,8 +14,8 @@ Under the hood:
 * A **`workerd` sidecar** runs the same Pod Worker as the Cloudflare
   deploy. It listens on `127.0.0.1:<port>` only — never accepts
   connections from the network.
-* All Pod data (encrypted SQLite for civic submissions, journal entries,
-  Kami chat history, signing keys) lives in the OS app-data directory:
+* All Pod data (encrypted SQLite for civic submissions,
+  signing keys) lives in the OS app-data directory:
   * Linux: `~/.local/share/Forum Pod/`
   * macOS: `~/Library/Application Support/Forum Pod/`
   * Windows: `%APPDATA%\Forum Pod\`

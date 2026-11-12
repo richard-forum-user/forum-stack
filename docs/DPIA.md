@@ -8,7 +8,7 @@
 | Data | Location | Retention |
 |------|----------|-----------|
 | Passkey credential id | Client + D1 WebAuthn tables | Until account deletion |
-| Pod journal, submissions, assistant | PersonalPodDO + encrypted local cache | Until sign-out wipe / member request |
+| Pod submissions, assistant | PersonalPodDO + encrypted local cache | Until sign-out wipe / member request |
 | Opt-in forum feedback | D1 `forum_feedback` | Max **7 days** after report publish (`contest_window_ends_at`), then hard-deleted |
 | Contest claims | D1 `forum_contest_claims` | Until resolved + row wipe |
 | Membership JWT audit | D1 `coop_memberships` | JWT TTL (default 24h) + revocation |

@@ -51,66 +51,6 @@ export async function writeCivicSubmissionToPod(row) {
   return { ok: true, id };
 }
 
-export async function writeJournalEntryToPod(row) {
-  requirePodSession();
-  const id = row.submission_id;
-  if (!id) throw new Error("journal entry missing submission_id");
-  if (skipsCloudPodWrite()) {
-    return { ok: true, id, storage: "local" };
-  }
-  await podRpc("PUT", `/journal/raw/${encodeURIComponent(id)}`, {
-    submitted_at: row.submitted_at || new Date().toISOString(),
-    raw_text: row.raw_text || "",
-    source_context: row.source_context || "journal",
-    user_category_id: row.user_category_id || null,
-    user_category_label: row.user_category_label || null,
-    processing_status: row.processing_status || "unprocessed",
-    lexicon_version: row.lexicon_version || null,
-  });
-  return { ok: true, id };
-}
-
-export async function writeBehaviorToPod(row) {
-  requirePodSession();
-  const id = row.behavior_id;
-  if (!id) throw new Error("behavior missing behavior_id");
-  if (skipsCloudPodWrite()) {
-    return { ok: true, id, storage: "local" };
-  }
-  await podRpc("PUT", `/journal/behaviors/${encodeURIComponent(id)}`, {
-    submission_id: row.submission_id || null,
-    category: row.category || "",
-    action: row.action || null,
-    entity: row.entity || null,
-    metadata_json: row.metadata_json || null,
-    source: row.source || "rule:v1",
-    confidence: Number(row.confidence ?? 0),
-    reviewed: !!row.reviewed,
-    created_at: row.created_at || new Date().toISOString(),
-  });
-  return { ok: true, id };
-}
-
-export async function writeTraitToPod(row) {
-  requirePodSession();
-  const id = row.psycho_id;
-  if (!id) throw new Error("trait missing psycho_id");
-  if (skipsCloudPodWrite()) {
-    return { ok: true, id, storage: "local" };
-  }
-  await podRpc("PUT", `/journal/traits/${encodeURIComponent(id)}`, {
-    submission_id: row.submission_id || null,
-    category: row.category || "",
-    attribute: row.attribute || "",
-    sentiment: row.sentiment != null ? Number(row.sentiment) : null,
-    source: row.source || "rule:v1",
-    confidence: Number(row.confidence ?? 0),
-    reviewed: !!row.reviewed,
-    created_at: row.created_at || new Date().toISOString(),
-  });
-  return { ok: true, id };
-}
-
 /**
  * Persist one Civic AI Kami chat message into the Pod DO. The Pod is the
  * source of truth for the conversation; the device IDB is a cache. We

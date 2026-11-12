@@ -6,7 +6,7 @@
 ## What we collect
 
 - **Passkey authentication** — we store credential identifiers, not passwords.
-- **Personal Pod content** — journal, submissions, and assistant messages you choose to save; stored in your Cloudflare Durable Object.
+- **Personal Pod content** — submissions and assistant messages you choose to save; stored in your Cloudflare Durable Object.
 - **Cooperative feedback** — only when you opt in at submit; may include category, ZIP, and comment text in cooperative D1 **temporarily** (see retention below).
 - **Membership verification** — government-ID check via Stripe Identity (when enabled); only a salted `member_hash` is stored on the cooperative side.
 

@@ -97,31 +97,21 @@ const PRESETS = [
     label: "How many rows do I have, total?",
     group: "Totals",
     sql: `SELECT
-  (SELECT COUNT(*) FROM civic_submissions)                       AS forum_submissions,
-  (SELECT COUNT(*) FROM raw_submissions)                         AS journal_entries,
-  (SELECT COUNT(*) FROM behavioral_data)                         AS behaviors,
-  (SELECT COUNT(*) FROM psychographic_data)                      AS traits;`,
+  (SELECT COUNT(*) FROM civic_submissions) AS forum_submissions;`,
     summarise(rows) {
       const r = rows[0] || {};
-      const total = (r.forum_submissions || 0) + (r.journal_entries || 0) + (r.behaviors || 0) + (r.traits || 0);
+      const total = r.forum_submissions || 0;
       if (total === 0) return "Your Pod has no rows saved yet.";
-      return `Pod totals — Forum Submissions: ${r.forum_submissions || 0}, Journal entries: ${r.journal_entries || 0}, Behaviors: ${r.behaviors || 0}, Traits: ${r.traits || 0}.`;
+      return `Pod totals — Forum Submissions: ${total}.`;
     },
   },
   {
     id: "anything_24h",
     label: "Anything saved in the last 24 hours?",
     group: "Totals",
-    sql: `WITH t AS (
-  SELECT 'forum_submission' AS kind, submitted_at AS ts FROM civic_submissions WHERE submitted_at >= now() - INTERVAL 1 DAY
-  UNION ALL
-  SELECT 'journal_entry', submitted_at FROM raw_submissions WHERE submitted_at >= now() - INTERVAL 1 DAY
-  UNION ALL
-  SELECT 'behavior', created_at FROM behavioral_data WHERE created_at >= now() - INTERVAL 1 DAY
-  UNION ALL
-  SELECT 'trait', created_at FROM psychographic_data WHERE created_at >= now() - INTERVAL 1 DAY
-)
-SELECT kind, COUNT(*) AS rows FROM t GROUP BY kind ORDER BY rows DESC;`,
+    sql: `SELECT 'forum_submission' AS kind, COUNT(*) AS rows
+FROM civic_submissions
+WHERE submitted_at >= now() - INTERVAL 1 DAY;`,
     summarise(rows) {
       if (rows.length === 0) return "Nothing saved in the last 24 hours.";
       const parts = rows.map((r) => `${r.kind} (${r.rows})`);
@@ -190,111 +180,6 @@ ORDER BY submitted_at DESC;`,
     },
   },
 
-  // ---- Journal
-  {
-    id: "j_recent",
-    label: "Show my 10 most recent Journal entries",
-    group: "Journal",
-    sql: `SELECT submitted_at, user_category_label, raw_text
-FROM raw_submissions
-ORDER BY submitted_at DESC
-LIMIT 10;`,
-    summarise(rows) {
-      if (rows.length === 0) return "No Journal entries saved yet.";
-      const newest = rows[0].submitted_at || "?";
-      return `Showing ${rows.length} most recent Journal entr${rows.length === 1 ? "y" : "ies"}. Newest: ${String(newest).slice(0, 10)}.`;
-    },
-  },
-  {
-    id: "j_by_category",
-    label: "Which Journal categories do I use most?",
-    group: "Journal",
-    sql: `SELECT COALESCE(user_category_label, '(uncategorized)') AS category, COUNT(*) AS entries
-FROM raw_submissions
-GROUP BY category
-ORDER BY entries DESC, category;`,
-    summarise(rows) {
-      if (rows.length === 0) return "No Journal entries to group.";
-      const total = rows.reduce((acc, r) => acc + Number(r.entries || 0), 0);
-      const top = rows[0];
-      return `${total} Journal entr${total === 1 ? "y" : "ies"} across ${rows.length} categor${rows.length === 1 ? "y" : "ies"}. Most common: ${top.category} (${top.entries}).`;
-    },
-  },
-  {
-    id: "j_this_week",
-    label: "What did I journal this week?",
-    group: "Journal",
-    sql: `SELECT submitted_at, user_category_label, raw_text
-FROM raw_submissions
-WHERE submitted_at >= now() - INTERVAL 7 DAY
-ORDER BY submitted_at DESC;`,
-    summarise(rows) {
-      if (rows.length === 0) return "No Journal entries in the last 7 days.";
-      return `${rows.length} Journal entr${rows.length === 1 ? "y" : "ies"} in the last 7 days.`;
-    },
-  },
-
-  // ---- Behaviors
-  {
-    id: "b_by_category",
-    label: "Which behaviors am I noting?",
-    group: "Behaviors",
-    sql: `SELECT COALESCE(category, '(uncategorized)') AS category, COUNT(*) AS rows
-FROM behavioral_data
-GROUP BY category
-ORDER BY rows DESC, category;`,
-    summarise(rows) {
-      if (rows.length === 0) return "No behavior rows saved yet.";
-      const total = rows.reduce((acc, r) => acc + Number(r.rows || 0), 0);
-      const top = rows[0];
-      return `${total} behavior row${total === 1 ? "" : "s"} across ${rows.length} categor${rows.length === 1 ? "y" : "ies"}. Most frequent: ${top.category} (${top.rows}).`;
-    },
-  },
-  {
-    id: "b_recent",
-    label: "Show my 10 most recent behaviors",
-    group: "Behaviors",
-    sql: `SELECT created_at, category, action, entity, confidence, source
-FROM behavioral_data
-ORDER BY created_at DESC
-LIMIT 10;`,
-    summarise(rows) {
-      if (rows.length === 0) return "No behaviors saved yet.";
-      const userRows = rows.filter((r) => r.source === "user").length;
-      return `Showing ${rows.length} most recent behavior row${rows.length === 1 ? "" : "s"} (${userRows} you chose, ${rows.length - userRows} rule-derived).`;
-    },
-  },
-
-  // ---- Traits
-  {
-    id: "t_by_category",
-    label: "Which trait categories appear in my data?",
-    group: "Traits",
-    sql: `SELECT COALESCE(category, '(uncategorized)') AS category, COUNT(*) AS rows
-FROM psychographic_data
-GROUP BY category
-ORDER BY rows DESC, category;`,
-    summarise(rows) {
-      if (rows.length === 0) return "No trait rows saved yet.";
-      const total = rows.reduce((acc, r) => acc + Number(r.rows || 0), 0);
-      const top = rows[0];
-      return `${total} trait row${total === 1 ? "" : "s"} across ${rows.length} categor${rows.length === 1 ? "y" : "ies"}. Most frequent: ${top.category} (${top.rows}).`;
-    },
-  },
-  {
-    id: "t_recent",
-    label: "Show my 10 most recent traits",
-    group: "Traits",
-    sql: `SELECT created_at, category, attribute, sentiment, confidence, source
-FROM psychographic_data
-ORDER BY created_at DESC
-LIMIT 10;`,
-    summarise(rows) {
-      if (rows.length === 0) return "No traits saved yet.";
-      const userRows = rows.filter((r) => r.source === "user").length;
-      return `Showing ${rows.length} most recent trait row${rows.length === 1 ? "" : "s"} (${userRows} you chose, ${rows.length - userRows} rule-derived).`;
-    },
-  },
 ];
 
 function formatCell(value) {

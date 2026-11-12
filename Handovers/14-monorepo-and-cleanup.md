@@ -41,16 +41,12 @@ are preserved so every Handover path reference still resolves once you
   forum-airlock/                    (Worker + listener + DO)
   forum-ai/                         (analysis pipeline)
   forum-egress/                     (egress Worker)
-  archive/
-    forum-app/                      (pre-H8 TypeScript prototype +
-                                     README explaining its status)
 ```
 
-The `archive/forum-app/` directory holds the ten TypeScript files from
+The `archive/forum-app/` directory held the ten TypeScript files from
 May 12–17 (`cf-worker.ts`, `container-manager.ts`, `nullifier-registry.ts`,
-etc.) that pre-date the H8 DO pivot and are not built by anything in
-the live stack. They are kept for historical reference and the
-sub-README points at H8 for context.
+etc.) that pre-date the H8 DO pivot and were not built by anything in
+the live stack. That tree later moved to the Roadmap repo.
 
 Internal handover cross-references (`[12-civic-ai.md](12-civic-ai.md)`,
 `[handover6-secure-pod-first.md](handover6-secure-pod-first.md)`, etc.)
