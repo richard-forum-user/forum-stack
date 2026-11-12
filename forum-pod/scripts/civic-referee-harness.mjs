@@ -93,17 +93,17 @@ if (liveUrl) {
   });
   const body = await response.json();
   const verdict = checkReply(body.reply || {});
-  const credit = body.reply?.credit || {};
-  const creditText = [credit.ours, credit.idea, credit.notHers, ...(credit.links || []).map((link) => `${link.title} ${link.url}`)].join(" ");
+  const page = await fetch(liveUrl, { method: "GET" });
+  const html = await page.text();
+  const credits = `Credits: <a href="https://civic.ai/kami/">Audrey Tang’s civic.ai Kami</a>. This worker is ours and is not her Kami.`;
   const creditErrors = [];
-  if (!/this worker is ours/i.test(credit.ours || "")) creditErrors.push("credit does not say the worker is ours");
-  if (!/Audrey Tang/.test(credit.idea || "")) creditErrors.push("credit does not name Audrey Tang");
-  if (!/civic\.ai/.test(credit.idea || "")) creditErrors.push("credit does not name civic.ai");
-  if (!/not her Kami/i.test(credit.notHers || "")) creditErrors.push("credit does not say it is not her Kami");
-  if (!/not her model/i.test(credit.notHers || "")) creditErrors.push("credit does not say it is not her model");
-  for (const url of ["https://civic.ai/kami/", "https://civic.ai/inside-the-kami/", "https://pi.audreyt.org/"]) {
-    if (!creditText.includes(url)) creditErrors.push(`credit missing ${url}`);
+  if (body.reply?.credit) creditErrors.push("credit is still on the reply");
+  const thread = html.split('id="thread"')[1] || "";
+  const threadBeforeForm = thread.split("<form")[0] || "";
+  if (threadBeforeForm.includes("Audrey Tang") || threadBeforeForm.includes("civic.ai")) {
+    creditErrors.push("credit is inside the thread");
   }
+  if (html.split(credits).length - 1 !== 1) creditErrors.push("credits note is not on the page once");
   if (/https?:\/\/(?![^\s]*\.(?:gov|legiscan\.com))/.test(body.reply?.answer || "")) {
     creditErrors.push("the answer itself carries a non-source URL");
   }

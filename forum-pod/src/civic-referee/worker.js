@@ -161,18 +161,6 @@ async function chooseSentence(env, question, rows) {
   return parseChoice(text, rows.length);
 }
 
-const TANG_CREDIT = {
-  ours: "This worker is ours, kept for this forum.",
-  idea: "It follows Audrey Tang’s public Kami on civic.ai: an existing model, given written instructions, with one job for one place, that people here can correct.",
-  notHers: "It is not her Kami and not her model.",
-  links: [
-    { title: "Set up your own Kami", url: "https://civic.ai/kami/" },
-    { title: "Inside the Kami", url: "https://civic.ai/inside-the-kami/" },
-    { title: "The public skill", url: "https://civic.ai/.well-known/openclaw/SKILL.md" },
-    { title: "pi-kami, her local model", url: "https://pi.audreyt.org/" },
-  ],
-};
-
 function refusal(model, time, sources) {
   return {
     answer: "These sources do not contain that answer.",
@@ -180,7 +168,6 @@ function refusal(model, time, sources) {
     sources,
     model,
     time,
-    credit: TANG_CREDIT,
   };
 }
 
@@ -207,7 +194,6 @@ async function answerQuestion(env, question, sourceUrls) {
     sources: urls,
     model,
     time,
-    credit: TANG_CREDIT,
   };
   const verdict = checkReply(reply);
   if (!verdict.ok) return refusal(model, time, urls);
@@ -218,17 +204,21 @@ async function listCalls(db, host) {
   const rows = await db.prepare(
     `SELECT id, created_at, kind, parent_id, body FROM calls WHERE forum_host = ? ORDER BY created_at ASC`
   ).bind(host).all();
-  return (rows.results || []).map((row) => ({
-    id: row.id,
-    at: row.created_at,
-    kind: row.kind,
-    parentId: row.parent_id,
-    record: JSON.parse(row.body),
-  }));
+  return (rows.results || []).map((row) => {
+    const record = JSON.parse(row.body);
+    if (record && typeof record === "object") delete record.credit;
+    return {
+      id: row.id,
+      at: row.created_at,
+      kind: row.kind,
+      parentId: row.parent_id,
+      record,
+    };
+  });
 }
 
-function creditHtml() {
-  return `<p class="credit">This worker is ours. It cites <a href="https://civic.ai/kami/">Audrey Tang’s civic.ai Kami</a> and is not her system.</p>`;
+function creditsNote() {
+  return `<p class="credits">Credits: <a href="https://civic.ai/kami/">Audrey Tang’s civic.ai Kami</a>. This worker is ours and is not her Kami.</p>`;
 }
 
 function renderPage(host, calls, publicPath) {
@@ -260,7 +250,7 @@ function renderPage(host, calls, publicPath) {
     textarea, button { font: inherit; }
     textarea { width: 100%; min-height: 5rem; }
     button { margin-top: 8px; }
-    .credit { font-size: 0.95rem; }
+    .credits { font-size: 0.95rem; }
     .hidden { display: none; }
   </style>
 </head>
@@ -268,7 +258,6 @@ function renderPage(host, calls, publicPath) {
 <main>
   <p>Watching ${esc(host)}. Silent until called.</p>
   <h1>One job for this forum</h1>
-  ${creditHtml()}
   <p>It quotes a .gov or LegiScan page you name, or says those pages do not contain the answer.</p>
   <section id="thread">${items || "<p>No calls yet.</p>"}</section>
   <form method="post" action="${esc(publicPath)}">
@@ -277,6 +266,7 @@ function renderPage(host, calls, publicPath) {
     <label>Correct an earlier reply by its id. The earlier reply stays.<input name="parent" style="width:100%;font:inherit"></label>
     <button type="submit">Ask about these pages</button>
   </form>
+  ${creditsNote()}
 </main>
 <script>
   var key = "civic-referee-hidden";
