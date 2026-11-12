@@ -244,8 +244,8 @@ export default function SignInOverlay({
             : native
               ? isAirlockWebApp()
                 ? "Your data stays in this browser until you download a copy. Opt in to share with the cooperative when you're ready — raw text is wiped from the cloud after 7 days; only aggregates remain."
-                : "Your journal, submissions, and personal data live in an on-device Pod (encrypted SQLite). Nothing leaves this device unless you opt in to share with the cooperative."
-              : "Your journal, submissions, and personal data live in your Personal Pod (Cloudflare Durable Object), keyed to a WebAuthn passkey on this device. This device may cache encrypted copies while you are signed in; signing out or locking clears signing keys from memory."}
+                : "Your submissions and personal data live in an on-device Pod (encrypted SQLite). Nothing leaves this device unless you opt in to share with the cooperative."
+              : "Your submissions and personal data live in your Personal Pod (Cloudflare Durable Object), keyed to a WebAuthn passkey on this device. This device may cache encrypted copies while you are signed in; signing out or locking clears signing keys from memory."}
         </p>
         {native && !showRecover && (
           <div

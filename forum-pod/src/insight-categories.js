@@ -1,15 +1,4 @@
-// User-facing top-level categories for Journal entries.
-//
-// The user picks one of these when they submit. That pick is the
-// high-confidence (source=user, confidence=1.0) classification.
-// The deterministic extractor adds finer entity/attribute rows
-// underneath at lower confidence (source=rule:vN).
-//
-// `kind` decides which derived table the user-declared row lands in:
-//   - "behavioral"   -> behavioral_data
-//   - "psychographic"-> psychographic_data
-//
-// `category` is the value written into the row's `category` column.
+// Categories for Forum Feedback.
 
 export const INSIGHT_CATEGORIES = [
   // Behavioral — what the user did

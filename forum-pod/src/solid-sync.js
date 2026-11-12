@@ -81,48 +81,6 @@ export async function syncPodToDuckDB(connection, recordFn) {
   return { synced };
 }
 
-export async function syncJournalEntriesFromPod(connection, recordFn) {
-  if (!podSessionAvailable()) {
-    return { synced: 0, skipped: "not logged in" };
-  }
-  const rows = await safeList("/journal/raw");
-  if (rows === null) return { synced: 0, skipped: "pod_list_failed" };
-  let synced = 0;
-  for (const row of rows) {
-    await recordFn(connection, row);
-    synced += 1;
-  }
-  return { synced };
-}
-
-export async function syncBehaviorsFromPod(connection, recordFn) {
-  if (!podSessionAvailable()) {
-    return { synced: 0, skipped: "not logged in" };
-  }
-  const rows = await safeList("/journal/behaviors");
-  if (rows === null) return { synced: 0, skipped: "pod_list_failed" };
-  let synced = 0;
-  for (const row of rows) {
-    await recordFn(connection, row);
-    synced += 1;
-  }
-  return { synced };
-}
-
-export async function syncTraitsFromPod(connection, recordFn) {
-  if (!podSessionAvailable()) {
-    return { synced: 0, skipped: "not logged in" };
-  }
-  const rows = await safeList("/journal/traits");
-  if (rows === null) return { synced: 0, skipped: "pod_list_failed" };
-  let synced = 0;
-  for (const row of rows) {
-    await recordFn(connection, row);
-    synced += 1;
-  }
-  return { synced };
-}
-
 /**
  * Fetch every Civic AI Kami message for a single conversation from the
  * Pod DO. Used by the Assistant boot effect to rehydrate the local IDB

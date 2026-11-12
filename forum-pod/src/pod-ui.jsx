@@ -2,23 +2,12 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import * as duckdb from '@duckdb/duckdb-wasm';
 import {
   clearAllPodData,
-  getBehaviors,
-  getPsychographics,
-  getRawSubmissions,
   getSubmissions,
   patchSubmission,
-  saveBehavior,
-  savePsychographic,
-  saveRawSubmission,
   saveSubmission,
 } from "./pod-store.js";
 import { CIVIC_CATEGORIES } from "./civic-categories.js";
 import { INSIGHT_CATEGORIES, findInsightCategory } from "./insight-categories.js";
-import {
-  extractInsights,
-  extractUserTags,
-  LEXICON_VERSION,
-} from "./insight-extractor.js";
 import { recordCivicLocally } from "./pod-ui-sync.js";
 import {
   POLICY_VERSION,
@@ -39,11 +28,8 @@ import {
   loadMemberProfile,
   postCooperativeExport,
   solidLogout,
-  writeBehaviorToPod,
-  writeCivicSubmissionToPod,
-  writeJournalEntryToPod,
-  writeTraitToPod,
-} from "./pod-solid-integration.js";
+    writeCivicSubmissionToPod,
+    } from "./pod-solid-integration.js";
 import { clearSolidSessionMeta } from "./solid-session.js";
 import {
   exportDeviceKeyBlob,
@@ -164,24 +150,10 @@ async function setupCivicTables(connection) {
 
 /** Load session cache from IndexedDB (browser-local / airlock web app). */
 async function hydrateFromLocalStore(connection) {
-  const [civicRows, journalRows, behaviorRows, traitRows] = await Promise.all([
-    getSubmissions(),
-    getRawSubmissions(),
-    getBehaviors(),
-    getPsychographics(),
-  ]);
+  const civicRows = await getSubmissions();
 
   for (const row of civicRows) {
     await recordCivicLocally(connection, row);
-  }
-  for (const row of journalRows) {
-    await recordRawSubmissionLocally(connection, row);
-  }
-  for (const row of behaviorRows) {
-    await recordBehaviorLocally(connection, row);
-  }
-  for (const row of traitRows) {
-    await recordPsychographicLocally(connection, row);
   }
 }
 
@@ -194,12 +166,7 @@ async function hydrateSessionCache(connection) {
 
 /** Load all user data from the Pod DO into session cache (IndexedDB + DuckDB). */
 async function hydrateFromPod(connection) {
-  const [civicRows, journalRows, behaviorRows, traitRows] = await Promise.all([
-    listPodRows("/civic/submissions"),
-    listPodRows("/journal/raw"),
-    listPodRows("/journal/behaviors"),
-    listPodRows("/journal/traits"),
-  ]);
+  const civicRows = await listPodRows("/civic/submissions");
 
   await clearAllPodData();
 
@@ -222,116 +189,7 @@ async function hydrateFromPod(connection) {
     await saveSubmission(localRow);
     await recordCivicLocally(connection, localRow);
   }
-  for (const row of journalRows) {
-    await saveRawSubmission(row);
-    await recordRawSubmissionLocally(connection, row);
-  }
-  for (const row of behaviorRows) {
-    await saveBehavior(row);
-    await recordBehaviorLocally(connection, row);
-  }
-  for (const row of traitRows) {
-    await savePsychographic(row);
-    await recordPsychographicLocally(connection, row);
-  }
 }
-
-async function setupInsightTables(connection) {
-  await connection.query(`
-    CREATE TABLE IF NOT EXISTS raw_submissions (
-      submission_id VARCHAR PRIMARY KEY,
-      submitted_at VARCHAR NOT NULL,
-      raw_text VARCHAR NOT NULL,
-      source_context VARCHAR NOT NULL,
-      user_category_id VARCHAR,
-      user_category_label VARCHAR,
-      processing_status VARCHAR NOT NULL,
-      lexicon_version VARCHAR
-    );
-  `);
-  await connection.query(`
-    CREATE TABLE IF NOT EXISTS behavioral_data (
-      behavior_id VARCHAR PRIMARY KEY,
-      submission_id VARCHAR NOT NULL,
-      category VARCHAR NOT NULL,
-      action VARCHAR,
-      entity VARCHAR,
-      metadata_json VARCHAR,
-      source VARCHAR NOT NULL,
-      confidence DOUBLE NOT NULL,
-      reviewed BOOLEAN NOT NULL DEFAULT FALSE,
-      created_at VARCHAR NOT NULL
-    );
-  `);
-  await connection.query(`
-    CREATE TABLE IF NOT EXISTS psychographic_data (
-      psycho_id VARCHAR PRIMARY KEY,
-      submission_id VARCHAR NOT NULL,
-      category VARCHAR NOT NULL,
-      attribute VARCHAR NOT NULL,
-      sentiment DOUBLE,
-      source VARCHAR NOT NULL,
-      confidence DOUBLE NOT NULL,
-      reviewed BOOLEAN NOT NULL DEFAULT FALSE,
-      created_at VARCHAR NOT NULL
-    );
-  `);
-}
-
-async function recordRawSubmissionLocally(connection, row) {
-  await connection.query(`
-    INSERT OR REPLACE INTO raw_submissions
-      (submission_id, submitted_at, raw_text, source_context, user_category_id, user_category_label, processing_status, lexicon_version)
-    VALUES (
-      '${sqlEscape(row.submission_id)}',
-      '${sqlEscape(row.submitted_at)}',
-      '${sqlEscape(row.raw_text)}',
-      '${sqlEscape(row.source_context)}',
-      ${row.user_category_id ? `'${sqlEscape(row.user_category_id)}'` : "NULL"},
-      ${row.user_category_label ? `'${sqlEscape(row.user_category_label)}'` : "NULL"},
-      '${sqlEscape(row.processing_status || "unprocessed")}',
-      ${row.lexicon_version ? `'${sqlEscape(row.lexicon_version)}'` : "NULL"}
-    );
-  `);
-}
-
-async function recordBehaviorLocally(connection, row) {
-  await connection.query(`
-    INSERT OR REPLACE INTO behavioral_data
-      (behavior_id, submission_id, category, action, entity, metadata_json, source, confidence, reviewed, created_at)
-    VALUES (
-      '${sqlEscape(row.behavior_id)}',
-      '${sqlEscape(row.submission_id)}',
-      '${sqlEscape(row.category)}',
-      ${row.action ? `'${sqlEscape(row.action)}'` : "NULL"},
-      ${row.entity ? `'${sqlEscape(row.entity)}'` : "NULL"},
-      ${row.metadata_json ? `'${sqlEscape(row.metadata_json)}'` : "NULL"},
-      '${sqlEscape(row.source)}',
-      ${Number(row.confidence) || 0},
-      ${row.reviewed ? "TRUE" : "FALSE"},
-      '${sqlEscape(row.created_at)}'
-    );
-  `);
-}
-
-async function recordPsychographicLocally(connection, row) {
-  await connection.query(`
-    INSERT OR REPLACE INTO psychographic_data
-      (psycho_id, submission_id, category, attribute, sentiment, source, confidence, reviewed, created_at)
-    VALUES (
-      '${sqlEscape(row.psycho_id)}',
-      '${sqlEscape(row.submission_id)}',
-      '${sqlEscape(row.category)}',
-      '${sqlEscape(row.attribute)}',
-      ${row.sentiment !== undefined && row.sentiment !== null ? Number(row.sentiment) : "NULL"},
-      '${sqlEscape(row.source)}',
-      ${Number(row.confidence) || 0},
-      ${row.reviewed ? "TRUE" : "FALSE"},
-      '${sqlEscape(row.created_at)}'
-    );
-  `);
-}
-
 
 const fmt = (v) => {
   if (v === null || v === undefined) return <span style={{ color: "#4a5568" }}>NULL</span>;
@@ -635,42 +493,6 @@ function buildQbeSql({ source, shape, zipPrefix, categoryId, status, since, limi
   const cappedLimit = Math.max(1, Math.min(Number(limit) || 25, 500));
   const dir = String(sortDir).toUpperCase() === "ASC" ? "ASC" : "DESC";
 
-  if (source === "journal") {
-    const w = [];
-    if (since) w.push(`submitted_at >= '${sqlEscape(since)}'`);
-    if (commentLike && commentLike.trim()) w.push(`raw_text ILIKE '%${sqlEscape(commentLike.trim())}%'`);
-    const whereSql = w.length ? `\nWHERE ${w.join("\n  AND ")}` : "";
-    const sortCol = ({ submitted_at: "submitted_at", user_category_label: "user_category_label" })[sortBy] || "submitted_at";
-    return `SELECT submission_id, submitted_at, user_category_label, raw_text, lexicon_version
-FROM raw_submissions${whereSql}
-ORDER BY ${sortCol} ${dir}
-LIMIT ${cappedLimit};`;
-  }
-
-  if (source === "behaviors") {
-    const w = [];
-    if (since) w.push(`created_at >= '${sqlEscape(since)}'`);
-    if (commentLike && commentLike.trim()) w.push(`(entity ILIKE '%${sqlEscape(commentLike.trim())}%' OR action ILIKE '%${sqlEscape(commentLike.trim())}%')`);
-    const whereSql = w.length ? `\nWHERE ${w.join("\n  AND ")}` : "";
-    const sortCol = ({ created_at: "created_at", category: "category", confidence: "confidence" })[sortBy] || "created_at";
-    return `SELECT created_at, category, action, entity, confidence, source, reviewed, submission_id
-FROM behavioral_data${whereSql}
-ORDER BY ${sortCol} ${dir}
-LIMIT ${cappedLimit};`;
-  }
-
-  if (source === "traits") {
-    const w = [];
-    if (since) w.push(`created_at >= '${sqlEscape(since)}'`);
-    if (commentLike && commentLike.trim()) w.push(`attribute ILIKE '%${sqlEscape(commentLike.trim())}%'`);
-    const whereSql = w.length ? `\nWHERE ${w.join("\n  AND ")}` : "";
-    const sortCol = ({ created_at: "created_at", category: "category", attribute: "attribute", confidence: "confidence" })[sortBy] || "created_at";
-    return `SELECT created_at, category, attribute, sentiment, confidence, source, reviewed, submission_id
-FROM psychographic_data${whereSql}
-ORDER BY ${sortCol} ${dir}
-LIMIT ${cappedLimit};`;
-  }
-
   // civic (default)
   const where = [];
   if (zipPrefix && zipPrefix.trim()) {
@@ -758,7 +580,7 @@ export default function PersonalPod() {
   }));
   const [authState, setAuthState] = useState("checking");
   const [rebindingNotice, setRebindingNotice] = useState(null);
-  const [tab, setTab] = useState("journal");
+  const [tab, setTab] = useState("chat");
   const [showAdvanced, setShowAdvanced] = useState(
     () => localStorage.getItem("forum.showAdvanced") === "1"
   );
@@ -768,11 +590,6 @@ export default function PersonalPod() {
   const [showCivicAiDisclosure, setShowCivicAiDisclosure] = useState(false);
   const [expandedRowId, setExpandedRowId] = useState(null);
 
-  const [journalText, setJournalText] = useState("");
-  const [journalCategoryId, setJournalCategoryId] = useState(INSIGHT_CATEGORIES[0]?.id || "");
-  const [journalSending, setJournalSending] = useState(false);
-  const [journalStatus, setJournalStatus] = useState(null);
-  const [journalTotals, setJournalTotals] = useState({ raw: 0, behaviors: 0, psychographics: 0 });
   const [civicComment, setCivicComment] = useState("");
   const [civicZip, setCivicZip] = useState("");
   // Forum Feedback now spans all 9 insight categories. The state holds
@@ -851,149 +668,6 @@ export default function PersonalPod() {
     setLocalSubmissions(rows);
     return rows;
   }, []);
-
-  const refreshJournalTotals = useCallback(async () => {
-    const [raw, beh, psy] = await Promise.all([
-      getRawSubmissions(),
-      getBehaviors(),
-      getPsychographics(),
-    ]);
-    setJournalTotals({
-      raw: raw.length,
-      behaviors: beh.length,
-      psychographics: psy.length,
-    });
-  }, []);
-
-  // Mount-time refresh of the journal counters from IndexedDB. This is an
-  // intentional "sync with an external store" pattern, not derived state,
-  // so the react-hooks/set-state-in-effect rule does not apply.
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    refreshJournalTotals().catch(() => { /* noop */ });
-  }, [refreshJournalTotals]);
-
-  // Live preview as the user types in the journal box. Derived from
-  // journalText, so we compute in render via useMemo rather than mirror
-  // it into useState through an effect.
-  const journalPreview = useMemo(() => {
-    if (!journalText.trim()) return { behaviors: [], psychographics: [] };
-    const insights = extractInsights(journalText);
-    return { behaviors: insights.behaviors, psychographics: insights.psychographics };
-  }, [journalText]);
-
-  const submitJournalEntry = useCallback(async () => {
-    if (!journalText.trim() || journalSending) return;
-    if (!conn && !isLocalWebApp) return;
-    const cat = findInsightCategory(journalCategoryId);
-    if (!cat) {
-      setJournalStatus({ ok: false, text: "Pick a category for this entry." });
-      return;
-    }
-    setJournalSending(true);
-    setJournalStatus(null);
-
-    const submissionId = crypto.randomUUID();
-    const submittedAt = new Date().toISOString();
-    const rawText = journalText.trim();
-
-    const rawRow = {
-      submission_id: submissionId,
-      submitted_at: submittedAt,
-      raw_text: rawText,
-      source_context: "journal",
-      user_category_id: cat.id,
-      user_category_label: cat.label,
-      processing_status: `rule:${LEXICON_VERSION}`,
-      lexicon_version: LEXICON_VERSION,
-    };
-
-    try {
-      const insights = extractInsights(rawText);
-      const podRows = { raw: rawRow, behaviors: [], traits: [] };
-
-      await writeJournalEntryToPod(rawRow);
-
-      const userDeclared = {
-        submission_id: submissionId,
-        category: cat.category,
-        source: "user",
-        confidence: 1.0,
-        reviewed: true,
-        created_at: submittedAt,
-      };
-      if (cat.kind === "behavioral") {
-        const row = { behavior_id: crypto.randomUUID(), ...userDeclared };
-        await writeBehaviorToPod(row);
-        podRows.behaviors.push(row);
-      } else {
-        const row = { psycho_id: crypto.randomUUID(), ...userDeclared, attribute: "(declared)", sentiment: 0 };
-        await writeTraitToPod(row);
-        podRows.traits.push(row);
-      }
-
-      for (const tag of extractUserTags(rawText)) {
-        const row = {
-          psycho_id: crypto.randomUUID(),
-          submission_id: submissionId,
-          ...tag,
-          reviewed: true,
-          created_at: submittedAt,
-        };
-        await writeTraitToPod(row);
-        podRows.traits.push(row);
-      }
-
-      for (const b of insights.behaviors) {
-        const row = {
-          behavior_id: crypto.randomUUID(),
-          submission_id: submissionId,
-          ...b,
-          metadata_json: b.why ? JSON.stringify(b.why) : null,
-          reviewed: false,
-          created_at: submittedAt,
-        };
-        await writeBehaviorToPod(row);
-        podRows.behaviors.push(row);
-      }
-      for (const p of insights.psychographics) {
-        const row = {
-          psycho_id: crypto.randomUUID(),
-          submission_id: submissionId,
-          ...p,
-          reviewed: false,
-          created_at: submittedAt,
-        };
-        await writeTraitToPod(row);
-        podRows.traits.push(row);
-      }
-
-      await saveRawSubmission(rawRow);
-      if (conn) {
-        await recordRawSubmissionLocally(conn, rawRow);
-      }
-      for (const row of podRows.behaviors) {
-        await saveBehavior(row);
-        if (conn) await recordBehaviorLocally(conn, row);
-      }
-      for (const row of podRows.traits) {
-        await savePsychographic(row);
-        if (conn) await recordPsychographicLocally(conn, row);
-      }
-
-      await refreshJournalTotals();
-      setJournalText("");
-      setJournalStatus({
-        ok: true,
-        text: `Saved. ${insights.behaviors.length} behavioral and ${insights.psychographics.length} psychographic signals inferred (yellow until you review).`,
-      });
-    } catch (e) {
-      console.error("Journal save failed:", e);
-      setJournalStatus({ ok: false, text: e.message });
-    } finally {
-      setJournalSending(false);
-    }
-  }, [journalText, journalCategoryId, journalSending, conn, isLocalWebApp, refreshJournalTotals]);
 
   useEffect(() => {
     const onResize = () => setViewport({ w: window.innerWidth, h: window.innerHeight });
@@ -1077,7 +751,6 @@ export default function PersonalPod() {
       setDb(null);
       setSchema([]);
       setLocalSubmissions([]);
-      setJournalTotals({ raw: 0, behaviors: 0, psychographics: 0 });
       setQbeResults(null);
       setDeviceKeyExport("");
       setDeviceKeyImport("");
@@ -1184,7 +857,6 @@ export default function PersonalPod() {
         /* already initialized */
       }
       await setupCivicTables(connection);
-      await setupInsightTables(connection);
       return { database, connection };
     }
 
@@ -1201,17 +873,15 @@ export default function PersonalPod() {
         setPodStatus("connected");
         fetchSchema(connection);
         refreshLocalSubmissions();
-        refreshJournalTotals();
         setSigningMeta(loadSigningMeta());
       } catch (e) {
         console.error("DuckDB init failed:", e);
         if (isLocalWebApp) {
           // Browser-local web app: IndexedDB is the source of truth. DuckDB is
-          // optional (Explore/SQL); civic + journal still work without it.
+          // optional (Explore/SQL); civic submissions still work without it.
           if (cancelled) return;
           setPodStatus("connected");
           refreshLocalSubmissions();
-          refreshJournalTotals();
           setSigningMeta(loadSigningMeta());
           return;
         }
@@ -1460,17 +1130,13 @@ export default function PersonalPod() {
     resetQbeFilters();
   }, [resetQbeFilters]);
 
-  // Forum Submissions and Journal data views: re-run query whenever filters
-  // change. The `chat` branch keeps the legacy tab id mapped to civic rows.
+  // Forum Submissions view: re-run query whenever filters change.
+  // The `chat` tab id is the civic rows.
   useEffect(() => {
-    if (!conn || (tab !== "chat" && tab !== "journal")) return;
-    if (tab === "chat" && qbeSource !== "civic") {
+    if (!conn || tab !== "chat") return;
+    if (qbeSource !== "civic") {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       selectQbeSource("civic");
-      return;
-    }
-    if (tab === "journal" && qbeSource === "civic") {
-      selectQbeSource("journal");
       return;
     }
     runQbe();
@@ -1594,7 +1260,7 @@ export default function PersonalPod() {
               Enable Civic AI Kami
             </div>
             <div style={{ fontSize: 12, color: "#8b949e", lineHeight: 1.6, marginBottom: 14 }}>
-              This assistant runs through the cooperative GPU and receives only what you type into chat (not your Pod submissions, journal, or other saved rows). Conversations are stored in your Personal Pod on Cloudflare and mirrored on this device for speed. <strong>Stop and forget</strong> or <strong>sign-out</strong> deletes them from the Pod and this device. The cooperative edge stores daily message counts and token counts only — not prompt text.
+              This assistant runs through the cooperative GPU and receives only what you type into chat (not your Pod submissions or other saved rows). Conversations are stored in your Personal Pod on Cloudflare and mirrored on this device for speed. <strong>Stop and forget</strong> or <strong>sign-out</strong> deletes them from the Pod and this device. The cooperative edge stores daily message counts and token counts only — not prompt text.
             </div>
             <div style={{ fontSize: 12, color: "#c9d1d9", lineHeight: 1.6, marginBottom: 14 }}>
               The model has a training cutoff and no live news or web search. For current events it may be wrong or outdated; for your own data use the <strong>Explore</strong> tab. Pack 4 says affected people must be able to correct or stop the system — use <strong>Stop and forget</strong> in the Assistant tab any time.
@@ -1682,7 +1348,6 @@ export default function PersonalPod() {
       {signedIn && <div style={S.main}>
         <div style={tabBarStyle}>
           {[
-            { id: "journal", label: "Journal" },
             { id: "chat", label: "Forum Submissions" },
             { id: "civic", label: "Forum Feedback" },
             { id: "explore", label: "Explore" },
@@ -1873,161 +1538,6 @@ export default function PersonalPod() {
                   }}>
                     {coopReport.report}
                   </pre>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {tab === "journal" && (
-          <div style={formPanelStyle}>
-            <div style={{ width: "100%", maxWidth: 900 }}>
-              <div style={{ fontSize: 16, fontWeight: 700, color: "#e6edf3", marginBottom: 4 }}>Journal</div>
-              <div style={{ fontSize: 12, color: "#8b949e", marginBottom: 16, lineHeight: 1.5, maxWidth: 640 }}>
-                Anything you want your Pod to remember. The category tells your Pod how to file it. Hashtags like <code>#sustainability</code> become traits at full confidence. Everything stays on this device.
-              </div>
-
-              <div style={{ display: "flex", gap: 12, marginBottom: 14, fontSize: 11, color: "#8b949e" }}>
-                <div style={{ padding: "6px 10px", border: "1px solid #21262d", borderRadius: 6, background: "#0d1117" }}>
-                  Entries <span style={{ color: "#79c0ff", marginLeft: 4 }}>{journalTotals.raw}</span>
-                </div>
-                <div style={{ padding: "6px 10px", border: "1px solid #21262d", borderRadius: 6, background: "#0d1117" }}>
-                  Behaviors <span style={{ color: "#79c0ff", marginLeft: 4 }}>{journalTotals.behaviors}</span>
-                </div>
-                <div style={{ padding: "6px 10px", border: "1px solid #21262d", borderRadius: 6, background: "#0d1117" }}>
-                  Traits <span style={{ color: "#79c0ff", marginLeft: 4 }}>{journalTotals.psychographics}</span>
-                </div>
-              </div>
-
-              <label style={{ fontSize: 11, color: "#8b949e", display: "block", marginBottom: 6 }}>What kind of entry is this?</label>
-              <select
-                value={journalCategoryId}
-                onChange={(e) => setJournalCategoryId(e.target.value)}
-                style={{ ...S.chatInput, width: "100%", marginBottom: 12, boxSizing: "border-box" }}
-              >
-                <optgroup label="What I did">
-                  {INSIGHT_CATEGORIES.filter((c) => c.kind === "behavioral").map((c) => (
-                    <option key={c.id} value={c.id}>{c.label}</option>
-                  ))}
-                </optgroup>
-                <optgroup label="How I think / what I value">
-                  {INSIGHT_CATEGORIES.filter((c) => c.kind === "psychographic").map((c) => (
-                    <option key={c.id} value={c.id}>{c.label}</option>
-                  ))}
-                </optgroup>
-              </select>
-
-              <textarea
-                value={journalText}
-                onChange={(e) => setJournalText(e.target.value)}
-                placeholder={"What happened, or what's on your mind?  e.g. 'Bought a new Patagonia jacket for my hiking trip. Expensive but I love that they use recycled materials.'  Add #tags for traits you want to remember."}
-                style={{ ...S.chatInput, width: "100%", minHeight: 140, marginBottom: 12, boxSizing: "border-box", lineHeight: 1.5 }}
-              />
-
-              {(journalPreview.behaviors.length > 0 || journalPreview.psychographics.length > 0) && (
-                <div style={{ marginBottom: 12, padding: "10px 12px", border: "1px solid #21262d", borderRadius: 8, background: "#0d1117" }}>
-                  <div style={{ fontSize: 10, color: "#8b949e", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 6 }}>Preview — what your Pod would file</div>
-                  {journalPreview.behaviors.map((b, i) => (
-                    <div key={`b${i}`} style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 11, color: "#c9d1d9", padding: "3px 0" }}>
-                      <span style={S.tag("#58a6ff")}>do</span>
-                      <span style={{ color: "#8b949e" }}>{b.category} / {b.action}</span>
-                      {b.entity && <span style={{ color: "#79c0ff" }}>{b.entity}</span>}
-                      <span style={{ marginLeft: "auto", color: "#484f58" }}>{Math.round(b.confidence * 100)}%</span>
-                    </div>
-                  ))}
-                  {journalPreview.psychographics.map((p, i) => (
-                    <div key={`p${i}`} style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 11, color: "#c9d1d9", padding: "3px 0" }}>
-                      <span style={S.tag("#d29922")}>be</span>
-                      <span style={{ color: "#8b949e" }}>{p.category}</span>
-                      <span style={{ color: "#79c0ff" }}>{p.attribute}</span>
-                      <span style={{ marginLeft: "auto", color: "#484f58" }}>{Math.round(p.confidence * 100)}%</span>
-                    </div>
-                  ))}
-                  <div style={{ marginTop: 8, fontSize: 10, color: "#484f58", lineHeight: 1.5 }}>
-                    Inferred rows save with a yellow "review me" flag. Review them below in Journal Data.
-                  </div>
-                </div>
-              )}
-
-              <button
-                onClick={submitJournalEntry}
-                disabled={journalSending || !journalText.trim() || (!conn && !isLocalWebApp)}
-                style={{ ...S.runBtn(journalSending || !journalText.trim() || (!conn && !isLocalWebApp)), width: "100%", padding: "11px", textAlign: "center" }}
-              >
-                {journalSending ? "Saving…" : "Save to my Pod"}
-              </button>
-
-              {journalStatus && (
-                <div style={{ marginTop: 12, padding: "10px 14px", borderRadius: 6, fontSize: 12, background: journalStatus.ok ? "#122119" : "#3d1c1c", border: `1px solid ${journalStatus.ok ? "#2ea04330" : "#6e3030"}`, color: journalStatus.ok ? "#3fb950" : "#f85149" }}>
-                  {journalStatus.text}
-                </div>
-              )}
-
-              <div style={{ marginTop: 24, borderTop: "1px solid #21262d", paddingTop: 16 }}>
-                <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap", marginBottom: 10 }}>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: "#e6edf3" }}>Journal Data</div>
-                  <div style={{ fontSize: 11, color: "#8b949e" }}>
-                    {qbeMeta ? `${qbeMeta.rows} row${qbeMeta.rows === 1 ? "" : "s"}` : "loading…"}
-                  </div>
-                  <input
-                    value={qbeCommentLike}
-                    onChange={(e) => setQbeCommentLike(e.target.value)}
-                    placeholder="Search journal data..."
-                    style={{ ...S.chatInput, marginLeft: "auto", width: 220, padding: "6px 10px", fontSize: 12 }}
-                  />
-                </div>
-
-                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
-                  <span style={{ fontSize: 10, color: "#484f58", alignSelf: "center", marginRight: 4 }}>SOURCE</span>
-                  {[
-                    { id: "journal", label: "Journal entries" },
-                    { id: "behaviors", label: "Behaviors" },
-                    { id: "traits", label: "Traits" },
-                  ].map((s) => (
-                    <button
-                      key={s.id}
-                      onClick={() => selectQbeSource(s.id)}
-                      style={{
-                        background: qbeSource === s.id ? "#1f6feb" : "#161b22",
-                        border: `1px solid ${qbeSource === s.id ? "#1f6feb" : "#30363d"}`,
-                        color: qbeSource === s.id ? "#fff" : "#8b949e",
-                        borderRadius: 999,
-                        padding: "4px 10px",
-                        fontSize: 11,
-                        fontFamily: "inherit",
-                        cursor: "pointer",
-                      }}
-                    >
-                      {s.label}
-                    </button>
-                  ))}
-                </div>
-
-                {qbeError && (
-                  <div style={{ marginTop: 12, padding: "10px 14px", borderRadius: 6, fontSize: 12, background: "#3d1c1c", border: "1px solid #6e3030", color: "#f85149" }}>
-                    {qbeError}
-                  </div>
-                )}
-                {qbeResults && qbeResults.rows.length === 0 && !qbeError && (
-                  <div style={{ padding: 24, textAlign: "center", color: "#484f58", fontSize: 13 }}>
-                    No journal data matches these filters.
-                  </div>
-                )}
-                {qbeResults && qbeResults.rows.length > 0 && qbeSource !== "civic" && (
-                  <>
-                    <ResultsGrid
-                      columns={qbeResults.columns}
-                      rows={qbeResults.rows}
-                      onCellClick={(col, val) => {
-                        if (col === "category" || col === "attribute") {
-                          setQbeCommentLike(String(val));
-                        }
-                      }}
-                    />
-                    <div style={{ marginTop: 8, fontSize: 10, color: "#484f58", lineHeight: 1.5 }}>
-                      Rows with <code>source = "user"</code> are choices you made. Rows with <code>source = "rule:{LEXICON_VERSION}"</code> are inferred from your text by the deterministic extractor (no AI).
-                    </div>
-                  </>
                 )}
               </div>
             </div>
@@ -2264,7 +1774,7 @@ export default function PersonalPod() {
               <div style={{ marginTop: 8, marginBottom: 16, padding: "12px 14px", border: "1px solid #21262d", borderRadius: 8, background: "#0d1117" }}>
                 <div style={{ fontSize: 12, fontWeight: 700, color: "#e6edf3", marginBottom: 8 }}>Your data, your copy</div>
                 <div style={{ fontSize: 11, color: "#8b949e", lineHeight: 1.55, marginBottom: 10 }}>
-                  Download everything stored in this browser — submissions, journal entries, and insights — as a JSON file.
+                  Download everything stored in this browser — your submissions — as a JSON file.
                   This is your durable backup. The cooperative cloud never keeps your raw text permanently.
                 </div>
                 <button
@@ -2274,7 +1784,7 @@ export default function PersonalPod() {
                       const payload = await downloadLocalDataExport();
                       setLocalExportStatus({
                         ok: true,
-                        text: `Downloaded ${payload.data.civic_submissions.length} submission(s), ${payload.data.raw_submissions.length} journal row(s). Keep this file safe.`,
+                        text: `Downloaded ${payload.data.civic_submissions.length} submission(s). Keep this file safe.`,
                       });
                     } catch (e) {
                       setLocalExportStatus({ ok: false, text: e.message });
