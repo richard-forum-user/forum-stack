@@ -12,7 +12,7 @@ The following patterns are in `.gitignore` and must **not** be committed:
 
 ## Workspace hygiene
 
-If local copies exist under `archive/forum-on-prem/` (e.g. `private.pem`, `cron.log`), they are ignored but should be **deleted from developer machines** before investor diligence.
+The `archive/forum-on-prem/` tree moved to the Roadmap repo. If local copies of secrets from that tree exist (for example `private.pem`, `cron.log`), delete them from developer machines before investor diligence.
 
 ## Required Cloudflare secrets
 

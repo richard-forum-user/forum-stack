@@ -1,8 +1,8 @@
 # Forum Personal Pod
 
 > Legacy note: this document predates the Cloudflare Durable Object + D1 edge
-> architecture. The Node listener and Python analysis pipeline are archived
-> under `archive/forum-on-prem/`. Prefer the root `README.md`,
+> architecture. The Node listener and Python analysis pipeline moved to the
+> Roadmap repo (`forum-stack/archive/`). Prefer the root `README.md`,
 > `Handovers/13-pod-as-source-of-truth.md`, and
 > `forum-airlock/docs/civic-edge-analysis.md` for the current stack.
 

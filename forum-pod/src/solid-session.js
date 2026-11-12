@@ -120,7 +120,7 @@ export function getSolidSession() {
  * and the trial pod (HTTP to airlock.yourcommunity.forum).
  *
  *   verb: "PUT" | "LIST" | "GET" | "PROVISION"
- *   path: "/civic/submissions/abc", "/journal/raw", etc.
+ *   path: "/civic/submissions/abc", etc.
  *   data: the JSON body to PUT (or empty for GET/LIST/PROVISION)
  */
 export async function podRpc(verb, path, data = null) {

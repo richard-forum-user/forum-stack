@@ -4,12 +4,7 @@
  * and in files they download, not in the cooperative cloud.
  */
 
-import {
-  getBehaviors,
-  getPsychographics,
-  getRawSubmissions,
-  getSubmissions,
-} from "./pod-store.js";
+import { getSubmissions } from "./pod-store.js";
 import { loadMemberProfile, loadSigningMeta } from "./member-store.js";
 import { loadRecoveryEnrollment, loadRecoveryReceipts } from "./recovery-phrase.js";
 
@@ -23,12 +18,7 @@ function base64urlEncode(str) {
 }
 
 export async function buildLocalDataExport() {
-  const [submissions, rawSubmissions, behaviors, psychographics] = await Promise.all([
-    getSubmissions(),
-    getRawSubmissions(),
-    getBehaviors(),
-    getPsychographics(),
-  ]);
+  const submissions = await getSubmissions();
   return {
     kind: EXPORT_KIND,
     exported_at: new Date().toISOString(),
@@ -38,9 +28,6 @@ export async function buildLocalDataExport() {
     recovery_receipts: loadRecoveryReceipts(),
     data: {
       civic_submissions: submissions,
-      raw_submissions: rawSubmissions,
-      behavioral_data: behaviors,
-      psychographic_data: psychographics,
     },
   };
 }

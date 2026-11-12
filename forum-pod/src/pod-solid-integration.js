@@ -6,18 +6,12 @@ import {
   deleteAllAssistantConversationsFromPod,
   deleteAssistantConversationFromPod,
   writeAssistantMessageToPod,
-  writeBehaviorToPod,
   writeCivicSubmissionToPod,
-  writeJournalEntryToPod,
-  writeTraitToPod,
 } from "./solid-pod-write.js";
 import {
   listPodRows,
   syncAssistantConversationFromPod,
-  syncBehaviorsFromPod,
-  syncJournalEntriesFromPod,
   syncPodToDuckDB,
-  syncTraitsFromPod,
 } from "./solid-sync.js";
 import {
   authenticateDevice,
@@ -60,17 +54,11 @@ export {
   solidLogin,
   solidLogout,
   syncAssistantConversationFromPod,
-  syncBehaviorsFromPod,
-  syncJournalEntriesFromPod,
   syncPodToDuckDB,
-  syncTraitsFromPod,
   unlockWithWebAuthn,
   webAuthnSupported,
   writeAssistantMessageToPod,
-  writeBehaviorToPod,
   writeCivicSubmissionToPod,
-  writeJournalEntryToPod,
-  writeTraitToPod,
 };
 
 function isNativePlatform() {

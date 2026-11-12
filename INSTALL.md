@@ -1,7 +1,7 @@
 # Install Forum Pod
 
 Forum Pod is your personal data Pod for the Forum cooperative. Once
-installed, every civic submission, journal entry, behavior, trait, and
+installed, every civic submission and
 Civic AI Kami conversation lives on **your** device, in an encrypted
 SQLite vault. Nothing leaves your machine unless you explicitly opt in
 to share it with the cooperative.
@@ -31,8 +31,8 @@ All downloads live at:
    exposed to the network.
 2. The Pod UI opens and asks you to **register a passkey** with your
    fingerprint, Face ID, Windows Hello, or a hardware security key.
-3. You're in. Civic submissions, the journal, the Kami assistant — all
-   working offline.
+3. You're in. Civic submissions and the Kami assistant
+   work offline.
 
 ## Where your data lives
 

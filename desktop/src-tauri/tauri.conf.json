@@ -34,7 +34,7 @@
     "targets": ["app", "dmg", "msi", "nsis", "deb", "appimage"],
     "category": "Utility",
     "shortDescription": "Your personal Pod for the Forum cooperative.",
-    "longDescription": "Self-hosted Personal Pod that stores your civic submissions, journal entries and Kami chat history locally in an encrypted SQLite vault. Communication with the cooperative is opt-in and strictly outbound.",
+    "longDescription": "Self-hosted Personal Pod that stores your civic submissions and chat history locally in an encrypted SQLite vault. Communication with the cooperative is opt-in and strictly outbound.",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
