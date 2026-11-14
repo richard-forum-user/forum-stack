@@ -1,6 +1,6 @@
 import { urlAllowed } from "./allowlist.js";
 
-const MAX_SEEDS = 8;
+const MAX_SEEDS = 12;
 
 function push(seeds, url) {
   if (seeds.length >= MAX_SEEDS) return;
@@ -19,7 +19,6 @@ export function searchSeeds(comment) {
   if (ld) {
     const n = String(Number(ld[1]));
     push(seeds, `https://legislature.maine.gov/legis/bills/display_ps.asp?LD=${n}&snum=132`);
-    push(seeds, `https://legislature.maine.gov/legis/bills/display_ps.asp?LD=${n}&snum=131`);
     push(seeds, `https://www.maine.gov/search?q=${encodeURIComponent(`LD ${n}`)}`);
     push(seeds, `https://legiscan.com/ME/bill/LD${n}/2025`);
   } else {
