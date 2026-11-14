@@ -58,6 +58,39 @@ test("pdf text is the sentence stored in the file", async () => {
   assert.equal(await pdfToText(new TextEncoder().encode(pdf)), sentence);
 });
 
+test("a keyword search opens the matching article", async () => {
+  const pubmed = "https://pubmed.ncbi.nlm.nih.gov/?term=%22data%20centers%22";
+  const pmcSearch = "https://pmc.ncbi.nlm.nih.gov/search/?term=E2SVM%20cloud%20data%20centers";
+  const article = "https://pmc.ncbi.nlm.nih.gov/articles/PMC11164395/";
+  const sentence = "Cloud data centers present a challenge to environmental sustainability because of their significant energy consumption.";
+  const calls = [];
+  const result = await runAgent({
+    group: "academia",
+    comment: "what are experts saying about LD 307 maine data center data centers",
+    urls: [pubmed],
+    fetchImpl: async (url) => {
+      const href = String(url);
+      calls.push(href);
+      if (href.startsWith(article)) {
+        return new Response(`<p>${sentence}</p>`, { status: 200, headers: { "content-type": "text/html" } });
+      }
+      if (href.includes("pmc.ncbi.nlm.nih.gov/search")) {
+        return new Response(`<a class="usa-link docsum-title docsum-link" href="${article}">E2SVM cloud data centers</a>`, {
+          status: 200,
+          headers: { "content-type": "text/html" },
+        });
+      }
+      return new Response('<a class="docsum-title" href="/38857300/">E2SVM approach in cloud data centers.</a>', {
+        status: 200,
+        headers: { "content-type": "text/html" },
+      });
+    },
+  });
+  assert.ok(calls.includes(pmcSearch) || calls.some((url) => url.includes("pmc.ncbi.nlm.nih.gov/search")));
+  assert.ok(calls.includes(article));
+  assert.equal(result.quotes.some((quote) => quote.text === sentence && quote.url === article), true);
+});
+
 test("a bill summary also fetches the printed bill text", async () => {
   const pdf = "https://legislature.maine.gov/legis/bills/getPDF.asp?paper=HP0207&item=2&snum=132";
   const calls = [];

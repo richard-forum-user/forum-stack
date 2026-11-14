@@ -2,7 +2,8 @@ import { groupOf } from "./allowlist.js";
 import { checkQuotes } from "./quote-check.js";
 import { chooseQuotes, hasExpertQuote } from "./choose-quotes.js";
 import { searchSeeds } from "./search-seeds.js";
-import { SPOKEN_REFUSAL, statusLine } from "./speak.js";
+import { expertQuery, scholarSeeds } from "./scholar.js";
+import { asksExperts, SPOKEN_REFUSAL, statusLine } from "./speak.js";
 
 const BINDING = { gov: "GOV", academia: "ACADEMIA", press: "PRESS" };
 
@@ -45,11 +46,28 @@ export async function runCoordinator({ comment, urls, ask }) {
     buckets[group].push(raw);
   }
 
+  const payloadFor = (group, list, text) => ({
+    comment: String(text || "").slice(0, 2000),
+    urls: list,
+  });
+
+  if (asksExperts(comment) && pasted.length === 0) {
+    const early = ["gov", "press"].filter((group) => buckets[group].length);
+    const earlyResults = (await Promise.all(early.map((group) => ask(group, payloadFor(group, buckets[group], comment)))))
+      .map((result) => result || { quotes: [], pages: {} });
+    const blob = earlyResults.map((result) => Object.values(result.pages || {}).join("\n")).join("\n");
+    const query = expertQuery(comment, blob);
+    const scholar = scholarSeeds(query.term);
+    const results = [...earlyResults];
+    if (scholar.length) {
+      const academia = await ask("academia", payloadFor("academia", scholar, `${comment} ${query.hint}`));
+      results.push(academia || { quotes: [], pages: {} });
+    }
+    return { ...assembleReply(results, comment), refused };
+  }
+
   const groups = ["gov", "academia", "press"].filter((group) => buckets[group].length);
-  const asked = groups.map((group) => ask(group, {
-    comment: String(comment || "").slice(0, 2000),
-    urls: buckets[group],
-  }));
+  const asked = groups.map((group) => ask(group, payloadFor(group, buckets[group], comment)));
   const results = (await Promise.all(asked)).map((result) => result || { quotes: [], pages: {} });
 
   return { ...assembleReply(results, comment), refused };

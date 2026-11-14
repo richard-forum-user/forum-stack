@@ -177,6 +177,36 @@ test("search-page chrome is not quoted, so a greeting still refuses", async () =
   assert.equal(reply.answer, "I looked at the allowlisted pages and did not find that.");
 });
 
+test("an expert question searches peer-reviewed sources by keyword", async () => {
+  const seen = [];
+  const article = "https://pmc.ncbi.nlm.nih.gov/articles/PMC11164395/";
+  const sentence = "Cloud data centers present a challenge to environmental sustainability because of their significant energy consumption.";
+  const bill = "https://legislature.maine.gov/legis/bills/display_ps.asp?LD=307&snum=132";
+  const title = "LD # 307 An Act to Establish the Maine Data Center Coordination Council and Place a Temporary Limitation on Certain Data Centers (TITLE CHANGE)";
+  const reply = await runCoordinator({
+    comment: "Tell me about LD 307 in greater detail, what are experts saying?",
+    urls: [],
+    ask: async (group, payload) => {
+      seen.push({ group, urls: payload.urls });
+      if (group === "gov") return { quotes: [{ text: title, url: bill }], pages: { [bill]: title } };
+      if (group === "academia") return { quotes: [{ text: sentence, url: article }], pages: { [article]: sentence } };
+      return { quotes: [], pages: {} };
+    },
+  });
+  const govAt = seen.findIndex((row) => row.group === "gov");
+  const academia = seen.find((row) => row.group === "academia");
+  assert.ok(govAt >= 0);
+  assert.ok(govAt < seen.findIndex((row) => row.group === "academia"));
+  assert.ok(academia.urls[0].startsWith("https://pubmed.ncbi.nlm.nih.gov/?term="));
+  assert.match(decodeURIComponent(academia.urls[0]), /data centers/);
+  assert.equal(academia.urls[0].includes("Tell%20me"), false);
+  assert.equal(reply.ok, true);
+  assert.ok(reply.quotes.some((quote) => quote.url === article));
+  assert.ok(reply.quotes.some((quote) => quote.url === bill));
+  assert.match(reply.lead, /pmc\.ncbi\.nlm\.nih\.gov/);
+  assert.doesNotMatch(reply.lead, /not on an allowlisted page/);
+});
+
 test("a detail question quotes the bill text and says when experts are absent", async () => {
   const comment = "Tell me about LD 307 in greater detail, what are experts saying?";
   const display = "https://legislature.maine.gov/legis/bills/display_ps.asp?LD=307&snum=132";

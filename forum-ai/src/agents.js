@@ -1,6 +1,7 @@
 import { urlAllowed } from "./allowlist.js";
 import { isBillDoc, mentionsLd } from "./bill-pages.js";
 import { readAllowlisted } from "./read-page.js";
+import { isArticleUrl, isPubmedRecord, isScholarSearch } from "./scholar.js";
 import { contentTokens, pickSpans } from "./spans.js";
 
 const MAX_FETCH = 8;
@@ -51,13 +52,19 @@ export async function runAgent({ group, comment, urls, fetchImpl }) {
       if (!urlAllowed(href, group)) continue;
       const bill = isBillDoc(href);
       const named = mentionsLd(href, comment) || mentionsLd(label, comment);
-      if (bill || named || (!found.length && linkMatches(href, comment, read.url))) next.push(href);
+      const article = isArticleUrl(href) && !isPubmedRecord(href);
+      const scholar = isScholarSearch(href);
+      if (bill || named || article || scholar || (!found.length && linkMatches(href, comment, read.url))) next.push(href);
     }
     const docs = next.filter((href) => isBillDoc(href));
     const pdfLinks = docs.filter((href) => /getpdf/i.test(href)).slice(0, MAX_PDF);
     const summary = docs.filter((href) => /summary\.asp|dockets\.asp/i.test(href)).slice(0, 1);
-    const rest = next.filter((href) => !isBillDoc(href));
+    const articles = next.filter((href) => isArticleUrl(href) && !isPubmedRecord(href)).slice(0, 2);
+    const scholar = next.filter((href) => isScholarSearch(href)).slice(0, 2);
+    const rest = next.filter((href) => !docs.includes(href) && !articles.includes(href) && !scholar.includes(href));
     queue.unshift(...pdfLinks, ...summary);
+    if (articles.length) queue.unshift(...articles);
+    else queue.unshift(...scholar);
     queue.push(...rest);
   }
   return { quotes, pages };

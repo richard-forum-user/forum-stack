@@ -1,6 +1,7 @@
 import { urlAllowed } from "./allowlist.js";
 import { isBillDoc } from "./bill-pages.js";
 import { pdfToText } from "./pdf-text.js";
+import { isArticleUrl, isPubmedRecord } from "./scholar.js";
 
 const SKIP_LINK = /\.(pdf|png|jpe?g|gif|css|js|ico|svg|zip|xml)(\?|$)/i;
 
@@ -29,9 +30,56 @@ export function linksIn(html, base, group) {
     const text = match[2].replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
     out.push({ url: abs, text, doc: isBillDoc(abs) });
   }
-  const docs = out.filter((link) => link.doc);
-  const rest = out.filter((link) => !link.doc);
-  return [...docs, ...rest].slice(0, 16);
+  const articles = out.filter((link) => isArticleUrl(link.url) && !isPubmedRecord(link.url));
+  const records = out.filter((link) => isPubmedRecord(link.url));
+  const docs = out.filter((link) => link.doc && !articles.includes(link));
+  const rest = out.filter((link) => !link.doc && !articles.includes(link) && !records.includes(link));
+  return [...articles.map((link) => link.url), ...titleSearches(html, base, group), ...records.map((link) => link.url), ...docs.map((link) => link.url), ...rest.map((link) => link.url)].slice(0, 12);
+}
+
+function plainLabel(html) {
+  return String(html || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+}
+
+// PubMed result titles become PMC searches, because the article page itself
+// is a cookie wall and the PMC copy is readable HTML.
+function titleSearches(html, base, group) {
+  let host = "";
+  try {
+    host = new URL(base).hostname.toLowerCase();
+  } catch {
+    return [];
+  }
+  if (!host.endsWith("pubmed.ncbi.nlm.nih.gov")) return [];
+  const titles = [];
+  const re = /class="docsum-title"[\s\S]*?>([\s\S]*?)<\/a>/gi;
+  let match;
+  while ((match = re.exec(String(html || "")))) {
+    const title = plainLabel(match[1]);
+    if (title.length < 30) continue;
+    titles.push(title);
+  }
+  let phrases = [];
+  try {
+    phrases = [...new URL(base).searchParams.get("term").matchAll(/"([^"]{8,80})"/g)].map((item) => item[1].toLowerCase());
+  } catch {
+    phrases = [];
+  }
+  const hit = (title) => phrases.find((phrase) => title.toLowerCase().includes(phrase));
+  const phrased = phrases.length ? titles.filter((title) => hit(title)) : [];
+  const rank = (title) => {
+    const phrase = hit(title);
+    return (phrase ? phrase.length * 20 : 0) + title.length;
+  };
+  const ranked = (phrased.length ? phrased : titles).sort((a, b) => rank(b) - rank(a));
+  const found = [];
+  for (const title of ranked) {
+    const url = `https://pmc.ncbi.nlm.nih.gov/search/?term=${encodeURIComponent(title.slice(0, 180))}`;
+    if (!urlAllowed(url, group) || found.includes(url)) continue;
+    found.push(url);
+    if (found.length === 2) break;
+  }
+  return found;
 }
 
 export function htmlToText(html) {
@@ -110,7 +158,7 @@ export async function readAllowlisted(raw, group, fetchImpl = globalThis.fetch) 
     if (type && !/text\/html|text\/plain|application\/xhtml/i.test(type)) return null;
     const html = new TextDecoder().decode(bytes);
     const text = htmlToText(html).slice(0, 20000);
-    if (!text) return null;
+    if (!text || /cookies must be enabled/i.test(text)) return null;
     return { url: finalUrl, text, links: linksIn(html, finalUrl, group) };
   }
   return null;
