@@ -53,7 +53,7 @@ test("oauth bearer is enough and an anonymous visitor only sees admin login", as
   const anon = await session.fetch(new Request("https://yourcommunity.forum/forum-ai"));
   const anonHtml = await anon.text();
   assert.match(anonHtml, /type="password"/);
-  assert.doesNotMatch(anonHtml, /name="comment"/);
+  assert.match(anonHtml, /name="comment"/);
 
   const oauth = await session.fetch(new Request("https://yourcommunity.forum/forum-ai", {
     headers: { authorization: "Bearer already-in-the-browser" },

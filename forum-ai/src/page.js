@@ -53,13 +53,13 @@ function renderResult(result) {
 
 export function renderPage({ authorized, kind, result, error }) {
   const err = error ? `<p class="err">${escapeHtml(error)}</p>` : "";
-  const body = authorized
-    ? `<p class="who">${kind === "admin" ? "Signed in as admin." : "Signed in with the Forum session already in this browser."}</p>
-       ${commentForm()}
-       ${renderResult(result)}`
-    : `<p>A Forum session already in this browser opens this page. There is no second password.</p>
-       <p>Sign in on the Forum, then open this page again.</p>
+  const who = authorized
+    ? `<p class="who">${kind === "admin" ? "Signed in as admin." : "Signed in with the Forum session already in this browser."}</p>`
+    : `<p>Checking a comment uses the Forum session already in this browser. There is no second password.</p>
        ${adminForm()}`;
+  const body = `${who}
+       ${commentForm()}
+       ${renderResult(result)}`;
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
