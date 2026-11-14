@@ -42,8 +42,10 @@ test("a forum session cookie opens the page with no second password", async () =
   }));
   const html = await response.text();
   assert.equal(response.status, 200);
-  assert.match(html, /name="comment"/);
+  assert.match(html, /name="message"/);
   assert.doesNotMatch(html, /type="password"/);
+  assert.doesNotMatch(html, /name="sources"/);
+  assert.doesNotMatch(html, /name="comment"/);
   assert.ok([...storage.map.values()].includes("forum_session=abc123"));
 });
 
@@ -53,14 +55,18 @@ test("oauth bearer is enough and an anonymous visitor only sees admin login", as
   const anon = await session.fetch(new Request("https://yourcommunity.forum/forum-ai"));
   const anonHtml = await anon.text();
   assert.match(anonHtml, /type="password"/);
-  assert.match(anonHtml, /name="comment"/);
+  assert.match(anonHtml, /name="username"/);
+  assert.doesNotMatch(anonHtml, /name="message"/);
+  assert.doesNotMatch(anonHtml, /name="comment"/);
+  assert.doesNotMatch(anonHtml, /name="sources"/);
 
   const oauth = await session.fetch(new Request("https://yourcommunity.forum/forum-ai", {
     headers: { authorization: "Bearer already-in-the-browser" },
   }));
   const html = await oauth.text();
-  assert.match(html, /name="comment"/);
+  assert.match(html, /name="message"/);
   assert.doesNotMatch(html, /type="password"/);
+  assert.doesNotMatch(html, /name="sources"/);
 });
 
 test("the coordinator is called without the forum cookie", async () => {
@@ -138,4 +144,43 @@ test("admin password is checked and not stored", async () => {
     assert.notEqual(value, "test-only-password");
     assert.equal(String(value).includes("test-only-password"), false);
   }
+});
+
+test("a signed-in message is kept in the chat thread", async () => {
+  const storage = memoryStorage();
+  const session = new ForumAiSession({ storage }, envWith(storage, async () => Response.json({
+    ok: true,
+    answer: "\"The bill was enacted in 2024.\"",
+    quotes: [{ text: "The bill was enacted in 2024.", url: "https://www.maine.gov/bill" }],
+    refused: [],
+  })));
+  const opened = await session.fetch(new Request("https://yourcommunity.forum/forum-ai", {
+    headers: { cookie: "forum_session=abc123" },
+  }));
+  const sid = opened.headers.getSetCookie().find((row) => row.startsWith("forum_ai_sid="));
+  const cookie = `forum_session=abc123; ${sid.split(";")[0]}`;
+  const posted = await session.fetch(new Request("https://yourcommunity.forum/forum-ai", {
+    method: "POST",
+    headers: {
+      cookie,
+      "content-type": "application/x-www-form-urlencoded",
+    },
+    body: "message=Was+the+bill+enacted%3F+https%3A%2F%2Fwww.maine.gov%2Fbill",
+  }));
+  const html = await posted.text();
+  assert.equal(posted.status, 200);
+  assert.match(html, /Was the bill enacted\?/);
+  assert.match(html, /The bill was enacted in 2024\./);
+  assert.match(html, /class="user"/);
+  assert.match(html, /class="assistant"/);
+  assert.match(html, /name="message"/);
+  assert.doesNotMatch(html, /name="sources"/);
+  assert.doesNotMatch(html, /type="password"/);
+
+  const again = await session.fetch(new Request("https://yourcommunity.forum/forum-ai", {
+    headers: { cookie },
+  }));
+  const kept = await again.text();
+  assert.match(kept, /Was the bill enacted\?/);
+  assert.match(kept, /The bill was enacted in 2024\./);
 });

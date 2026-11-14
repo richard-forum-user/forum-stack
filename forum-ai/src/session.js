@@ -81,6 +81,7 @@ async function readFields(request) {
   return {
     username: params.get("username") || "",
     password: params.get("password") || "",
+    message: params.get("message") || "",
     comment: params.get("comment") || "",
     sources: params.get("sources") || "",
   };
@@ -112,12 +113,14 @@ export class ForumAiSession {
     const forumOk = sid ? Boolean(await this.state.storage.get(`forum:${sid}`)) : false;
     const authorized = adminOk || forumOk;
     const kind = adminOk ? "admin" : forumOk ? "forum" : "";
+    if (authorized && !sid) sid = crypto.randomUUID();
 
     if (path === "/forum-ai/admin" && request.method === "POST") {
       return this.login(request);
     }
     if (path === "/forum-ai" && request.method === "GET") {
-      return this.render({ authorized, kind, sid });
+      const thread = authorized ? await this.loadThread(sid) : [];
+      return this.render({ authorized, kind, sid, thread });
     }
     if (path === "/forum-ai" && request.method === "POST") {
       if (!authorized) {
@@ -127,7 +130,7 @@ export class ForumAiSession {
           authorized: false,
           kind: "",
           sid,
-          error: "Sign in to the Forum in this browser. This page does not take a second password.",
+          error: "Sign in first.",
           status: 401,
         });
       }
@@ -136,10 +139,22 @@ export class ForumAiSession {
     return jsonResponse({ error: "not found" }, 404);
   }
 
-  render({ authorized, kind, sid, result, error, status = 200 }) {
+  async loadThread(sid) {
+    if (!sid) return [];
+    const stored = await this.state.storage.get(`thread:${sid}`);
+    return Array.isArray(stored) ? stored : [];
+  }
+
+  async saveThread(sid, thread) {
+    const trimmed = thread.slice(-40);
+    if (sid) await this.state.storage.put(`thread:${sid}`, trimmed);
+    return trimmed;
+  }
+
+  render({ authorized, kind, sid, thread, error, status = 200 }) {
     const headers = new Headers();
     if (sid) headers.append("set-cookie", cookieHeader("forum_ai_sid", sid, 60 * 60 * 12));
-    return htmlResponse(renderPage({ authorized, kind, result, error }), status, headers);
+    return htmlResponse(renderPage({ authorized, kind, thread, error }), status, headers);
   }
 
   async login(request) {
@@ -169,10 +184,11 @@ export class ForumAiSession {
     const fields = await readFields(request);
     if (fields.error) return jsonResponse({ error: "too large" }, 413);
     const wantsJson = (request.headers.get("content-type") || "").includes("application/json");
-    const comment = String(fields.comment || "").trim();
+    const comment = String(fields.message || fields.comment || "").trim();
     if (!comment) {
       if (wantsJson) return jsonResponse({ error: "missing comment" }, 400);
-      return this.render({ ...ctx, error: "Write a comment to check.", status: 400 });
+      const thread = await this.loadThread(ctx.sid);
+      return this.render({ ...ctx, thread, error: "Write a message.", status: 400 });
     }
     const urls = extractUrls(fields.sources, comment).slice(0, 8);
     const payload = coordinatorPayload(comment, urls);
@@ -190,7 +206,16 @@ export class ForumAiSession {
     } catch {
       reply = { ok: false, answer: REFUSAL, quotes: [], refused: [] };
     }
+    const thread = await this.loadThread(ctx.sid);
+    thread.push({ role: "user", text: comment.slice(0, 2000) });
+    thread.push({
+      role: "assistant",
+      text: reply.ok ? "" : (reply.answer || reply.refusal || REFUSAL),
+      quotes: reply.ok ? (reply.quotes || []) : [],
+      refused: reply.refused || [],
+    });
+    const saved = await this.saveThread(ctx.sid, thread);
     if (wantsJson) return jsonResponse(reply);
-    return this.render({ ...ctx, result: reply });
+    return this.render({ ...ctx, thread: saved });
   }
 }
