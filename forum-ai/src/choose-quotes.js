@@ -1,5 +1,6 @@
 import { hostGroup } from "./allowlist.js";
 import { isBillDoc } from "./bill-pages.js";
+import { canonicalArticle, isArticleUrl, isPubmedRecord } from "./scholar.js";
 
 const CHROME = [
   "search terms",
@@ -13,6 +14,7 @@ const CHROME = [
 
 function searchUrl(raw) {
   try {
+    if (isArticleUrl(raw) && !isPubmedRecord(raw)) return false;
     const url = new URL(raw);
     const path = url.pathname.toLowerCase();
     if (path.includes("search")) return true;

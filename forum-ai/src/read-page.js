@@ -1,7 +1,7 @@
 import { urlAllowed } from "./allowlist.js";
 import { isBillDoc } from "./bill-pages.js";
 import { pdfToText } from "./pdf-text.js";
-import { isArticleUrl, isPubmedRecord } from "./scholar.js";
+import { canonicalArticle, isArticleUrl, isPubmedRecord } from "./scholar.js";
 
 const SKIP_LINK = /\.(pdf|png|jpe?g|gif|css|js|ico|svg|zip|xml)(\?|$)/i;
 
@@ -105,9 +105,35 @@ async function dropBody(response) {
   }
 }
 
+const remembered = new Map();
+const REMEMBER_MS = 10 * 60 * 1000;
+
+function recall(url) {
+  const hit = remembered.get(url);
+  if (!hit || Date.now() - hit.at > REMEMBER_MS) return null;
+  return hit.value;
+}
+
+function remember(url, value) {
+  remembered.set(url, { at: Date.now(), value });
+  if (remembered.size > 40) remembered.delete(remembered.keys().next().value);
+}
+
 // Returns page text only after the host allowlist accepts the URL. Redirects
-// are manual so an off-list Location is never requested.
+// are manual so an off-list Location is never requested. A page read in the
+// last few minutes is reused when the live fetch fails.
 export async function readAllowlisted(raw, group, fetchImpl = globalThis.fetch) {
+  const read = await fetchAllowlisted(raw, group, fetchImpl);
+  if (fetchImpl === globalThis.fetch && read) {
+    remember(canonicalArticle(raw), read);
+    remember(canonicalArticle(read.url), read);
+  }
+  if (read) return read;
+  if (fetchImpl !== globalThis.fetch) return null;
+  return recall(canonicalArticle(raw));
+}
+
+async function fetchAllowlisted(raw, group, fetchImpl) {
   let current = String(raw || "");
   const seen = new Set();
   for (let hop = 0; hop < 3; hop++) {

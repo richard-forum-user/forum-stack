@@ -177,6 +177,23 @@ test("search-page chrome is not quoted, so a greeting still refuses", async () =
   assert.equal(reply.answer, "I looked at the allowlisted pages and did not find that.");
 });
 
+test("an article link keeps its quote when the url still has a search term", async () => {
+  const article = "https://pmc.ncbi.nlm.nih.gov/articles/PMC8876709/?term=data%20centers";
+  const sentence = "Design of EAFT scheme that reduces energy consumption in data centers while preserving a predefined level of fault tolerance.";
+  const reply = await runCoordinator({
+    comment: "What are experts saying about data centers?",
+    urls: [article],
+    ask: async () => ({
+      quotes: [{ text: sentence, url: article }],
+      pages: { [article]: sentence },
+    }),
+  });
+  assert.equal(reply.ok, true);
+  assert.equal(reply.quotes[0].url, article);
+  assert.match(reply.lead, /pmc\.ncbi\.nlm\.nih\.gov/);
+  assert.doesNotMatch(reply.lead, /not on an allowlisted page/);
+});
+
 test("an expert question searches peer-reviewed sources by keyword", async () => {
   const seen = [];
   const article = "https://pmc.ncbi.nlm.nih.gov/articles/PMC11164395/";

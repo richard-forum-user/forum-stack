@@ -11,6 +11,22 @@ const TITLE_DROP = new Set([
   "council", "regarding", "state", "within", "under", "through", "provide",
 ]);
 
+// Article pages stay article pages when a search link adds ?term=.
+export function canonicalArticle(raw) {
+  try {
+    const url = new URL(raw);
+    const host = url.hostname.toLowerCase();
+    const pmc = host.endsWith("pmc.ncbi.nlm.nih.gov") && /\/articles\/pmc\d+/i.test(url.pathname);
+    const doi = (host === "doi.org" || host.endsWith(".doi.org")) && url.pathname.startsWith("/10.");
+    if (!pmc && !doi) return String(raw);
+    url.search = "";
+    url.hash = "";
+    return url.href;
+  } catch {
+    return String(raw || "");
+  }
+}
+
 export function isArticleUrl(raw) {
   try {
     const url = new URL(raw);

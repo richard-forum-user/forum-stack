@@ -1,7 +1,7 @@
 import { urlAllowed } from "./allowlist.js";
 import { isBillDoc, mentionsLd } from "./bill-pages.js";
 import { readAllowlisted } from "./read-page.js";
-import { isArticleUrl, isPubmedRecord, isScholarSearch } from "./scholar.js";
+import { canonicalArticle, isArticleUrl, isPubmedRecord, isScholarSearch } from "./scholar.js";
 import { contentTokens, pickSpans } from "./spans.js";
 
 const MAX_FETCH = 8;
@@ -19,7 +19,8 @@ function linkMatches(url, comment, fromUrl) {
 }
 
 function hrefOf(link) {
-  return typeof link === "string" ? link : link?.url;
+  const raw = typeof link === "string" ? link : link?.url;
+  return raw ? canonicalArticle(raw) : raw;
 }
 
 export async function runAgent({ group, comment, urls, fetchImpl }) {
@@ -41,8 +42,9 @@ export async function runAgent({ group, comment, urls, fetchImpl }) {
     fetches += 1;
     const read = await readAllowlisted(raw, group, fetchImpl);
     if (!read) continue;
-    pages[read.url] = read.text;
-    const found = pickSpans(comment, read.text, read.url).filter((quote) => read.text.includes(quote.text));
+    const pageUrl = canonicalArticle(read.url);
+    pages[pageUrl] = read.text;
+    const found = pickSpans(comment, read.text, pageUrl).filter((quote) => read.text.includes(quote.text));
     for (const quote of found) quotes.push(quote);
     const next = [];
     for (const link of read.links || []) {
@@ -59,7 +61,11 @@ export async function runAgent({ group, comment, urls, fetchImpl }) {
     const docs = next.filter((href) => isBillDoc(href));
     const pdfLinks = docs.filter((href) => /getpdf/i.test(href)).slice(0, MAX_PDF);
     const summary = docs.filter((href) => /summary\.asp|dockets\.asp/i.test(href)).slice(0, 1);
-    const articles = next.filter((href) => isArticleUrl(href) && !isPubmedRecord(href)).slice(0, 2);
+    const articleLinks = next.filter((href) => isArticleUrl(href) && !isPubmedRecord(href));
+    const articles = [
+      ...articleLinks.filter((href) => href.includes("pmc.ncbi.nlm.nih.gov")),
+      ...articleLinks.filter((href) => !href.includes("pmc.ncbi.nlm.nih.gov")),
+    ].slice(0, 2);
     const scholar = next.filter((href) => isScholarSearch(href)).slice(0, 2);
     const rest = next.filter((href) => !docs.includes(href) && !articles.includes(href) && !scholar.includes(href));
     queue.unshift(...pdfLinks, ...summary);
