@@ -137,6 +137,46 @@ test("an empty comment is not searched", async () => {
   assert.equal(reply.answer, SPOKEN_REFUSAL);
 });
 
+test("an LD bill keeps the current legislature page and drops search chrome", async () => {
+  const title = "LD # 307 An Act to Establish the Maine Data Center Coordination Council and Place a Temporary Limitation on Certain Data Centers (TITLE CHANGE)";
+  const bill = "https://legislature.maine.gov/legis/bills/display_ps.asp?LD=307&snum=132";
+  const older = "https://legislature.maine.gov/legis/bills/display_ps.asp?LD=307&snum=131";
+  const search = "https://pubmed.ncbi.nlm.nih.gov/?term=Tell%20me%20about%20Maine%20LD%20307";
+  const reply = await runCoordinator({
+    comment: "Tell me about Maine LD 307",
+    urls: [bill],
+    ask: async () => ({
+      quotes: [
+        { text: title, url: bill },
+        { text: "An Act to Lower the State's Health Care Costs", url: older },
+        { text: "Search terms: Tell me about Maine LD 307", url: search },
+      ],
+      pages: {
+        [bill]: title,
+        [older]: "An Act to Lower the State's Health Care Costs",
+        [search]: "Search terms: Tell me about Maine LD 307",
+      },
+    }),
+  });
+  assert.equal(reply.ok, true);
+  assert.equal(reply.lead, "Looking at legislature.maine.gov");
+  assert.deepEqual(reply.quotes.map((quote) => quote.url), [bill]);
+});
+
+test("search-page chrome is not quoted, so a greeting still refuses", async () => {
+  const search = "https://pubmed.ncbi.nlm.nih.gov/?term=Hello";
+  const reply = await runCoordinator({
+    comment: "Hello",
+    urls: [search],
+    ask: async () => ({
+      quotes: [{ text: "Cite Item in Clipboard 2 Cite Hello", url: search }],
+      pages: { [search]: "Cite Item in Clipboard 2 Cite Hello" },
+    }),
+  });
+  assert.equal(reply.ok, false);
+  assert.equal(reply.answer, "I looked at the allowlisted pages and did not find that.");
+});
+
 test("a found quote is introduced with the host that was read", async () => {
   const quote = "An Act to Establish the Maine Data Center Coordination Council and Place a Temporary Limitation on Certain Data Centers";
   const reply = await runCoordinator({

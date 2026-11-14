@@ -1,17 +1,15 @@
 import { groupOf } from "./allowlist.js";
 import { checkQuotes } from "./quote-check.js";
+import { chooseQuotes } from "./choose-quotes.js";
 import { searchSeeds } from "./search-seeds.js";
 import { lookingLine, SPOKEN_REFUSAL } from "./speak.js";
 
 const BINDING = { gov: "GOV", academia: "ACADEMIA", press: "PRESS" };
 
-export function assembleReply(results) {
-  const quotes = [];
-  const pages = {};
-  for (const result of results || []) {
-    for (const [url, text] of Object.entries(result?.pages || {})) pages[url] = text;
-    for (const quote of result?.quotes || []) quotes.push(quote);
-  }
+export function assembleReply(results, comment) {
+  const chosen = chooseQuotes(comment, results);
+  const quotes = chosen.quotes;
+  const pages = chosen.pages;
   if (!quotes.length) {
     return { ok: false, refusal: SPOKEN_REFUSAL, answer: SPOKEN_REFUSAL, quotes: [], lead: "" };
   }
@@ -57,7 +55,7 @@ export async function runCoordinator({ comment, urls, ask }) {
     results.push(result || { quotes: [], pages: {} });
   }
 
-  return { ...assembleReply(results), refused };
+  return { ...assembleReply(results, comment), refused };
 }
 
 export class ForumAiCoordinator {
