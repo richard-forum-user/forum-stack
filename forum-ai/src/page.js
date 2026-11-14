@@ -1,4 +1,4 @@
-import { REFUSAL } from "./quote-check.js";
+import { SPOKEN_REFUSAL } from "./speak.js";
 import { urlAllowed } from "./allowlist.js";
 
 export function escapeHtml(value) {
@@ -38,10 +38,9 @@ function renderTurn(turn) {
     return `<li class="user"><p>${escapeHtml(turn.text)}</p></li>`;
   }
   const quotes = renderQuotes(turn.quotes);
-  const text = quotes
-    ? ""
-    : `<p>${escapeHtml(turn.text || REFUSAL)}</p>`;
-  return `<li class="assistant">${text}${quotes}${renderRefused(turn.refused)}</li>`;
+  const line = turn.lead ? `<p>${escapeHtml(turn.lead)}</p>` : "";
+  const text = quotes ? "" : `<p>${escapeHtml(turn.text || SPOKEN_REFUSAL)}</p>`;
+  return `<li class="assistant">${line}${text}${quotes}${renderRefused(turn.refused)}</li>`;
 }
 
 function chat(kind, thread) {

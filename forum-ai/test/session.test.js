@@ -170,6 +170,8 @@ test("a signed-in message is kept in the chat thread", async () => {
   const html = await posted.text();
   assert.equal(posted.status, 200);
   assert.match(html, /Was the bill enacted\?/);
+  assert.match(html, /Looking at www\.maine\.gov/);
+  assert.ok(html.indexOf("Looking at www.maine.gov") < html.indexOf("The bill was enacted in 2024."));
   assert.match(html, /The bill was enacted in 2024\./);
   assert.match(html, /class="user"/);
   assert.match(html, /class="assistant"/);

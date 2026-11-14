@@ -1,5 +1,35 @@
 import { urlAllowed } from "./allowlist.js";
 
+const SKIP_LINK = /\.(pdf|png|jpe?g|gif|css|js|ico|svg|zip|xml)(\?|$)/i;
+
+export function linksIn(html, base, group) {
+  const out = [];
+  const seen = new Set();
+  const re = /href\s*=\s*["']([^"'#]+)["']/gi;
+  let match;
+  while ((match = re.exec(String(html || "")))) {
+    let abs;
+    try {
+      abs = new URL(match[1], base).href.split("#")[0];
+    } catch {
+      continue;
+    }
+    let path = "";
+    try {
+      path = new URL(abs).pathname;
+    } catch {
+      continue;
+    }
+    if (SKIP_LINK.test(path)) continue;
+    if (!urlAllowed(abs, group)) continue;
+    if (seen.has(abs)) continue;
+    seen.add(abs);
+    out.push(abs);
+    if (out.length === 20) break;
+  }
+  return out;
+}
+
 export function htmlToText(html) {
   return String(html || "")
     .replace(/<script[\s\S]*?<\/script>/gi, " ")
@@ -64,9 +94,10 @@ export async function readAllowlisted(raw, group, fetchImpl = globalThis.fetch) 
       await dropBody(response);
       return null;
     }
-    const text = htmlToText(await response.text()).slice(0, 20000);
+    const html = await response.text();
+    const text = htmlToText(html).slice(0, 20000);
     if (!text) return null;
-    return { url: finalUrl, text };
+    return { url: finalUrl, text, links: linksIn(html, finalUrl, group) };
   }
   return null;
 }

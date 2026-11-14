@@ -1,5 +1,7 @@
 import { groupOf } from "./allowlist.js";
-import { checkQuotes, REFUSAL } from "./quote-check.js";
+import { checkQuotes } from "./quote-check.js";
+import { searchSeeds } from "./search-seeds.js";
+import { lookingLine, SPOKEN_REFUSAL } from "./speak.js";
 
 const BINDING = { gov: "GOV", academia: "ACADEMIA", press: "PRESS" };
 
@@ -11,27 +13,30 @@ export function assembleReply(results) {
     for (const quote of result?.quotes || []) quotes.push(quote);
   }
   if (!quotes.length) {
-    return { ok: false, refusal: REFUSAL, answer: REFUSAL, quotes: [] };
+    return { ok: false, refusal: SPOKEN_REFUSAL, answer: SPOKEN_REFUSAL, quotes: [], lead: "" };
   }
   const answer = quotes.map((quote) => `"${quote.text}"`).join(" and ");
   const verdict = checkQuotes({ answer, quotes, pages });
   if (!verdict.ok) {
-    return { ok: false, refusal: verdict.refusal, answer: verdict.refusal, quotes: [], errors: verdict.errors };
+    return { ok: false, refusal: SPOKEN_REFUSAL, answer: SPOKEN_REFUSAL, quotes: [], errors: verdict.errors, lead: "" };
   }
   return {
     ok: true,
     answer,
     quotes,
+    lead: lookingLine(quotes.map((quote) => quote.url)),
     sources: [...new Set(quotes.map((quote) => quote.url))],
   };
 }
 
 // Fans a check out to the three source agents. This function does not fetch.
 export async function runCoordinator({ comment, urls, ask }) {
+  const pasted = Array.isArray(urls) ? urls : [];
+  const planned = pasted.length ? pasted : searchSeeds(comment);
   const buckets = { gov: [], academia: [], press: [] };
   const refused = [];
   const seen = new Set();
-  for (const raw of urls || []) {
+  for (const raw of planned) {
     if (seen.has(raw)) continue;
     seen.add(raw);
     const group = groupOf(raw);

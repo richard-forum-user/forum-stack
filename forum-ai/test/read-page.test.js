@@ -49,3 +49,29 @@ test("an allowlisted page is fetched and quoted exactly", async () => {
   assert.equal(result.quotes.length, 1);
   assert.equal(result.pages[result.quotes[0].url].includes(result.quotes[0].text), true);
 });
+
+test("a search page does not fetch an off-list result", async () => {
+  const calls = [];
+  const html = `<a href="https://example.com/ld307">LD 307</a><a href="https://www.maine.gov/agencies/ld307">LD 307 note</a>`;
+  const result = await runAgent({
+    group: "gov",
+    comment: "Tell me about Maine LD 307",
+    urls: ["https://www.maine.gov/search?q=LD%20307"],
+    fetchImpl: async (url) => {
+      calls.push(String(url));
+      if (String(url).includes("agencies")) {
+        return new Response("<p>An Act to Establish the Maine Data Center Coordination Council today.</p>", {
+          status: 200,
+          headers: { "content-type": "text/html" },
+        });
+      }
+      return new Response(html, { status: 200, headers: { "content-type": "text/html" } });
+    },
+  });
+  assert.deepEqual(calls, [
+    "https://www.maine.gov/search?q=LD%20307",
+    "https://www.maine.gov/agencies/ld307",
+  ]);
+  assert.equal(result.quotes.some((quote) => quote.text.includes("Data Center Coordination Council")), true);
+  assert.equal(calls.some((url) => url.includes("example.com")), false);
+});

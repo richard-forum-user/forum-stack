@@ -1,7 +1,7 @@
 import { adminMatches, forumCredential, parseCookies } from "./auth.js";
 import { extractUrls } from "./allowlist.js";
 import { renderPage } from "./page.js";
-import { REFUSAL } from "./quote-check.js";
+import { lookingLine, SPOKEN_REFUSAL } from "./speak.js";
 
 const MAX_BODY = 32 * 1024;
 
@@ -204,14 +204,16 @@ export class ForumAiSession {
       const res = await stub.fetch(outbound);
       reply = await res.json();
     } catch {
-      reply = { ok: false, answer: REFUSAL, quotes: [], refused: [] };
+      reply = { ok: false, answer: SPOKEN_REFUSAL, quotes: [], refused: [], lead: "" };
     }
+    const quotes = reply.ok ? (reply.quotes || []) : [];
     const thread = await this.loadThread(ctx.sid);
     thread.push({ role: "user", text: comment.slice(0, 2000) });
     thread.push({
       role: "assistant",
-      text: reply.ok ? "" : (reply.answer || reply.refusal || REFUSAL),
-      quotes: reply.ok ? (reply.quotes || []) : [],
+      lead: reply.ok ? (reply.lead || lookingLine(quotes.map((quote) => quote.url))) : "",
+      text: reply.ok ? "" : (reply.answer || reply.refusal || SPOKEN_REFUSAL),
+      quotes,
       refused: reply.refused || [],
     });
     const saved = await this.saveThread(ctx.sid, thread);

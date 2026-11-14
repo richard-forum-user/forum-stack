@@ -1,17 +1,41 @@
 import { urlAllowed } from "./allowlist.js";
 import { readAllowlisted } from "./read-page.js";
-import { pickSpans } from "./spans.js";
+import { contentTokens, pickSpans } from "./spans.js";
+
+const MAX_FETCH = 6;
+
+function linkMatches(url, comment, fromUrl) {
+  let fromHost = "";
+  try {
+    fromHost = new URL(fromUrl).hostname.toLowerCase();
+  } catch {
+    fromHost = "";
+  }
+  const hay = decodeURIComponent(url).toLowerCase();
+  return contentTokens(comment).some((word) => word !== "ld" && !fromHost.includes(word) && hay.includes(word));
+}
 
 export async function runAgent({ group, comment, urls, fetchImpl }) {
   const quotes = [];
   const pages = {};
-  for (const raw of urls || []) {
+  const queue = [...(urls || [])];
+  const seen = new Set();
+  let fetches = 0;
+  while (queue.length && fetches < MAX_FETCH) {
+    const raw = queue.shift();
+    if (seen.has(raw)) continue;
+    seen.add(raw);
     if (!urlAllowed(raw, group)) continue;
+    fetches += 1;
     const read = await readAllowlisted(raw, group, fetchImpl);
     if (!read) continue;
     pages[read.url] = read.text;
-    for (const quote of pickSpans(comment, read.text, read.url)) {
-      if (read.text.includes(quote.text)) quotes.push(quote);
+    const found = pickSpans(comment, read.text, read.url).filter((quote) => read.text.includes(quote.text));
+    for (const quote of found) quotes.push(quote);
+    if (found.length) continue;
+    for (const link of read.links || []) {
+      if (seen.has(link) || !linkMatches(link, comment, read.url)) continue;
+      queue.push(link);
     }
   }
   return { quotes, pages };
