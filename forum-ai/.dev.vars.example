@@ -1,0 +1,3 @@
+# Copy to .dev.vars. Set the admin password there, or with:
+# npx wrangler secret put FORUM_AI_ADMIN_PASSWORD
+FORUM_AI_ADMIN_PASSWORD=

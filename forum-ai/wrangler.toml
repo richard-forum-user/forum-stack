@@ -1,0 +1,43 @@
+name = "forum-ai"
+main = "src/index.js"
+compatibility_date = "2026-05-26"
+compatibility_flags = [ "nodejs_compat" ]
+workers_dev = false
+
+# Admin password. Local value: forum-ai/.dev.vars (gitignored).
+# Production: npx wrangler secret put FORUM_AI_ADMIN_PASSWORD
+# Do not commit the password.
+
+[[durable_objects.bindings]]
+name = "SESSION"
+class_name = "ForumAiSession"
+
+[[durable_objects.bindings]]
+name = "COORDINATOR"
+class_name = "ForumAiCoordinator"
+
+[[durable_objects.bindings]]
+name = "GOV"
+class_name = "GovSourceAgent"
+
+[[durable_objects.bindings]]
+name = "ACADEMIA"
+class_name = "AcademiaSourceAgent"
+
+[[durable_objects.bindings]]
+name = "PRESS"
+class_name = "PressSourceAgent"
+
+[[migrations]]
+tag = "v1-forum-ai-swarm"
+new_sqlite_classes = ["ForumAiSession", "ForumAiCoordinator", "GovSourceAgent", "AcademiaSourceAgent", "PressSourceAgent"]
+
+# More specific than podlink-hub's yourcommunity.forum/* route.
+# Only this path moves. The rest of the forum stays on the pod worker.
+[[routes]]
+pattern = "yourcommunity.forum/forum-ai*"
+zone_name = "yourcommunity.forum"
+
+[[routes]]
+pattern = "www.yourcommunity.forum/forum-ai*"
+zone_name = "yourcommunity.forum"
