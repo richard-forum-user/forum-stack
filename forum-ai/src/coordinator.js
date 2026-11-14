@@ -1,8 +1,8 @@
 import { groupOf } from "./allowlist.js";
 import { checkQuotes } from "./quote-check.js";
-import { chooseQuotes } from "./choose-quotes.js";
+import { chooseQuotes, hasExpertQuote } from "./choose-quotes.js";
 import { searchSeeds } from "./search-seeds.js";
-import { lookingLine, SPOKEN_REFUSAL } from "./speak.js";
+import { SPOKEN_REFUSAL, statusLine } from "./speak.js";
 
 const BINDING = { gov: "GOV", academia: "ACADEMIA", press: "PRESS" };
 
@@ -22,7 +22,7 @@ export function assembleReply(results, comment) {
     ok: true,
     answer,
     quotes,
-    lead: lookingLine(quotes.map((quote) => quote.url)),
+    lead: statusLine(comment, quotes, hasExpertQuote(quotes)),
     sources: [...new Set(quotes.map((quote) => quote.url))],
   };
 }
@@ -45,15 +45,12 @@ export async function runCoordinator({ comment, urls, ask }) {
     buckets[group].push(raw);
   }
 
-  const results = [];
-  for (const group of ["gov", "academia", "press"]) {
-    if (!buckets[group].length) continue;
-    const result = await ask(group, {
-      comment: String(comment || "").slice(0, 2000),
-      urls: buckets[group],
-    });
-    results.push(result || { quotes: [], pages: {} });
-  }
+  const groups = ["gov", "academia", "press"].filter((group) => buckets[group].length);
+  const asked = groups.map((group) => ask(group, {
+    comment: String(comment || "").slice(0, 2000),
+    urls: buckets[group],
+  }));
+  const results = (await Promise.all(asked)).map((result) => result || { quotes: [], pages: {} });
 
   return { ...assembleReply(results, comment), refused };
 }

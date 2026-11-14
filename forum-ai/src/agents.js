@@ -1,8 +1,10 @@
 import { urlAllowed } from "./allowlist.js";
+import { isBillDoc, mentionsLd } from "./bill-pages.js";
 import { readAllowlisted } from "./read-page.js";
 import { contentTokens, pickSpans } from "./spans.js";
 
-const MAX_FETCH = 6;
+const MAX_FETCH = 8;
+const MAX_PDF = 3;
 
 function linkMatches(url, comment, fromUrl) {
   let fromHost = "";
@@ -15,28 +17,48 @@ function linkMatches(url, comment, fromUrl) {
   return contentTokens(comment).some((word) => word !== "ld" && !fromHost.includes(word) && hay.includes(word));
 }
 
+function hrefOf(link) {
+  return typeof link === "string" ? link : link?.url;
+}
+
 export async function runAgent({ group, comment, urls, fetchImpl }) {
   const quotes = [];
   const pages = {};
   const queue = [...(urls || [])];
   const seen = new Set();
   let fetches = 0;
+  let pdfFetches = 0;
   while (queue.length && fetches < MAX_FETCH) {
     const raw = queue.shift();
     if (seen.has(raw)) continue;
     seen.add(raw);
     if (!urlAllowed(raw, group)) continue;
+    if (isBillDoc(raw) && /getpdf/i.test(raw)) {
+      if (pdfFetches >= MAX_PDF) continue;
+      pdfFetches += 1;
+    }
     fetches += 1;
     const read = await readAllowlisted(raw, group, fetchImpl);
     if (!read) continue;
     pages[read.url] = read.text;
     const found = pickSpans(comment, read.text, read.url).filter((quote) => read.text.includes(quote.text));
     for (const quote of found) quotes.push(quote);
-    if (found.length) continue;
+    const next = [];
     for (const link of read.links || []) {
-      if (seen.has(link) || !linkMatches(link, comment, read.url)) continue;
-      queue.push(link);
+      const href = hrefOf(link);
+      const label = typeof link === "string" ? "" : link?.text || "";
+      if (!href || seen.has(href) || queue.includes(href) || next.includes(href)) continue;
+      if (!urlAllowed(href, group)) continue;
+      const bill = isBillDoc(href);
+      const named = mentionsLd(href, comment) || mentionsLd(label, comment);
+      if (bill || named || (!found.length && linkMatches(href, comment, read.url))) next.push(href);
     }
+    const docs = next.filter((href) => isBillDoc(href));
+    const pdfLinks = docs.filter((href) => /getpdf/i.test(href)).slice(0, MAX_PDF);
+    const summary = docs.filter((href) => /summary\.asp|dockets\.asp/i.test(href)).slice(0, 1);
+    const rest = next.filter((href) => !isBillDoc(href));
+    queue.unshift(...pdfLinks, ...summary);
+    queue.push(...rest);
   }
   return { quotes, pages };
 }

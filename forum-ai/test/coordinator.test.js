@@ -177,6 +177,59 @@ test("search-page chrome is not quoted, so a greeting still refuses", async () =
   assert.equal(reply.answer, "I looked at the allowlisted pages and did not find that.");
 });
 
+test("a detail question quotes the bill text and says when experts are absent", async () => {
+  const comment = "Tell me about LD 307 in greater detail, what are experts saying?";
+  const display = "https://legislature.maine.gov/legis/bills/display_ps.asp?LD=307&snum=132";
+  const pdf = "https://legislature.maine.gov/legis/bills/getPDF.asp?paper=HP0207&item=2&snum=132";
+  const search = "https://www.npr.org/search?query=LD%20307";
+  const title = "LD # 307 An Act to Establish the Maine Data Center Coordination Council and Place a Temporary Limitation on Certain Data Centers (TITLE CHANGE)";
+  const section = "Sec. 1. Temporary limitation on certain data centers. Notwithstanding any provision of law to the contrary, prior to November 1, 2027, a municipality may not issue a permit.";
+  const reply = await runCoordinator({
+    comment,
+    urls: [display, pdf, search],
+    ask: async () => ({
+      quotes: [
+        { text: title, url: display },
+        { text: section, url: pdf },
+        { text: "Search terms: Tell me about LD 307 in greater detail", url: search },
+      ],
+      pages: {
+        [display]: title,
+        [pdf]: section,
+        [search]: "Search terms: Tell me about LD 307 in greater detail",
+      },
+    }),
+  });
+  assert.equal(reply.ok, true);
+  assert.ok(reply.quotes.length >= 2);
+  assert.ok(reply.quotes.some((quote) => quote.url === pdf && quote.text === section));
+  assert.equal(reply.quotes.some((quote) => quote.url === search), false);
+  assert.match(reply.lead, /^Looking at legislature\.maine\.gov/);
+  assert.match(reply.lead, /Expert commentary was not on an allowlisted page\.$/);
+});
+
+test("expert commentary on an allowlisted page is quoted and named", async () => {
+  const comment = "What are experts saying about LD 307?";
+  const pdf = "https://legislature.maine.gov/legis/bills/getPDF.asp?paper=HP0207&item=2&snum=132";
+  const story = "https://www.npr.org/2026/maine-ld-307";
+  const section = "Sec. 1. Temporary limitation on certain data centers. Notwithstanding any provision of law to the contrary, prior to November 1, 2027, a municipality may not issue a permit.";
+  const said = "Experts told the committee the data center limit in LD 307 is temporary.";
+  const reply = await runCoordinator({
+    comment,
+    urls: [pdf, story],
+    ask: async () => ({
+      quotes: [
+        { text: section, url: pdf },
+        { text: said, url: story },
+      ],
+      pages: { [pdf]: section, [story]: said },
+    }),
+  });
+  assert.equal(reply.ok, true);
+  assert.ok(reply.quotes.some((quote) => quote.url === story));
+  assert.equal(reply.lead, "Looking at legislature.maine.gov and www.npr.org");
+});
+
 test("a found quote is introduced with the host that was read", async () => {
   const quote = "An Act to Establish the Maine Data Center Coordination Council and Place a Temporary Limitation on Certain Data Centers";
   const reply = await runCoordinator({
