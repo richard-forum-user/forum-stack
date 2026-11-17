@@ -170,9 +170,11 @@ test("a signed-in message is kept in the chat thread", async () => {
   const html = await posted.text();
   assert.equal(posted.status, 200);
   assert.match(html, /Was the bill enacted\?/);
-  assert.match(html, /Looking at www\.maine\.gov/);
-  assert.ok(html.indexOf("Looking at www.maine.gov") < html.indexOf("The bill was enacted in 2024."));
+  assert.match(html, /That will take a moment/);
+  assert.match(html, /Other \.gov pages checked/);
+  assert.ok(html.indexOf("That will take a moment") < html.indexOf("The bill was enacted in 2024."));
   assert.match(html, /The bill was enacted in 2024\./);
+  assert.equal(html.includes("<p>and</p>"), false);
   assert.match(html, /class="user"/);
   assert.match(html, /class="assistant"/);
   assert.match(html, /name="message"/);
@@ -185,4 +187,53 @@ test("a signed-in message is kept in the chat thread", async () => {
   const kept = await again.text();
   assert.match(kept, /Was the bill enacted\?/);
   assert.match(kept, /The bill was enacted in 2024\./);
+});
+
+test("the pacing sentence is on the page before the check finishes", async () => {
+  const storage = memoryStorage();
+  let release;
+  const gate = new Promise((resolve) => {
+    release = resolve;
+  });
+  const session = new ForumAiSession({ storage }, envWith(storage, async () => {
+    await gate;
+    return Response.json({
+      ok: true,
+      answer: "\"133rd Maine Legislature\"",
+      quotes: [{ text: "133rd Maine Legislature", url: "https://legislature.maine.gov/bills/billdirectory_ps.asp?ldFrom=1&snum=133" }],
+      refused: [],
+    });
+  }));
+  const opened = await session.fetch(new Request("https://yourcommunity.forum/forum-ai", {
+    headers: { cookie: "forum_session=abc123" },
+  }));
+  const sid = opened.headers.getSetCookie().find((row) => row.startsWith("forum_ai_sid="));
+  const cookie = `forum_session=abc123; ${sid.split(";")[0]}`;
+  const posted = await session.fetch(new Request("https://yourcommunity.forum/forum-ai", {
+    method: "POST",
+    headers: {
+      cookie,
+      "content-type": "application/x-www-form-urlencoded",
+    },
+    body: "message=I%27m+curious+about+what+legislation+is+coming+up+for+the+next+session+in+Maine",
+  }));
+  const reader = posted.body.getReader();
+  const decoder = new TextDecoder();
+  let html = "";
+  while (!html.includes("That will take a moment")) {
+    const chunk = await reader.read();
+    assert.equal(chunk.done, false);
+    html += decoder.decode(chunk.value, { stream: true });
+  }
+  assert.equal(html.includes("133rd Maine Legislature"), false);
+  release();
+  while (true) {
+    const chunk = await reader.read();
+    if (chunk.done) break;
+    html += decoder.decode(chunk.value, { stream: true });
+  }
+  assert.match(html, /Bill list checked/);
+  assert.match(html, /133rd Maine Legislature/);
+  assert.ok(html.indexOf("That will take a moment") < html.indexOf("133rd Maine Legislature"));
+  assert.equal(html.includes("<p>and</p>"), false);
 });

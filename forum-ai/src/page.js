@@ -24,7 +24,15 @@ function renderQuotes(quotes) {
       ? `<p><a href="${safeUrl}" rel="noreferrer">${safeUrl}</a></p>`
       : "";
     return `<blockquote><p>${escapeHtml(quote.text)}</p>${link}</blockquote>`;
-  }).join("<p>and</p>");
+  }).join("");
+}
+
+export function renderStageBlock(stage) {
+  if (!stage) return "";
+  const line = stage.line ? `<p>${escapeHtml(stage.line)}</p>` : "";
+  const quotes = renderQuotes(stage.quotes);
+  const empty = !quotes && stage.empty ? `<p>${escapeHtml(stage.empty)}</p>` : "";
+  return `${line}${quotes}${empty}`;
 }
 
 function renderRefused(refused) {
@@ -48,21 +56,25 @@ function renderTurn(turn) {
   if (turn.role === "user") {
     return `<li class="user"><p>${escapeHtml(turn.text)}</p></li>`;
   }
-  const quotes = renderQuotes(turn.quotes);
-  const line = turn.lead ? `<p>${escapeHtml(turn.lead)}</p>` : "";
-  const text = quotes ? "" : `<p>${linkify(turn.text || SPOKEN_REFUSAL)}</p>`;
-  return `<li class="assistant">${line}${text}${quotes}${renderRefused(turn.refused)}</li>`;
+  const staged = Array.isArray(turn.stages) && turn.stages.length > 0;
+  const quotes = staged ? turn.stages.map(renderStageBlock).join("") : renderQuotes(turn.quotes);
+  const pace = turn.pace ? `<p>${escapeHtml(turn.pace)}</p>` : "";
+  const line = pace ? "" : (turn.lead ? `<p>${escapeHtml(turn.lead)}</p>` : "");
+  const close = turn.close ? `<p>${linkify(turn.close)}</p>` : "";
+  const text = quotes || close ? "" : `<p>${linkify(turn.text || SPOKEN_REFUSAL)}</p>`;
+  return `<li class="assistant">${pace}${line}${text}${quotes}${close}${renderRefused(turn.refused)}</li>`;
 }
 
-function chat(kind, thread) {
+function whoLine(kind) {
   const who = kind === "admin"
     ? "Signed in as admin."
     : "Signed in with the Forum session already in this browser.";
-  const turns = (thread || []).map(renderTurn).join("");
   return `<p class="who">${who}</p>
-    <p>Replies are quotes from allowlisted pages, or a refusal.</p>
-    <ol class="thread">${turns}</ol>
-    <form method="post" action="/forum-ai" class="composer">
+    <p>Replies are quotes from allowlisted pages, or a refusal.</p>`;
+}
+
+function composer() {
+  return `<form method="post" action="/forum-ai" class="composer">
       <label>Message
         <textarea name="message" required maxlength="2000"></textarea>
       </label>
@@ -70,9 +82,15 @@ function chat(kind, thread) {
     </form>`;
 }
 
-export function renderPage({ authorized, kind, thread, error }) {
+function chat(kind, thread) {
+  const turns = (thread || []).map(renderTurn).join("");
+  return `${whoLine(kind)}
+    <ol class="thread">${turns}</ol>
+    ${composer()}`;
+}
+
+function pageTop({ authorized, error }) {
   const err = error ? `<p class="err">${escapeHtml(error)}</p>` : "";
-  const body = authorized ? chat(kind, thread) : loginForm();
   const lead = authorized
     ? ""
     : `<p>Use the Forum session already in this browser, or sign in as admin.</p>`;
@@ -104,9 +122,36 @@ export function renderPage({ authorized, kind, thread, error }) {
 <main>
   <h1>Forum AI</h1>
   ${lead}
-  ${err}
-  ${body}
-</main>
+  ${err}`;
+}
+
+function pageBottom() {
+  return `</main>
 </body>
 </html>`;
+}
+
+export function renderPage({ authorized, kind, thread, error }) {
+  const body = authorized ? chat(kind, thread) : loginForm();
+  return `${pageTop({ authorized, error })}
+  ${body}
+${pageBottom()}`;
+}
+
+// The pacing sentence is the first bytes of a check. Stage quotes are appended
+// after it, once that stage has finished.
+export function renderPageStart({ authorized, kind, thread, error, userText, pace }) {
+  const prior = (thread || []).map(renderTurn).join("");
+  const user = `<li class="user"><p>${escapeHtml(userText || "")}</p></li>`;
+  const opening = pace ? `<p>${escapeHtml(pace)}</p>` : "";
+  return `${pageTop({ authorized, error })}
+  ${whoLine(kind)}
+    <ol class="thread">${prior}${user}<li class="assistant">${opening}`;
+}
+
+export function renderPageEnd({ close, refused }) {
+  const closing = close ? `<p>${linkify(close)}</p>` : "";
+  return `${closing}${renderRefused(refused)}</li></ol>
+    ${composer()}
+${pageBottom()}`;
 }

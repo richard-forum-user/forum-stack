@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { runCoordinator } from "../src/coordinator.js";
-import { SPOKEN_REFUSAL } from "../src/speak.js";
+import { NO_TARGET, SPOKEN_REFUSAL } from "../src/speak.js";
 
 const page = "The bill was enacted by the legislature in public session.";
 const second = "The act takes effect on the date the secretary certifies it.";
@@ -58,8 +58,8 @@ test("routes each link to its own source group", async () => {
   });
   assert.deepEqual(seen, [
     ["gov", "https://www.maine.gov/bill"],
-    ["academia", "https://pubmed.ncbi.nlm.nih.gov/1"],
     ["press", "https://apnews.com/story"],
+    ["academia", "https://pubmed.ncbi.nlm.nih.gov/1"],
   ]);
 });
 
@@ -97,32 +97,36 @@ test("a message with no link searches the allowlists before refusing", async () 
     comment: "Tell me about Maine LD 307",
     urls: [],
     ask: async (group, payload) => {
-      seen.push({ group, urls: payload.urls });
+      seen.push({ group, stage: payload.stage, urls: payload.urls });
       return { quotes: [], pages: {} };
     },
   });
   assert.equal(seen[0].group, "gov");
+  assert.equal(seen[0].stage, "bills");
   assert.equal(seen[0].urls[0], "https://legislature.maine.gov/legis/bills/display_ps.asp?LD=307&snum=132");
-  assert.ok(seen[0].urls.includes("https://www.maine.gov/search?q=LD%20307"));
-  assert.ok(seen.some((row) => row.group === "academia"));
-  assert.ok(seen.some((row) => row.group === "press"));
+  const otherGov = seen.find((row) => row.stage === "gov");
+  assert.ok(otherGov.urls.includes("https://www.maine.gov/search?q=LD%20307"));
+  const pressAt = seen.findIndex((row) => row.group === "press");
+  const academiaAt = seen.findIndex((row) => row.group === "academia");
+  assert.ok(pressAt > seen.findIndex((row) => row.stage === "gov"));
+  assert.ok(academiaAt > pressAt);
   assert.equal(reply.ok, false);
   assert.equal(reply.answer, SPOKEN_REFUSAL);
   assert.equal(reply.lead, "");
 });
 
-test("hello with no link still searches, then refuses when nothing matches", async () => {
-  const seen = [];
+test("hello with no link asks for a bill instead of searching", async () => {
   const reply = await runCoordinator({
     comment: "Hello",
     urls: [],
-    ask: async (group, payload) => {
-      seen.push([group, payload.urls[0]]);
-      return { quotes: [], pages: {} };
+    ask: async () => {
+      throw new Error("should not be asked");
     },
   });
-  assert.equal(seen[0][1], "https://www.maine.gov/search?q=Hello");
-  assert.equal(reply.answer, "I looked at the allowlisted pages and did not find that.");
+  assert.equal(reply.ok, false);
+  assert.equal(reply.answer, NO_TARGET);
+  assert.equal(reply.pace, "");
+  assert.deepEqual(reply.quotes, []);
 });
 
 test("an empty comment is not searched", async () => {
