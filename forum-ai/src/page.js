@@ -70,7 +70,7 @@ function whoLine(kind) {
     ? "Signed in as admin."
     : "Signed in with the Forum session already in this browser.";
   return `<p class="who">${who}</p>
-    <p>Replies are quotes from allowlisted pages, or a refusal.</p>`;
+    <p>Replies are short answers, with the allowlisted page that was read.</p>`;
 }
 
 function composer() {
