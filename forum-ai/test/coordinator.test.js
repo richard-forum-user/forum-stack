@@ -104,15 +104,28 @@ test("a message with no link searches the allowlists before refusing", async () 
   assert.equal(seen[0].group, "gov");
   assert.equal(seen[0].stage, "bills");
   assert.equal(seen[0].urls[0], "https://legislature.maine.gov/legis/bills/display_ps.asp?LD=307&snum=132");
-  const otherGov = seen.find((row) => row.stage === "gov");
-  assert.ok(otherGov.urls.includes("https://www.maine.gov/search?q=LD%20307"));
-  const pressAt = seen.findIndex((row) => row.group === "press");
-  const academiaAt = seen.findIndex((row) => row.group === "academia");
-  assert.ok(pressAt > seen.findIndex((row) => row.stage === "gov"));
-  assert.ok(academiaAt > pressAt);
+  assert.equal(seen.length, 1);
+  assert.equal(seen.some((row) => row.urls.some((url) => url.includes("congress.gov"))), false);
   assert.equal(reply.ok, false);
   assert.equal(reply.answer, SPOKEN_REFUSAL);
   assert.equal(reply.lead, "");
+});
+
+test("what is this stays a refusal with a page link", async () => {
+  const reply = await runCoordinator({
+    comment: "What is this?",
+    urls: [],
+    model: async () => {
+      throw new Error("the model must not answer this");
+    },
+    ask: async () => {
+      throw new Error("should not be asked");
+    },
+  });
+  assert.equal(reply.ok, false);
+  assert.deepEqual(reply.quotes, []);
+  assert.match(reply.answer, /https:\/\/www\.congress\.gov\//);
+  assert.equal(reply.answer.includes("I think"), false);
 });
 
 test("hello with no link asks for a bill instead of searching", async () => {
@@ -204,9 +217,14 @@ test("an expert question searches peer-reviewed sources by keyword", async () =>
   const sentence = "Cloud data centers present a challenge to environmental sustainability because of their significant energy consumption.";
   const bill = "https://legislature.maine.gov/legis/bills/display_ps.asp?LD=307&snum=132";
   const title = "LD # 307 An Act to Establish the Maine Data Center Coordination Council and Place a Temporary Limitation on Certain Data Centers (TITLE CHANGE)";
+  let modelCalls = 0;
   const reply = await runCoordinator({
     comment: "Tell me about LD 307 in greater detail, what are experts saying?",
     urls: [],
+    model: async () => {
+      modelCalls += 1;
+      return "The energy use is enormous. pmc.ncbi.nlm.nih.gov";
+    },
     ask: async (group, payload) => {
       seen.push({ group, urls: payload.urls });
       if (group === "gov") return { quotes: [{ text: title, url: bill }], pages: { [bill]: title } };
@@ -214,16 +232,13 @@ test("an expert question searches peer-reviewed sources by keyword", async () =>
       return { quotes: [], pages: {} };
     },
   });
-  const govAt = seen.findIndex((row) => row.group === "gov");
-  const academia = seen.find((row) => row.group === "academia");
-  assert.ok(govAt >= 0);
-  assert.ok(govAt < seen.findIndex((row) => row.group === "academia"));
-  assert.ok(academia.urls[0].startsWith("https://pubmed.ncbi.nlm.nih.gov/?term="));
-  assert.match(decodeURIComponent(academia.urls[0]), /data centers/);
-  assert.equal(academia.urls[0].includes("Tell%20me"), false);
+  assert.equal(modelCalls, 1);
+  assert.equal(seen.length, 1);
+  assert.equal(seen[0].group, "academia");
+  assert.ok(seen[0].urls[0].startsWith("https://pmc.ncbi.nlm.nih.gov/search/?term="));
   assert.equal(reply.ok, true);
   assert.ok(reply.quotes.some((quote) => quote.url === article));
-  assert.ok(reply.quotes.some((quote) => quote.url === bill));
+  assert.equal(reply.quotes.some((quote) => quote.text.includes("energy use is enormous")), false);
   assert.match(reply.lead, /pmc\.ncbi\.nlm\.nih\.gov/);
   assert.doesNotMatch(reply.lead, /not on an allowlisted page/);
 });

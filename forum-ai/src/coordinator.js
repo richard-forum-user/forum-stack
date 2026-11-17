@@ -1,11 +1,9 @@
 import { groupOf } from "./allowlist.js";
 import { checkQuotes } from "./quote-check.js";
 import { chooseQuotes, hasExpertQuote, quoteStage } from "./choose-quotes.js";
-import { stageSeeds } from "./search-seeds.js";
-import { expertQuery, scholarSeeds } from "./scholar.js";
+import { chooseHost, HOST_PROMPT, isVague, MODEL_ID, modelText, pageRefusal } from "./pick-host.js";
 import { asksSessionBills, sessionMissLine } from "./session-bills.js";
 import {
-  asksExperts,
   closingLine,
   isSmallTalk,
   NO_TARGET,
@@ -46,11 +44,15 @@ function missed(comment) {
 // Fans a check out one stage at a time: bill list, then other .gov pages,
 // then the press pages, then journal pages when the question asks for them.
 // This function does not fetch.
-export async function* walkCheck({ comment, urls, ask }) {
+export async function* walkCheck({ comment, urls, ask, model }) {
   const text = String(comment || "").trim();
   const pasted = (Array.isArray(urls) ? urls : []).filter(Boolean);
   if (!text) {
     yield { type: "done", reply: emptyReply(SPOKEN_REFUSAL) };
+    return;
+  }
+  if (isVague(text)) {
+    yield { type: "done", reply: emptyReply(pageRefusal()) };
     return;
   }
   if (isSmallTalk(text, pasted)) {
@@ -58,12 +60,10 @@ export async function* walkCheck({ comment, urls, ask }) {
     return;
   }
 
-  const pace = paceFor(text, pasted);
-  yield { type: "pace", pace };
-
   const buckets = { bills: [], gov: [], press: [], academia: [] };
   const refused = [];
   const seen = new Set();
+  let chosenHost = "";
   if (pasted.length) {
     for (const raw of pasted) {
       if (seen.has(raw)) continue;
@@ -76,23 +76,28 @@ export async function* walkCheck({ comment, urls, ask }) {
       buckets[stage].push(raw);
     }
   } else {
-    const seeds = stageSeeds(text);
-    buckets.bills = seeds.bills;
-    buckets.gov = seeds.gov;
-    buckets.press = seeds.press;
-    buckets.academia = asksExperts(text) ? [] : seeds.academia;
+    const choice = await chooseHost(text, model);
+    if (!choice.url) {
+      yield { type: "done", reply: emptyReply(pageRefusal()) };
+      return;
+    }
+    const stage = quoteStage(choice.url);
+    if (!stage) {
+      refused.push(choice.url);
+      yield { type: "done", reply: { ...emptyReply(pageRefusal()), refused } };
+      return;
+    }
+    buckets[stage] = [choice.url];
+    chosenHost = choice.host;
   }
 
+  const pace = chosenHost ? `That will take a moment. I'll check ${chosenHost}.` : paceFor(text, pasted);
+  yield { type: "pace", pace };
+
   const stages = [];
-  let govText = "";
   for (const id of STAGE_ORDER) {
-    let list = buckets[id];
-    let stageComment = text;
-    if (id === "academia" && !pasted.length && asksExperts(text)) {
-      const query = expertQuery(text, govText);
-      list = scholarSeeds(query.term);
-      stageComment = `${text} ${query.hint}`.slice(0, 2000);
-    }
+    const list = buckets[id];
+    const stageComment = text;
     if (!list || !list.length) continue;
     let result = { quotes: [], pages: {} };
     try {
@@ -104,9 +109,6 @@ export async function* walkCheck({ comment, urls, ask }) {
     } catch {
       result = { quotes: [], pages: {} };
     }
-    if (id === "bills" || id === "gov") {
-      govText += `\n${Object.values(result.pages || {}).join("\n")}`;
-    }
     const chosen = chooseQuotes(text, [result], { stage: id });
     let quotes = chosen.quotes;
     if (quotes.length) {
@@ -116,7 +118,7 @@ export async function* walkCheck({ comment, urls, ask }) {
     }
     const stage = {
       id,
-      line: STAGE_LINE[id],
+      line: chosenHost ? `Checking ${chosenHost}.` : STAGE_LINE[id],
       quotes,
       empty: quotes.length ? "" : STAGE_EMPTY[id],
     };
@@ -173,6 +175,17 @@ export class ForumAiCoordinator {
           for await (const event of walkCheck({
             comment: body.comment,
             urls: body.urls,
+            model: async (comment) => {
+              if (!this.env?.AI?.run) return "";
+              const result = await this.env.AI.run(MODEL_ID, {
+                messages: [
+                  { role: "system", content: HOST_PROMPT },
+                  { role: "user", content: String(comment || "").slice(0, 2000) },
+                ],
+                max_tokens: 32,
+              });
+              return modelText(result);
+            },
             ask: async (group, payload) => {
               const ns = this.env[BINDING[group]];
               const stub = ns.get(ns.idFromName(group));

@@ -32,6 +32,9 @@ class_name = "PressSourceAgent"
 tag = "v1-forum-ai-swarm"
 new_sqlite_classes = ["ForumAiSession", "ForumAiCoordinator", "GovSourceAgent", "AcademiaSourceAgent", "PressSourceAgent"]
 
+[ai]
+binding = "AI"
+
 # More specific than podlink-hub's yourcommunity.forum/* route.
 # Only this path moves. The rest of the forum stays on the pod worker.
 [[routes]]

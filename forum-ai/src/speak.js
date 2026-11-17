@@ -41,8 +41,7 @@ export function isSmallTalk(comment, urls) {
 export function paceFor(comment, urls) {
   const pasted = (urls || []).filter(Boolean);
   if (pasted.length) return PACING_NAMED;
-  if (asksSessionBills(comment) || /\bLD\s*#?\s*\d{1,4}\b/i.test(String(comment || ""))) return PACING_LINE;
-  return PACING_SECONDARY;
+  return "That will take a moment.";
 }
 
 export function closingLine(quotes) {
