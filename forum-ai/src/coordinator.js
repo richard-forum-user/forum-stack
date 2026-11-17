@@ -168,6 +168,7 @@ export class ForumAiCoordinator {
 
   async fetch(request) {
     const body = await request.json();
+    const env = this.env;
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
       async start(controller) {
@@ -176,8 +177,8 @@ export class ForumAiCoordinator {
             comment: body.comment,
             urls: body.urls,
             model: async (comment) => {
-              if (!this.env?.AI?.run) return "";
-              const result = await this.env.AI.run(MODEL_ID, {
+              if (!env?.AI?.run) return "";
+              const result = await env.AI.run(MODEL_ID, {
                 messages: [
                   { role: "system", content: HOST_PROMPT },
                   { role: "user", content: String(comment || "").slice(0, 2000) },
@@ -187,7 +188,7 @@ export class ForumAiCoordinator {
               return modelText(result);
             },
             ask: async (group, payload) => {
-              const ns = this.env[BINDING[group]];
+              const ns = env[BINDING[group]];
               const stub = ns.get(ns.idFromName(group));
               const res = await stub.fetch("https://agent/check", {
                 method: "POST",
