@@ -2,7 +2,7 @@ import { urlAllowed } from "./allowlist.js";
 import { isBillDoc, mentionsLd } from "./bill-pages.js";
 import { readAllowlisted } from "./read-page.js";
 import { canonicalArticle, isArticleUrl, isPubmedRecord, isScholarSearch } from "./scholar.js";
-import { billDirectoryUrl, billDisplayLinks, pickBillQuotes, sessionNumbers, asksSessionBills } from "./session-bills.js";
+import { billDirectoryUrl, pickBillQuotes, sessionNumbers, asksSessionBills } from "./session-bills.js";
 import { contentTokens, pickSpans } from "./spans.js";
 
 const MAX_FETCH = 8;
@@ -47,14 +47,14 @@ export async function runAgent({ group, comment, urls, fetchImpl }) {
     pages[pageUrl] = read.text;
     const found = pickSpans(comment, read.text, pageUrl).filter((quote) => read.text.includes(quote.text));
     for (const quote of found) quotes.push(quote);
-    if (asksSessionBills(comment)) {
+    if (asksSessionBills(comment) && /legislature\.maine\.gov/i.test(pageUrl)) {
       for (const quote of pickBillQuotes(read.text, pageUrl)) {
         if (read.text.includes(quote.text) && !quotes.some((kept) => kept.text === quote.text)) quotes.push(quote);
       }
-      const displays = billDisplayLinks(read.text).slice(0, 3);
-      const dirs = sessionNumbers(read.text).slice(0, 2).map((n) => billDirectoryUrl(n)).filter(Boolean);
-      const front = displays.length ? [...displays, ...dirs] : dirs;
-      for (const href of [...front].reverse()) {
+      // The highest session directory only. Act display pages are a catalog
+      // of filed titles, and an open session question does not fetch them.
+      const dirs = sessionNumbers(read.text).slice(0, 1).map((n) => billDirectoryUrl(n)).filter(Boolean);
+      for (const href of [...dirs].reverse()) {
         if (!href || seen.has(href) || queue.includes(href) || !urlAllowed(href, group)) continue;
         queue.unshift(href);
       }
@@ -85,7 +85,8 @@ export async function runAgent({ group, comment, urls, fetchImpl }) {
     queue.unshift(...pdfLinks, ...summary);
     if (articles.length) queue.unshift(...articles);
     else queue.unshift(...scholar);
-    queue.push(...rest);
+    // The press stage follows one matching article, then stops adding links.
+    queue.push(...(group === "press" ? rest.slice(0, 1) : rest));
   }
   return { quotes, pages };
 }

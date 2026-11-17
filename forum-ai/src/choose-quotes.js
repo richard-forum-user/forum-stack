@@ -46,12 +46,32 @@ function olderSession(url) {
 }
 
 function legislaturePage(url) {
+  return quoteStage(url) === "bills";
+}
+
+// Bill pages are their own stage. Other .gov hosts, the press list, and
+// journal pages each stay in the stage that fetched them.
+export function quoteStage(raw) {
+  let url;
   try {
-    const host = new URL(url).hostname.toLowerCase();
-    return host === "legislature.maine.gov" || host === "www.mainelegislature.org" || isBillDoc(url);
+    url = new URL(raw);
   } catch {
-    return false;
+    return "";
   }
+  const group = hostGroup(url.hostname);
+  if (group === "press" || group === "academia") return group;
+  if (group !== "gov") return "";
+  const host = url.hostname.toLowerCase();
+  if (
+    host === "legislature.maine.gov"
+    || host.endsWith(".legislature.maine.gov")
+    || host === "www.mainelegislature.org"
+    || host.endsWith(".mainelegislature.org")
+    || isBillDoc(raw)
+  ) {
+    return "bills";
+  }
+  return "gov";
 }
 
 function scoreQuote(quote, comment) {
@@ -85,58 +105,30 @@ function diversify(quotes, limit) {
   return picked;
 }
 
-function ldNumber(text) {
-  const match = String(text || "").match(/\bLD\s*#?\s*(\d{1,4})\b/i);
-  return match ? String(Number(match[1])) : "";
-}
-
 function sessionKey(text) {
   const match = String(text || "").match(/(\d{2,3})\s*(?:st|nd|rd|th)\s+Maine Legislature/i);
   return match ? match[1] : "";
 }
 
-// Session questions quote the page's session heading and filed bill titles.
-// A calendar is not written here; only lines that were on the fetched page.
-function chooseSessionQuotes(cleaned) {
-  const heading = cleaned.filter((quote) => /^\d{2,3}\s*(?:st|nd|rd|th)\s+Maine Legislature\b/i.test(quote.text.trim()));
-  heading.sort((a, b) => Number(/\d(?:st|nd|rd|th)\s+Maine Legislature/i.test(b.text)) - Number(/\d(?:st|nd|rd|th)\s+Maine Legislature/i.test(a.text)));
-  const missing = cleaned.filter((quote) => /not available at this time/i.test(quote.text));
-  const acts = cleaned.filter((quote) => /\bLD\b/i.test(quote.text) && /\b(An Act|Resolve)\b/.test(quote.text));
-  const titleRank = (quote) => {
-    let rank = quote.url.includes("display_ps.asp") ? 4 : 0;
-    if (/^LD # \d+ (?:An Act|Resolve)\b/.test(quote.text)) rank += 2;
-    if (/^LD \d+, [A-Z]{1,4} \d+,/.test(quote.text)) rank += 2;
-    return rank;
-  };
-  acts.sort((a, b) => titleRank(b) - titleRank(a) || b.text.length - a.text.length);
-  const picked = [];
-  const takenLd = new Set();
-  const takenSession = new Set();
-  const take = (quote) => {
-    if (!quote || picked.length >= 6) return false;
-    if (picked.some((kept) => kept.text === quote.text || kept.text.includes(quote.text) || quote.text.includes(kept.text))) return false;
-    const ld = ldNumber(quote.text);
-    if (ld && takenLd.has(ld)) return false;
-    const session = sessionKey(quote.text);
-    if (session && takenSession.has(session) && !ld) return false;
-    if (ld) takenLd.add(ld);
-    if (session && !ld) takenSession.add(session);
-    picked.push(quote);
-    return true;
-  };
-  let actCount = 0;
-  for (const quote of acts) {
-    if (actCount >= 3) break;
-    if (take(quote)) actCount += 1;
-  }
-  for (const quote of heading) take(quote);
-  for (const quote of missing) take(quote);
-  return picked;
+// An open session question quotes the highest session heading and, when that
+// directory says so, the not-available sentence. Filed act titles are not the
+// answer to "what is coming up."
+function chooseSessionPrimary(cleaned) {
+  const heading = cleaned.filter((quote) => /^\d{2,3}\s*(?:st|nd|rd|th)\s+Maine Legislature\b/i.test(String(quote.text || "").trim()));
+  heading.sort((a, b) => Number(sessionKey(b.text)) - Number(sessionKey(a.text)));
+  const top = heading[0];
+  const num = top ? sessionKey(top.text) : "";
+  const missing = cleaned.find((quote) => {
+    if (!/not available at this time/i.test(quote.text || "")) return false;
+    if (!num) return true;
+    return String(quote.url || "").includes(`snum=${num}`);
+  });
+  return [top, missing].filter(Boolean);
 }
 
 // Keep several exact bill-text quotes, plus other allowlisted documents.
 // Search pages that only echo the question are left out.
-export function chooseQuotes(comment, results) {
+export function chooseQuotes(comment, results, options = {}) {
   const pages = {};
   const quotes = [];
   for (const result of results || []) {
@@ -144,6 +136,7 @@ export function chooseQuotes(comment, results) {
     for (const quote of result?.quotes || []) quotes.push(quote);
   }
   let cleaned = quotes.filter((quote) => usable(quote, pages, comment) && !searchUrl(quote.url));
+  if (options.stage) cleaned = cleaned.filter((quote) => quoteStage(quote.url) === options.stage);
   const ld = String(comment || "").match(/\bLD\s*#?\s*(\d{1,4})\b/i);
   if (ld) {
     const hasCurrent = cleaned.some((quote) => {
@@ -157,9 +150,16 @@ export function chooseQuotes(comment, results) {
     if (hasCurrent) cleaned = cleaned.filter((quote) => !olderSession(quote.url));
   }
   cleaned.sort((a, b) => scoreQuote(b, comment) - scoreQuote(a, comment));
-  if (asksSessionBills(comment)) {
-    const picked = chooseSessionQuotes(cleaned);
-    if (picked.length) return { quotes: picked, pages };
+  if (asksSessionBills(comment) && (!options.stage || options.stage === "bills")) {
+    const primary = chooseSessionPrimary(options.stage ? cleaned : cleaned.filter((quote) => quoteStage(quote.url) === "bills"));
+    if (options.stage === "bills") return { quotes: primary, pages };
+    const secondary = diversify(cleaned.filter((quote) => quoteStage(quote.url) !== "bills"), 3);
+    const picked = [...primary, ...secondary];
+    if (picked.length) return { quotes: picked.slice(0, 6), pages };
+  }
+  if (options.stage) {
+    const limit = options.stage === "bills" ? 5 : 3;
+    return { quotes: diversify(cleaned, limit), pages };
   }
   const bill = cleaned.filter((quote) => legislaturePage(quote.url));
   const other = cleaned.filter((quote) => !legislaturePage(quote.url));

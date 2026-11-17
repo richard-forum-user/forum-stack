@@ -1,8 +1,9 @@
 import { adminMatches, forumCredential, parseCookies } from "./auth.js";
 import { extractUrls } from "./allowlist.js";
-import { renderPage } from "./page.js";
+import { quoteStage } from "./choose-quotes.js";
+import { renderPage, renderPageEnd, renderPageStart, renderStageBlock } from "./page.js";
 import { asksSessionBills, sessionMissLine } from "./session-bills.js";
-import { lookingLine, SPOKEN_REFUSAL } from "./speak.js";
+import { closingLine, isSmallTalk, NO_TARGET, paceFor, SPOKEN_REFUSAL, STAGE_LINE } from "./speak.js";
 
 const MAX_BODY = 32 * 1024;
 
@@ -19,7 +20,7 @@ function cookieHeader(name, value, maxAge) {
   return `${name}=${value}; ${base}; Max-Age=${maxAge}`;
 }
 
-function htmlResponse(body, status, extra) {
+function htmlHeaders(extra) {
   const headers = new Headers(extra || {});
   headers.set("content-type", "text/html; charset=utf-8");
   headers.set("cache-control", "no-store");
@@ -29,7 +30,32 @@ function htmlResponse(body, status, extra) {
     "content-security-policy",
     "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'"
   );
-  return new Response(body, { status, headers });
+  return headers;
+}
+
+function htmlResponse(body, status, extra) {
+  return new Response(body, { status, headers: htmlHeaders(extra) });
+}
+
+function presentReply(reply) {
+  const fallback = reply?.answer || reply?.refusal || SPOKEN_REFUSAL;
+  if (!reply) return { ok: false, answer: SPOKEN_REFUSAL, quotes: [], refused: [], lead: "", pace: "", stages: [], close: SPOKEN_REFUSAL };
+  if (Array.isArray(reply.stages) && reply.stages.length) return reply;
+  if (!reply.ok) {
+    return { ...reply, pace: reply.pace || "", stages: [], close: reply.close || fallback, quotes: reply.quotes || [] };
+  }
+  const grouped = { bills: [], gov: [], press: [], academia: [] };
+  for (const quote of reply.quotes || []) {
+    const id = quoteStage(quote.url);
+    if (grouped[id]) grouped[id].push(quote);
+  }
+  const stages = ["bills", "gov", "press", "academia"].filter((id) => grouped[id].length).map((id) => ({
+    id,
+    line: STAGE_LINE[id],
+    quotes: grouped[id],
+    empty: "",
+  }));
+  return { ...reply, stages, close: reply.close || closingLine(reply.quotes) };
 }
 
 function jsonResponse(body, status) {
@@ -181,6 +207,58 @@ export class ForumAiSession {
     return new Response(null, { status: 303, headers });
   }
 
+  coordinatorRequest(payload) {
+    const ns = this.env.COORDINATOR;
+    const stub = ns.get(ns.idFromName("coordinator"));
+    return stub.fetch(new Request("https://coordinator/check", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(payload),
+    }));
+  }
+
+  failureReply(comment) {
+    return {
+      ok: false,
+      answer: asksSessionBills(comment) ? sessionMissLine() : SPOKEN_REFUSAL,
+      quotes: [],
+      refused: [],
+      lead: "",
+      pace: "",
+      stages: [],
+      close: asksSessionBills(comment) ? sessionMissLine() : SPOKEN_REFUSAL,
+    };
+  }
+
+  async readCoordinator(res) {
+    const type = res.headers.get("content-type") || "";
+    if (!type.includes("ndjson")) return res.json();
+    const text = await res.text();
+    let reply = null;
+    for (const line of text.split("\n")) {
+      if (!line.trim()) continue;
+      const event = JSON.parse(line);
+      if (event.type === "done") reply = event.reply;
+    }
+    return reply;
+  }
+
+  rememberTurn(thread, comment, reply) {
+    const shown = presentReply(reply);
+    thread.push({ role: "user", text: comment.slice(0, 2000) });
+    thread.push({
+      role: "assistant",
+      pace: shown.pace || "",
+      stages: shown.stages || [],
+      close: shown.ok ? (shown.close || "") : "",
+      lead: "",
+      text: shown.ok ? "" : (shown.answer || shown.refusal || shown.close || SPOKEN_REFUSAL),
+      quotes: shown.ok ? (shown.quotes || []) : [],
+      refused: shown.refused || [],
+    });
+    return shown;
+  }
+
   async check(request, ctx) {
     const fields = await readFields(request);
     if (fields.error) return jsonResponse({ error: "too large" }, 413);
@@ -192,39 +270,101 @@ export class ForumAiSession {
       return this.render({ ...ctx, thread, error: "Write a message.", status: 400 });
     }
     const urls = extractUrls(fields.sources, comment).slice(0, 8);
+    if (isSmallTalk(comment, urls)) {
+      const thread = await this.loadThread(ctx.sid);
+      thread.push({ role: "user", text: comment.slice(0, 2000) });
+      thread.push({ role: "assistant", text: NO_TARGET, quotes: [], pace: "", stages: [], close: "", refused: [] });
+      const saved = await this.saveThread(ctx.sid, thread);
+      if (wantsJson) {
+        return jsonResponse({ ok: false, answer: NO_TARGET, quotes: [], refused: [], lead: "", pace: "", stages: [], close: NO_TARGET });
+      }
+      return this.render({ ...ctx, thread: saved });
+    }
     const payload = coordinatorPayload(comment, urls);
+    if (!wantsJson) return this.streamCheck(ctx, comment, payload);
     let reply;
     try {
-      const ns = this.env.COORDINATOR;
-      const stub = ns.get(ns.idFromName("coordinator"));
-      const outbound = new Request("https://coordinator/check", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const res = await stub.fetch(outbound);
-      reply = await res.json();
+      reply = presentReply(await this.readCoordinator(await this.coordinatorRequest(payload)));
     } catch {
-      reply = {
-        ok: false,
-        answer: asksSessionBills(comment) ? sessionMissLine() : SPOKEN_REFUSAL,
-        quotes: [],
-        refused: [],
-        lead: "",
-      };
+      reply = this.failureReply(comment);
     }
-    const quotes = reply.ok ? (reply.quotes || []) : [];
     const thread = await this.loadThread(ctx.sid);
-    thread.push({ role: "user", text: comment.slice(0, 2000) });
-    thread.push({
-      role: "assistant",
-      lead: reply.ok ? (reply.lead || lookingLine(quotes.map((quote) => quote.url))) : "",
-      text: reply.ok ? "" : (reply.answer || reply.refusal || SPOKEN_REFUSAL),
-      quotes,
-      refused: reply.refused || [],
-    });
-    const saved = await this.saveThread(ctx.sid, thread);
-    if (wantsJson) return jsonResponse(reply);
-    return this.render({ ...ctx, thread: saved });
+    this.rememberTurn(thread, comment, reply);
+    await this.saveThread(ctx.sid, thread);
+    return jsonResponse(reply);
+  }
+
+  streamCheck(ctx, comment, payload) {
+    const pace = paceFor(comment, payload.urls);
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      start: async (controller) => {
+        const send = (html) => controller.enqueue(encoder.encode(html));
+        const thread = await this.loadThread(ctx.sid);
+        send(renderPageStart({
+          authorized: ctx.authorized,
+          kind: ctx.kind,
+          thread,
+          userText: comment.slice(0, 2000),
+          pace,
+        }));
+        let reply;
+        try {
+          reply = await this.readStages(payload, send);
+        } catch {
+          reply = this.failureReply(comment);
+        }
+        const shown = presentReply({ ...reply, pace: reply.pace || pace });
+        if (!(reply.stages || []).length) {
+          for (const stage of shown.stages || []) send(renderStageBlock(stage));
+        }
+        const close = shown.ok ? (shown.close || "") : (shown.answer || shown.close || SPOKEN_REFUSAL);
+        send(renderPageEnd({ close, refused: shown.refused }));
+        this.rememberTurn(thread, comment, { ...shown, pace, close: shown.ok ? shown.close : "" });
+        try {
+          await this.saveThread(ctx.sid, thread);
+        } catch {
+          // The page is already on its way.
+        }
+        controller.close();
+      },
+    }, new CountQueuingStrategy({ highWaterMark: 32 }));
+    const headers = htmlHeaders();
+    if (ctx.sid) headers.append("set-cookie", cookieHeader("forum_ai_sid", ctx.sid, 60 * 60 * 12));
+    return new Response(stream, { status: 200, headers });
+  }
+
+  async readStages(payload, send) {
+    const res = await this.coordinatorRequest(payload);
+    const type = res.headers.get("content-type") || "";
+    if (!type.includes("ndjson") || !res.body) {
+      const reply = await res.json();
+      return reply;
+    }
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+    let reply = null;
+    const stages = [];
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      let nl = buffer.indexOf("\n");
+      while (nl >= 0) {
+        const line = buffer.slice(0, nl).trim();
+        buffer = buffer.slice(nl + 1);
+        nl = buffer.indexOf("\n");
+        if (!line) continue;
+        const event = JSON.parse(line);
+        if (event.type === "stage" && event.stage) {
+          stages.push(event.stage);
+          send(renderStageBlock(event.stage));
+        }
+        if (event.type === "done" && event.reply) reply = event.reply;
+      }
+    }
+    if (reply) return { ...reply, stages: reply.stages?.length ? reply.stages : stages };
+    return { ok: false, answer: SPOKEN_REFUSAL, quotes: [], stages, close: SPOKEN_REFUSAL, refused: [], pace: "" };
   }
 }

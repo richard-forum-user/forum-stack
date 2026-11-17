@@ -5,6 +5,7 @@ import { runCoordinator } from "../src/coordinator.js";
 import { renderPage } from "../src/page.js";
 import { searchSeeds } from "../src/search-seeds.js";
 import { asksSessionBills, billDisplayLinks, pickBillQuotes, sessionMissLine, sessionNumbers, SESSION_LIST_URL } from "../src/session-bills.js";
+import { PACING_LINE, STAGE_LINE } from "../src/speak.js";
 
 const COMMENT = "I'm curious about what legislation is coming up for the next session in Maine";
 const SEARCH = "https://legislature.maine.gov/bills/default_ps.asp";
@@ -12,6 +13,10 @@ const HOME = "https://legislature.maine.gov/";
 const DIR133 = "https://legislature.maine.gov/bills/billdirectory_ps.asp?ldFrom=1&snum=133";
 const DIR132 = "https://legislature.maine.gov/bills/billdirectory_ps.asp?ldFrom=1&snum=132";
 const DISPLAY = "https://legislature.maine.gov/bills/display_ps.asp?snum=132&paper=SP0029&PID=1456";
+const MAINE_ARTICLE = "https://www.maine.gov/governor/news/legislation-next-session";
+const AP_ARTICLE = "https://apnews.com/article/maine-legislation-next-session";
+const MAINE_LINE = "Maine legislation for the next session is coming up in hearings across the state.";
+const AP_LINE = "The Associated Press reports Maine legislation for the next session is coming up this winter.";
 
 const PAGES = {
   [SEARCH]: "Bill Tracking and Text Search Session Any 133 132 131 130 Maine Legislature",
@@ -19,10 +24,18 @@ const PAGES = {
   [DIR133]: "133rd Maine Legislature LD 0 LD 1 - LD 200 Bill Directory, LD 1 to 200 Legislative documents from 1 to 200 are not available at this time.",
   [DIR132]: "132nd Maine Legislature LD 0 LD 1 - LD 200 1. LD 1, SP 29, 132nd Legislature An Act to Increase Storm Preparedness for Maine's Communities, Homes and Infrastructure Bill & Fiscal Information Printed LD PDF 2. LD 2, SP 11, 132nd Legislature An Act to Allow Military Vehicles Purchased for Civilian Use to Be Registered and Operated on Maine Roads Bill & Fiscal Information",
   [DISPLAY]: "Paper SP 29 LD # 1 An Act to Increase Storm Preparedness for Maine's Communities, Homes and Infrastructure (EMERGENCY) (GOVERNOR'S BILL) Text and Disposition",
+  [MAINE_ARTICLE]: MAINE_LINE,
+  [AP_ARTICLE]: AP_LINE,
 };
+
+function searchPage(article) {
+  return `<html><body><p>Results</p><a href="${article}">Read</a></body></html>`;
+}
 
 function fetchImpl(url) {
   const href = String(url);
+  if (href.startsWith("https://www.maine.gov/search")) return new Response(searchPage(MAINE_ARTICLE), { status: 200, headers: { "content-type": "text/html" } });
+  if (href.startsWith("https://apnews.com/search")) return new Response(searchPage(AP_ARTICLE), { status: 200, headers: { "content-type": "text/html" } });
   const html = PAGES[href];
   if (!html) return new Response("missing", { status: 404 });
   return new Response(`<html><body><p>${html}</p></body></html>`, {
@@ -52,14 +65,21 @@ test("bill list lines are exact page substrings", () => {
   assert.ok(missing.some((quote) => quote.text === "Legislative documents from 1 to 200 are not available at this time."));
 });
 
-test("a next-session question opens the bill list and quotes filed bills", async () => {
-  assert.deepEqual(searchSeeds(COMMENT), [SEARCH, HOME]);
+test("a next-session question checks the bill list, then other .gov pages, then the press", async () => {
+  const seeds = searchSeeds(COMMENT);
+  const q = encodeURIComponent(COMMENT);
+  assert.equal(seeds[0], SEARCH);
+  assert.equal(seeds[1], `https://www.maine.gov/search?q=${q}`);
+  assert.equal(seeds[2], `https://apnews.com/search?q=${q}`);
+  assert.equal(seeds.includes(HOME), false);
+  assert.equal(seeds.some((url) => url.includes("pubmed")), false);
   const calls = [];
+  const order = [];
   const reply = await runCoordinator({
     comment: COMMENT,
     urls: [],
     ask: async (group, payload) => {
-      assert.equal(group, "gov");
+      order.push(payload.stage);
       return runAgent({
         group,
         comment: payload.comment,
@@ -71,21 +91,41 @@ test("a next-session question opens the bill list and quotes filed bills", async
       });
     },
   });
+  assert.deepEqual(order, ["bills", "gov", "press"]);
   assert.ok(calls.includes(SEARCH));
   assert.ok(calls.includes(DIR133));
-  assert.ok(calls.includes(DIR132));
-  assert.ok(calls.includes(DISPLAY));
+  assert.equal(calls.includes(DIR132), false);
+  assert.equal(calls.includes(DISPLAY), false);
+  assert.equal(calls.includes(HOME), false);
+  assert.ok(calls.includes(MAINE_ARTICLE));
+  assert.ok(calls.includes(AP_ARTICLE));
   assert.equal(reply.ok, true);
-  assert.equal(reply.lead, "Looking at legislature.maine.gov");
+  assert.equal(reply.pace, PACING_LINE);
+  assert.deepEqual(reply.stages.map((stage) => stage.line), [STAGE_LINE.bills, STAGE_LINE.gov, STAGE_LINE.press]);
   assert.ok(reply.quotes.some((quote) => quote.text === "133rd Maine Legislature" && quote.url === DIR133));
-  assert.ok(reply.quotes.some((quote) => quote.text === "132nd Maine Legislature"));
   assert.ok(reply.quotes.some((quote) => quote.text === "Legislative documents from 1 to 200 are not available at this time."));
-  const acts = reply.quotes.filter((quote) => quote.text.includes("An Act"));
-  assert.ok(acts.length >= 2);
-  assert.ok(acts.some((quote) => quote.url === DISPLAY && quote.text.startsWith("LD # 1 An Act to Increase Storm Preparedness")));
-  assert.equal(reply.quotes.some((quote) => quote.text.includes("April 29")), false);
-  assert.equal(reply.quotes.some((quote) => quote.text.includes("January 7")), false);
-  assert.equal(reply.quotes.some((quote) => quote.text === "132 nd Maine Legislature"), false);
+  assert.equal(reply.quotes.some((quote) => /\b(An Act|Resolve)\b/.test(quote.text)), false);
+  assert.equal(reply.quotes.some((quote) => quote.text.includes("132nd")), false);
+  assert.ok(reply.quotes.some((quote) => quote.text === MAINE_LINE && quote.url === MAINE_ARTICLE));
+  assert.ok(reply.quotes.some((quote) => quote.text === AP_LINE && quote.url === AP_ARTICLE));
+  const html = renderPage({
+    authorized: true,
+    kind: "admin",
+    thread: [{
+      role: "assistant",
+      pace: reply.pace,
+      stages: reply.stages,
+      close: reply.close,
+      quotes: reply.quotes,
+    }],
+  });
+  assert.match(html, /That will take a moment\. I'll check the bill list first/);
+  assert.ok(html.indexOf("Bill list checked.") < html.indexOf("Other .gov pages checked."));
+  assert.ok(html.indexOf("Other .gov pages checked.") < html.indexOf(MAINE_LINE));
+  assert.ok(html.indexOf(MAINE_LINE) < html.indexOf("Press pages checked."));
+  assert.ok(html.indexOf("Press pages checked.") < html.indexOf(AP_LINE));
+  assert.equal(html.includes("<p>and</p>"), false);
+  assert.equal(html.includes("LD # 1"), false);
 });
 
 test("a session search with no quote names the list and does not guess", async () => {
