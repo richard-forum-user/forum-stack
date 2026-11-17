@@ -1,4 +1,5 @@
 import { urlAllowed } from "./allowlist.js";
+import { asksSessionBills, SESSION_LIST_URL } from "./session-bills.js";
 
 const MAX_SEEDS = 12;
 
@@ -13,6 +14,12 @@ function push(seeds, url) {
 export function searchSeeds(comment) {
   const text = String(comment || "").trim();
   if (!text) return [];
+  if (asksSessionBills(text)) {
+    const seeds = [];
+    push(seeds, SESSION_LIST_URL);
+    push(seeds, "https://legislature.maine.gov/");
+    return seeds;
+  }
   const q = encodeURIComponent(text.slice(0, 160));
   const seeds = [];
   const ld = text.match(/\bLD\s*#?\s*(\d{1,4})\b/i);
