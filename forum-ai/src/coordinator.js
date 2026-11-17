@@ -3,22 +3,25 @@ import { checkQuotes } from "./quote-check.js";
 import { chooseQuotes, hasExpertQuote } from "./choose-quotes.js";
 import { searchSeeds } from "./search-seeds.js";
 import { expertQuery, scholarSeeds } from "./scholar.js";
+import { asksSessionBills, sessionMissLine } from "./session-bills.js";
 import { asksExperts, SPOKEN_REFUSAL, statusLine } from "./speak.js";
 
 const BINDING = { gov: "GOV", academia: "ACADEMIA", press: "PRESS" };
+
+// No matching quote. The harness does not guess. A session question names the session list.
+function missed(comment) {
+  const answer = asksSessionBills(comment) ? sessionMissLine() : SPOKEN_REFUSAL;
+  return { ok: false, refusal: answer, answer, quotes: [], lead: "" };
+}
 
 export function assembleReply(results, comment) {
   const chosen = chooseQuotes(comment, results);
   const quotes = chosen.quotes;
   const pages = chosen.pages;
-  if (!quotes.length) {
-    return { ok: false, refusal: SPOKEN_REFUSAL, answer: SPOKEN_REFUSAL, quotes: [], lead: "" };
-  }
+  if (!quotes.length) return missed(comment);
   const answer = quotes.map((quote) => `"${quote.text}"`).join(" and ");
   const verdict = checkQuotes({ answer, quotes, pages });
-  if (!verdict.ok) {
-    return { ok: false, refusal: SPOKEN_REFUSAL, answer: SPOKEN_REFUSAL, quotes: [], errors: verdict.errors, lead: "" };
-  }
+  if (!verdict.ok) return { ...missed(comment), errors: verdict.errors };
   return {
     ok: true,
     answer,

@@ -1,6 +1,7 @@
 import { adminMatches, forumCredential, parseCookies } from "./auth.js";
 import { extractUrls } from "./allowlist.js";
 import { renderPage } from "./page.js";
+import { asksSessionBills, sessionMissLine } from "./session-bills.js";
 import { lookingLine, SPOKEN_REFUSAL } from "./speak.js";
 
 const MAX_BODY = 32 * 1024;
@@ -204,7 +205,13 @@ export class ForumAiSession {
       const res = await stub.fetch(outbound);
       reply = await res.json();
     } catch {
-      reply = { ok: false, answer: SPOKEN_REFUSAL, quotes: [], refused: [], lead: "" };
+      reply = {
+        ok: false,
+        answer: asksSessionBills(comment) ? sessionMissLine() : SPOKEN_REFUSAL,
+        quotes: [],
+        refused: [],
+        lead: "",
+      };
     }
     const quotes = reply.ok ? (reply.quotes || []) : [];
     const thread = await this.loadThread(ctx.sid);

@@ -33,13 +33,24 @@ function renderRefused(refused) {
   return `<p class="refused">Not fetched</p><ul>${items}</ul>`;
 }
 
+function linkify(text) {
+  return String(text || "").split(/(https:\/\/[^\s]+)/).map((part) => {
+    if (!part.startsWith("https://")) return escapeHtml(part);
+    const trimmed = part.replace(/[.,)]+$/, "");
+    const tail = part.slice(trimmed.length);
+    if (!urlAllowed(trimmed)) return escapeHtml(part);
+    const safe = escapeHtml(trimmed);
+    return `<a href="${safe}" rel="noreferrer">${safe}</a>${escapeHtml(tail)}`;
+  }).join("");
+}
+
 function renderTurn(turn) {
   if (turn.role === "user") {
     return `<li class="user"><p>${escapeHtml(turn.text)}</p></li>`;
   }
   const quotes = renderQuotes(turn.quotes);
   const line = turn.lead ? `<p>${escapeHtml(turn.lead)}</p>` : "";
-  const text = quotes ? "" : `<p>${escapeHtml(turn.text || SPOKEN_REFUSAL)}</p>`;
+  const text = quotes ? "" : `<p>${linkify(turn.text || SPOKEN_REFUSAL)}</p>`;
   return `<li class="assistant">${line}${text}${quotes}${renderRefused(turn.refused)}</li>`;
 }
 
