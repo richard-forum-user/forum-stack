@@ -43,6 +43,8 @@ test("a forum session cookie opens the page with no second password", async () =
   const html = await response.text();
   assert.equal(response.status, 200);
   assert.match(html, /name="message"/);
+  assert.match(html, /dataset\.sent/);
+  assert.match(html, /b\.disabled=true/);
   assert.doesNotMatch(html, /type="password"/);
   assert.doesNotMatch(html, /name="sources"/);
   assert.doesNotMatch(html, /name="comment"/);

@@ -2,7 +2,7 @@ import { urlAllowed } from "./allowlist.js";
 import { isBillDoc, mentionsLd } from "./bill-pages.js";
 import { readAllowlisted } from "./read-page.js";
 import { canonicalArticle, isArticleUrl, isPubmedRecord, isScholarSearch } from "./scholar.js";
-import { billDirectoryUrl, pickBillQuotes, sessionNumbers, asksSessionBills } from "./session-bills.js";
+import { asksMaineBills, billDirectoryUrl, pickBillQuotes, sessionNumbers } from "./session-bills.js";
 import { contentTokens, pickSpans } from "./spans.js";
 
 const MAX_FETCH = 8;
@@ -47,7 +47,7 @@ export async function runAgent({ group, comment, urls, fetchImpl }) {
     pages[pageUrl] = read.text;
     const found = pickSpans(comment, read.text, pageUrl).filter((quote) => read.text.includes(quote.text));
     for (const quote of found) quotes.push(quote);
-    if (asksSessionBills(comment) && /legislature\.maine\.gov/i.test(pageUrl)) {
+    if (asksMaineBills(comment) && /legislature\.maine\.gov/i.test(pageUrl)) {
       for (const quote of pickBillQuotes(read.text, pageUrl)) {
         if (read.text.includes(quote.text) && !quotes.some((kept) => kept.text === quote.text)) quotes.push(quote);
       }

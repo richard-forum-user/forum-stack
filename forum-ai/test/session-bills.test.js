@@ -3,9 +3,7 @@ import assert from "node:assert/strict";
 import { runAgent } from "../src/agents.js";
 import { runCoordinator } from "../src/coordinator.js";
 import { renderPage } from "../src/page.js";
-import { searchSeeds } from "../src/search-seeds.js";
-import { asksSessionBills, billDisplayLinks, pickBillQuotes, sessionMissLine, sessionNumbers, SESSION_LIST_URL } from "../src/session-bills.js";
-import { PACING_LINE, STAGE_LINE } from "../src/speak.js";
+import { asksMaineBills, asksSessionBills, billDisplayLinks, pickBillQuotes, sessionMissLine, sessionNumbers, SESSION_LIST_URL } from "../src/session-bills.js";
 
 const COMMENT = "I'm curious about what legislation is coming up for the next session in Maine";
 const SEARCH = "https://legislature.maine.gov/bills/default_ps.asp";
@@ -48,6 +46,9 @@ test("a next-session question is not treated as a single bill", () => {
   assert.equal(asksSessionBills(COMMENT), true);
   assert.equal(asksSessionBills("Tell me about Maine LD 307"), false);
   assert.equal(asksSessionBills("Hello"), false);
+  assert.equal(asksMaineBills("Hello, I'd like to learn more about Maine Legislation"), true);
+  assert.equal(asksMaineBills("Tell me about Maine LD 307"), false);
+  assert.equal(asksMaineBills("What is the US Senate considering?"), false);
 });
 
 test("session numbers come from the bills search list", () => {
@@ -65,19 +66,13 @@ test("bill list lines are exact page substrings", () => {
   assert.ok(missing.some((quote) => quote.text === "Legislative documents from 1 to 200 are not available at this time."));
 });
 
-test("a next-session question checks the bill list, then other .gov pages, then the press", async () => {
-  const seeds = searchSeeds(COMMENT);
-  const q = encodeURIComponent(COMMENT);
-  assert.equal(seeds[0], SEARCH);
-  assert.equal(seeds[1], `https://www.maine.gov/search?q=${q}`);
-  assert.equal(seeds[2], `https://apnews.com/search?q=${q}`);
-  assert.equal(seeds.includes(HOME), false);
-  assert.equal(seeds.some((url) => url.includes("pubmed")), false);
+test("a next-session question opens the Maine bill list and not a press catalog", async () => {
   const calls = [];
   const order = [];
   const reply = await runCoordinator({
     comment: COMMENT,
     urls: [],
+    model: async () => "apnews.com",
     ask: async (group, payload) => {
       order.push(payload.stage);
       return runAgent({
@@ -91,23 +86,21 @@ test("a next-session question checks the bill list, then other .gov pages, then 
       });
     },
   });
-  assert.deepEqual(order, ["bills", "gov", "press"]);
+  assert.deepEqual(order, ["bills"]);
   assert.ok(calls.includes(SEARCH));
   assert.ok(calls.includes(DIR133));
   assert.equal(calls.includes(DIR132), false);
   assert.equal(calls.includes(DISPLAY), false);
   assert.equal(calls.includes(HOME), false);
-  assert.ok(calls.includes(MAINE_ARTICLE));
-  assert.ok(calls.includes(AP_ARTICLE));
+  assert.equal(calls.includes(MAINE_ARTICLE), false);
+  assert.equal(calls.includes(AP_ARTICLE), false);
   assert.equal(reply.ok, true);
-  assert.equal(reply.pace, PACING_LINE);
-  assert.deepEqual(reply.stages.map((stage) => stage.line), [STAGE_LINE.bills, STAGE_LINE.gov, STAGE_LINE.press]);
+  assert.equal(reply.pace, "That will take a moment. I'll check legislature.maine.gov.");
+  assert.deepEqual(reply.stages.map((stage) => stage.line), ["Checking legislature.maine.gov."]);
   assert.ok(reply.quotes.some((quote) => quote.text === "133rd Maine Legislature" && quote.url === DIR133));
   assert.ok(reply.quotes.some((quote) => quote.text === "Legislative documents from 1 to 200 are not available at this time."));
   assert.equal(reply.quotes.some((quote) => /\b(An Act|Resolve)\b/.test(quote.text)), false);
   assert.equal(reply.quotes.some((quote) => quote.text.includes("132nd")), false);
-  assert.ok(reply.quotes.some((quote) => quote.text === MAINE_LINE && quote.url === MAINE_ARTICLE));
-  assert.ok(reply.quotes.some((quote) => quote.text === AP_LINE && quote.url === AP_ARTICLE));
   const html = renderPage({
     authorized: true,
     kind: "admin",
@@ -119,13 +112,36 @@ test("a next-session question checks the bill list, then other .gov pages, then 
       quotes: reply.quotes,
     }],
   });
-  assert.match(html, /That will take a moment\. I'll check the bill list first/);
-  assert.ok(html.indexOf("Bill list checked.") < html.indexOf("Other .gov pages checked."));
-  assert.ok(html.indexOf("Other .gov pages checked.") < html.indexOf(MAINE_LINE));
-  assert.ok(html.indexOf(MAINE_LINE) < html.indexOf("Press pages checked."));
-  assert.ok(html.indexOf("Press pages checked.") < html.indexOf(AP_LINE));
+  assert.match(html, /That will take a moment\. I'll check legislature\.maine\.gov/);
   assert.equal(html.includes("<p>and</p>"), false);
   assert.equal(html.includes("LD # 1"), false);
+});
+
+test("a Maine legislation question quotes the legislature page, not congress.gov", async () => {
+  const comment = "Hello, I'd like to learn more about Maine Legislation";
+  const calls = [];
+  const reply = await runCoordinator({
+    comment,
+    urls: [],
+    model: async () => "congress.gov",
+    ask: async (group, payload) => runAgent({
+      group,
+      comment: payload.comment,
+      urls: payload.urls,
+      fetchImpl: async (url) => {
+        calls.push(String(url));
+        return fetchImpl(url);
+      },
+    }),
+  });
+  assert.ok(calls.includes(SEARCH));
+  assert.ok(calls.includes(DIR133));
+  assert.equal(calls.some((url) => url.includes("congress.gov")), false);
+  assert.equal(reply.ok, true);
+  assert.equal(reply.pace, "That will take a moment. I'll check legislature.maine.gov.");
+  assert.ok(reply.quotes.some((quote) => quote.text === "133rd Maine Legislature" && quote.url === DIR133));
+  assert.equal(reply.answer.includes("congress.gov"), false);
+  assert.equal(reply.quotes.some((quote) => /\b(An Act|Resolve)\b/.test(quote.text)), false);
 });
 
 test("a session search with no quote names the list and does not guess", async () => {

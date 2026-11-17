@@ -1,8 +1,8 @@
 import { adminMatches, forumCredential, parseCookies } from "./auth.js";
 import { extractUrls } from "./allowlist.js";
 import { quoteStage } from "./choose-quotes.js";
-import { renderPage, renderPageEnd, renderPageStart, renderStageBlock } from "./page.js";
-import { asksSessionBills, sessionMissLine } from "./session-bills.js";
+import { escapeHtml, renderPage, renderPageEnd, renderPageStart, renderStageBlock } from "./page.js";
+import { asksMaineBills, sessionMissLine } from "./session-bills.js";
 import { closingLine, isSmallTalk, NO_TARGET, paceFor, SPOKEN_REFUSAL, STAGE_LINE } from "./speak.js";
 
 const MAX_BODY = 32 * 1024;
@@ -28,7 +28,7 @@ function htmlHeaders(extra) {
   headers.set("referrer-policy", "no-referrer");
   headers.set(
     "content-security-policy",
-    "default-src 'none'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'"
+    "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'"
   );
   return headers;
 }
@@ -220,13 +220,13 @@ export class ForumAiSession {
   failureReply(comment) {
     return {
       ok: false,
-      answer: asksSessionBills(comment) ? sessionMissLine() : SPOKEN_REFUSAL,
+      answer: asksMaineBills(comment) ? sessionMissLine() : SPOKEN_REFUSAL,
       quotes: [],
       refused: [],
       lead: "",
       pace: "",
       stages: [],
-      close: asksSessionBills(comment) ? sessionMissLine() : SPOKEN_REFUSAL,
+      close: asksMaineBills(comment) ? sessionMissLine() : SPOKEN_REFUSAL,
     };
   }
 
@@ -357,6 +357,7 @@ export class ForumAiSession {
         nl = buffer.indexOf("\n");
         if (!line) continue;
         const event = JSON.parse(line);
+        if (event.type === "pace" && event.pace) send(`<p>${escapeHtml(event.pace)}</p>`);
         if (event.type === "stage" && event.stage) {
           stages.push(event.stage);
           send(renderStageBlock(event.stage));

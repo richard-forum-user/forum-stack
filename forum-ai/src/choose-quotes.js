@@ -1,7 +1,7 @@
 import { hostGroup } from "./allowlist.js";
 import { isBillDoc } from "./bill-pages.js";
 import { canonicalArticle, isArticleUrl, isPubmedRecord } from "./scholar.js";
-import { asksSessionBills } from "./session-bills.js";
+import { asksMaineBills } from "./session-bills.js";
 
 const CHROME = [
   "search terms",
@@ -150,7 +150,7 @@ export function chooseQuotes(comment, results, options = {}) {
     if (hasCurrent) cleaned = cleaned.filter((quote) => !olderSession(quote.url));
   }
   cleaned.sort((a, b) => scoreQuote(b, comment) - scoreQuote(a, comment));
-  if (asksSessionBills(comment) && (!options.stage || options.stage === "bills")) {
+  if (asksMaineBills(comment) && (!options.stage || options.stage === "bills")) {
     const primary = chooseSessionPrimary(options.stage ? cleaned : cleaned.filter((quote) => quoteStage(quote.url) === "bills"));
     if (options.stage === "bills") return { quotes: primary, pages };
     const secondary = diversify(cleaned.filter((quote) => quoteStage(quote.url) !== "bills"), 3);

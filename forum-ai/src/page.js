@@ -74,7 +74,7 @@ function whoLine(kind) {
 }
 
 function composer() {
-  return `<form method="post" action="/forum-ai" class="composer">
+  return `<form method="post" action="/forum-ai" class="composer" onsubmit="if(this.dataset.sent)return false;this.dataset.sent='1';var b=this.querySelector('button');setTimeout(function(){if(b)b.disabled=true},0)">
       <label>Message
         <textarea name="message" required maxlength="2000"></textarea>
       </label>
