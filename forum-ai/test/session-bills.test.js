@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { runAgent } from "../src/agents.js";
 import { runCoordinator } from "../src/coordinator.js";
 import { renderPage } from "../src/page.js";
-import { asksSessionBills, billDisplayLinks, pickBillQuotes, sessionMissLine, sessionNumbers, SESSION_LIST_URL } from "../src/session-bills.js";
+import { asksMaineBills, asksSessionBills, billDisplayLinks, pickBillQuotes, sessionMissLine, sessionNumbers, SESSION_LIST_URL } from "../src/session-bills.js";
 
 const COMMENT = "I'm curious about what legislation is coming up for the next session in Maine";
 const SEARCH = "https://legislature.maine.gov/bills/default_ps.asp";
@@ -46,6 +46,9 @@ test("a next-session question is not treated as a single bill", () => {
   assert.equal(asksSessionBills(COMMENT), true);
   assert.equal(asksSessionBills("Tell me about Maine LD 307"), false);
   assert.equal(asksSessionBills("Hello"), false);
+  assert.equal(asksMaineBills("Hello, I'd like to learn more about Maine Legislation"), true);
+  assert.equal(asksMaineBills("Tell me about Maine LD 307"), false);
+  assert.equal(asksMaineBills("What is the US Senate considering?"), false);
 });
 
 test("session numbers come from the bills search list", () => {
@@ -112,6 +115,33 @@ test("a next-session question opens the Maine bill list and not a press catalog"
   assert.match(html, /That will take a moment\. I'll check legislature\.maine\.gov/);
   assert.equal(html.includes("<p>and</p>"), false);
   assert.equal(html.includes("LD # 1"), false);
+});
+
+test("a Maine legislation question quotes the legislature page, not congress.gov", async () => {
+  const comment = "Hello, I'd like to learn more about Maine Legislation";
+  const calls = [];
+  const reply = await runCoordinator({
+    comment,
+    urls: [],
+    model: async () => "congress.gov",
+    ask: async (group, payload) => runAgent({
+      group,
+      comment: payload.comment,
+      urls: payload.urls,
+      fetchImpl: async (url) => {
+        calls.push(String(url));
+        return fetchImpl(url);
+      },
+    }),
+  });
+  assert.ok(calls.includes(SEARCH));
+  assert.ok(calls.includes(DIR133));
+  assert.equal(calls.some((url) => url.includes("congress.gov")), false);
+  assert.equal(reply.ok, true);
+  assert.equal(reply.pace, "That will take a moment. I'll check legislature.maine.gov.");
+  assert.ok(reply.quotes.some((quote) => quote.text === "133rd Maine Legislature" && quote.url === DIR133));
+  assert.equal(reply.answer.includes("congress.gov"), false);
+  assert.equal(reply.quotes.some((quote) => /\b(An Act|Resolve)\b/.test(quote.text)), false);
 });
 
 test("a session search with no quote names the list and does not guess", async () => {

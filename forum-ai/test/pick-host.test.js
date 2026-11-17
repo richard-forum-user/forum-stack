@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { chooseHost, hostUrl, isVague, pageRefusal, parseHost, resolveHost, VAGUE_PAGE } from "../src/pick-host.js";
+import { SESSION_LIST_URL } from "../src/session-bills.js";
 import { renderPage } from "../src/page.js";
 
 test("the model text is only a host", () => {
@@ -29,6 +30,22 @@ test("Maine bills open the Maine legislature only when the question is about Mai
   assert.equal(resolveHost("Tell me about LD 307", "congress.gov"), "legislature.maine.gov");
   assert.equal(resolveHost("What is Congress doing this week?", "legislature.maine.gov"), "congress.gov");
   assert.equal(hostUrl("legislature.maine.gov", "What is Congress doing?"), "");
+});
+
+test("a Maine legislation question opens the legislature, not congress.gov", async () => {
+  const comment = "Hello, I'd like to learn more about Maine Legislation";
+  assert.equal(resolveHost(comment, "none"), "legislature.maine.gov");
+  assert.equal(resolveHost(comment, "congress.gov"), "legislature.maine.gov");
+  assert.equal(resolveHost(comment, ""), "legislature.maine.gov");
+  const seen = [];
+  const choice = await chooseHost(comment, async (text) => {
+    seen.push(text);
+    return "congress.gov";
+  });
+  assert.equal(seen.length, 1);
+  assert.equal(choice.host, "legislature.maine.gov");
+  assert.equal(choice.url, SESSION_LIST_URL);
+  assert.equal(choice.url.includes("congress.gov"), false);
 });
 
 test("what is this stays a refusal with a page link and no model facts", async () => {

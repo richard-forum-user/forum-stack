@@ -1,8 +1,8 @@
 import { groupOf } from "./allowlist.js";
 import { checkQuotes } from "./quote-check.js";
 import { chooseQuotes, hasExpertQuote, quoteStage } from "./choose-quotes.js";
-import { chooseHost, HOST_PROMPT, isVague, MODEL_ID, modelText, pageRefusal } from "./pick-host.js";
-import { asksSessionBills, sessionMissLine } from "./session-bills.js";
+import { asksMaine, chooseHost, HOST_PROMPT, isVague, MODEL_ID, modelText, pageRefusal } from "./pick-host.js";
+import { asksMaineBills, sessionMissLine } from "./session-bills.js";
 import {
   closingLine,
   isSmallTalk,
@@ -38,7 +38,7 @@ function emptyReply(answer) {
 }
 
 function missed(comment) {
-  return emptyReply(asksSessionBills(comment) ? sessionMissLine() : SPOKEN_REFUSAL);
+  return emptyReply(asksMaineBills(comment) ? sessionMissLine() : SPOKEN_REFUSAL);
 }
 
 // Fans a check out one stage at a time: bill list, then other .gov pages,
@@ -78,7 +78,8 @@ export async function* walkCheck({ comment, urls, ask, model }) {
   } else {
     const choice = await chooseHost(text, model);
     if (!choice.url) {
-      yield { type: "done", reply: emptyReply(pageRefusal()) };
+      const answer = asksMaine(text) ? sessionMissLine() : pageRefusal();
+      yield { type: "done", reply: emptyReply(answer) };
       return;
     }
     const stage = quoteStage(choice.url);

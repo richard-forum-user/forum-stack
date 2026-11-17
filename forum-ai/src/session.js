@@ -2,7 +2,7 @@ import { adminMatches, forumCredential, parseCookies } from "./auth.js";
 import { extractUrls } from "./allowlist.js";
 import { quoteStage } from "./choose-quotes.js";
 import { escapeHtml, renderPage, renderPageEnd, renderPageStart, renderStageBlock } from "./page.js";
-import { asksSessionBills, sessionMissLine } from "./session-bills.js";
+import { asksMaineBills, sessionMissLine } from "./session-bills.js";
 import { closingLine, isSmallTalk, NO_TARGET, paceFor, SPOKEN_REFUSAL, STAGE_LINE } from "./speak.js";
 
 const MAX_BODY = 32 * 1024;
@@ -220,13 +220,13 @@ export class ForumAiSession {
   failureReply(comment) {
     return {
       ok: false,
-      answer: asksSessionBills(comment) ? sessionMissLine() : SPOKEN_REFUSAL,
+      answer: asksMaineBills(comment) ? sessionMissLine() : SPOKEN_REFUSAL,
       quotes: [],
       refused: [],
       lead: "",
       pace: "",
       stages: [],
-      close: asksSessionBills(comment) ? sessionMissLine() : SPOKEN_REFUSAL,
+      close: asksMaineBills(comment) ? sessionMissLine() : SPOKEN_REFUSAL,
     };
   }
 

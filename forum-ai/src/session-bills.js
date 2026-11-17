@@ -15,6 +15,15 @@ export function asksSessionBills(comment) {
   return /\b(legislation|bills?|measures)\b/i.test(text) && /\b(session|coming|upcoming|filed|next)\b/i.test(text);
 }
 
+// Maine legislation with no bill number uses the legislature bill list.
+// A numbered LD stays on that bill's page. congress.gov is not a Maine page.
+export function asksMaineBills(comment) {
+  if (asksSessionBills(comment)) return true;
+  const text = String(comment || "");
+  if (/\bLD\s*#?\s*\d{1,4}\b/i.test(text)) return false;
+  return /\bmaine\b/i.test(text);
+}
+
 // Session numbers printed on the bills search or a directory heading.
 // The page's own list decides which sessions to open.
 export function sessionNumbers(text) {

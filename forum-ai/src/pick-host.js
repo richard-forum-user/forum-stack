@@ -27,7 +27,7 @@ export const HOST_PROMPT = [
   "Reply with only the host, or none.",
   `Hosts: ${CHOOSABLE_HOSTS.join(", ")}.`,
   "A United States Senate or Congress question uses congress.gov.",
-  "Open legislature.maine.gov only when the question is about Maine legislation.",
+  "A Maine question uses legislature.maine.gov.",
   "Do not add facts.",
 ].join(" ");
 
@@ -97,22 +97,17 @@ export function hostUrl(host, comment) {
   return url;
 }
 
-// The model names one host. A Senate question cannot land on the Maine bill
-// list, and the Maine bill list is only used when the question is about Maine.
+// The model names one host. congress.gov is only for a US Congress or Senate
+// question. A Maine question opens the Maine legislature even if the model
+// names congress.gov or no host.
 export function resolveHost(comment, modelText) {
   if (isVague(comment)) return "";
   if (asksCongress(comment)) return "congress.gov";
   const picked = parseHost(modelText);
-  const maineBill = asksMaine(comment) && (asksSessionBills(comment) || /\bLD\s*#?\s*\d{1,4}\b/i.test(comment));
-  if (asksExperts(comment)) {
-    if (JOURNAL_HOSTS.has(picked) || PRESS_HOSTS.has(picked)) return picked;
-    if (picked === "legislature.maine.gov" && asksMaine(comment)) return picked;
-    if (maineBill) return "legislature.maine.gov";
-    return picked && CHOOSABLE_HOSTS.includes(picked) ? picked : "";
-  }
-  if (maineBill) return "legislature.maine.gov";
+  if (asksExperts(comment) && (JOURNAL_HOSTS.has(picked) || PRESS_HOSTS.has(picked))) return picked;
+  if (asksMaine(comment)) return "legislature.maine.gov";
   if (!picked || !CHOOSABLE_HOSTS.includes(picked)) return "";
-  if ((picked === "legislature.maine.gov" || picked === "www.maine.gov") && !asksMaine(comment)) return "";
+  if (picked === "congress.gov" || picked === "legislature.maine.gov" || picked === "www.maine.gov") return "";
   return picked;
 }
 
