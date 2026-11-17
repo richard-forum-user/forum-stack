@@ -3,7 +3,7 @@ import { extractUrls } from "./allowlist.js";
 import { quoteStage } from "./choose-quotes.js";
 import { escapeHtml, renderPage, renderPageEnd, renderPageStart, renderStageBlock } from "./page.js";
 import { asksMaineBills, sessionMissLine } from "./session-bills.js";
-import { closingLine, isSmallTalk, NO_TARGET, paceFor, SPOKEN_REFUSAL, STAGE_LINE } from "./speak.js";
+import { closingLine, paceFor, SPOKEN_REFUSAL, STAGE_LINE } from "./speak.js";
 
 const MAX_BODY = 32 * 1024;
 
@@ -40,6 +40,10 @@ function htmlResponse(body, status, extra) {
 function presentReply(reply) {
   const fallback = reply?.answer || reply?.refusal || SPOKEN_REFUSAL;
   if (!reply) return { ok: false, answer: SPOKEN_REFUSAL, quotes: [], refused: [], lead: "", pace: "", stages: [], close: SPOKEN_REFUSAL };
+  if (!(reply.quotes || []).length) {
+    const spoken = reply.answer || reply.close || fallback;
+    return { ...reply, quotes: [], stages: reply.stages || [], close: reply.close || spoken, answer: spoken };
+  }
   if (Array.isArray(reply.stages) && reply.stages.length) return reply;
   if (!reply.ok) {
     return { ...reply, pace: reply.pace || "", stages: [], close: reply.close || fallback, quotes: reply.quotes || [] };
@@ -270,16 +274,6 @@ export class ForumAiSession {
       return this.render({ ...ctx, thread, error: "Write a message.", status: 400 });
     }
     const urls = extractUrls(fields.sources, comment).slice(0, 8);
-    if (isSmallTalk(comment, urls)) {
-      const thread = await this.loadThread(ctx.sid);
-      thread.push({ role: "user", text: comment.slice(0, 2000) });
-      thread.push({ role: "assistant", text: NO_TARGET, quotes: [], pace: "", stages: [], close: "", refused: [] });
-      const saved = await this.saveThread(ctx.sid, thread);
-      if (wantsJson) {
-        return jsonResponse({ ok: false, answer: NO_TARGET, quotes: [], refused: [], lead: "", pace: "", stages: [], close: NO_TARGET });
-      }
-      return this.render({ ...ctx, thread: saved });
-    }
     const payload = coordinatorPayload(comment, urls);
     if (!wantsJson) return this.streamCheck(ctx, comment, payload);
     let reply;

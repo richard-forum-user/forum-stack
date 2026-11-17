@@ -2,10 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { runCoordinator } from "../src/coordinator.js";
-import { NO_TARGET, SPOKEN_REFUSAL } from "../src/speak.js";
+import { SPOKEN_REFUSAL } from "../src/speak.js";
 
 const page = "The bill was enacted by the legislature in public session.";
-const second = "The act takes effect on the date the secretary certifies it.";
 
 test("coordinator never fetches", () => {
   const src = readFileSync(new URL("../src/coordinator.js", import.meta.url), "utf8");
@@ -36,8 +35,9 @@ test("off-list host is not sent to an agent", async () => {
     },
   });
   assert.deepEqual(seen, [{ group: "gov", urls: ["https://www.maine.gov/bill"] }]);
-  assert.equal(reply.ok, false);
-  assert.equal(reply.answer, SPOKEN_REFUSAL);
+  assert.equal(reply.ok, true);
+  assert.match(reply.answer, /https:\/\/www\.maine\.gov\/bill/);
+  assert.equal(reply.answer.includes("https://example.com/no"), false);
   assert.deepEqual(reply.quotes, []);
   assert.deepEqual(reply.refused, ["https://example.com/no"]);
 });
@@ -63,32 +63,22 @@ test("routes each link to its own source group", async () => {
   ]);
 });
 
-test("joins exact quotes and drops a paraphrase", async () => {
-  const good = await runCoordinator({
+test("a paraphrase is the reply and still names the page", async () => {
+  const said = "The bill passed easily and everyone agreed.";
+  const reply = await runCoordinator({
     comment: "enacted",
     urls: ["https://www.maine.gov/bill"],
     ask: async () => ({
-      quotes: [
-        { text: page, url: "https://www.maine.gov/bill" },
-        { text: second, url: "https://www.maine.gov/bill" },
-      ],
-      pages: { "https://www.maine.gov/bill": `${page} ${second}` },
-    }),
-  });
-  assert.equal(good.ok, true);
-  assert.equal(good.answer, `"${page}" and "${second}"`);
-
-  const bad = await runCoordinator({
-    comment: "enacted",
-    urls: ["https://www.maine.gov/bill"],
-    ask: async () => ({
-      quotes: [{ text: "The bill passed easily and everyone agreed.", url: "https://www.maine.gov/bill" }],
+      quotes: [{ text: said, url: "https://www.maine.gov/bill" }],
       pages: { "https://www.maine.gov/bill": page },
     }),
+    reply: async () => said,
   });
-  assert.equal(bad.ok, false);
-  assert.equal(bad.answer, SPOKEN_REFUSAL);
-  assert.deepEqual(bad.quotes, []);
+  assert.equal(reply.ok, true);
+  assert.match(reply.answer, /The bill passed easily and everyone agreed/);
+  assert.match(reply.answer, /https:\/\/www\.maine\.gov\/bill/);
+  assert.notEqual(reply.answer, SPOKEN_REFUSAL);
+  assert.deepEqual(reply.quotes, []);
 });
 
 test("a message with no link searches the allowlists before refusing", async () => {
@@ -106,38 +96,39 @@ test("a message with no link searches the allowlists before refusing", async () 
   assert.equal(seen[0].urls[0], "https://legislature.maine.gov/legis/bills/display_ps.asp?LD=307&snum=132");
   assert.equal(seen.length, 1);
   assert.equal(seen.some((row) => row.urls.some((url) => url.includes("congress.gov"))), false);
-  assert.equal(reply.ok, false);
-  assert.equal(reply.answer, SPOKEN_REFUSAL);
-  assert.equal(reply.lead, "");
+  assert.equal(reply.ok, true);
+  assert.match(reply.answer, /https:\/\/legislature\.maine\.gov\/legis\/bills\/display_ps\.asp\?LD=307&snum=132/);
+  assert.deepEqual(reply.quotes, []);
 });
 
-test("what is this stays a refusal with a page link", async () => {
+test("what is this is a sentence from the model", async () => {
   const reply = await runCoordinator({
     comment: "What is this?",
     urls: [],
     model: async () => {
-      throw new Error("the model must not answer this");
+      throw new Error("host choice is not needed");
     },
     ask: async () => {
       throw new Error("should not be asked");
     },
+    reply: async () => "This is Forum AI. Ask about a bill or a public page.",
   });
-  assert.equal(reply.ok, false);
+  assert.equal(reply.ok, true);
+  assert.equal(reply.answer, "This is Forum AI. Ask about a bill or a public page.");
   assert.deepEqual(reply.quotes, []);
-  assert.match(reply.answer, /https:\/\/www\.congress\.gov\//);
-  assert.equal(reply.answer.includes("I think"), false);
 });
 
-test("hello with no link asks for a bill instead of searching", async () => {
+test("hello is a sentence and does not search", async () => {
   const reply = await runCoordinator({
     comment: "Hello",
     urls: [],
     ask: async () => {
       throw new Error("should not be asked");
     },
+    reply: async () => "Hello. What bill or vote should we look at?",
   });
-  assert.equal(reply.ok, false);
-  assert.equal(reply.answer, NO_TARGET);
+  assert.equal(reply.ok, true);
+  assert.equal(reply.answer, "Hello. What bill or vote should we look at?");
   assert.equal(reply.pace, "");
   assert.deepEqual(reply.quotes, []);
 });
@@ -174,13 +165,15 @@ test("an LD bill keeps the current legislature page and drops search chrome", as
         [search]: "Search terms: Tell me about Maine LD 307",
       },
     }),
+    reply: async () => "This bill sets up a data center council.",
   });
   assert.equal(reply.ok, true);
-  assert.equal(reply.lead, "Looking at legislature.maine.gov");
-  assert.deepEqual(reply.quotes.map((quote) => quote.url), [bill]);
+  assert.match(reply.answer, /This bill sets up a data center council/);
+  assert.match(reply.answer, /https:\/\/legislature\.maine\.gov\/legis\/bills\/display_ps\.asp\?LD=307&snum=132/);
+  assert.deepEqual(reply.quotes, []);
 });
 
-test("search-page chrome is not quoted, so a greeting still refuses", async () => {
+test("a greeting with a pasted page is answered in a sentence", async () => {
   const search = "https://pubmed.ncbi.nlm.nih.gov/?term=Hello";
   const reply = await runCoordinator({
     comment: "Hello",
@@ -189,9 +182,12 @@ test("search-page chrome is not quoted, so a greeting still refuses", async () =
       quotes: [{ text: "Cite Item in Clipboard 2 Cite Hello", url: search }],
       pages: { [search]: "Cite Item in Clipboard 2 Cite Hello" },
     }),
+    reply: async () => "That search page is just the site's own chrome.",
   });
-  assert.equal(reply.ok, false);
-  assert.equal(reply.answer, "I looked at the allowlisted pages and did not find that.");
+  assert.equal(reply.ok, true);
+  assert.match(reply.answer, /just the site's own chrome/);
+  assert.match(reply.answer, /https:\/\/pubmed\.ncbi\.nlm\.nih\.gov\/\?term=Hello/);
+  assert.deepEqual(reply.quotes, []);
 });
 
 test("an article link keeps its quote when the url still has a search term", async () => {
@@ -206,9 +202,8 @@ test("an article link keeps its quote when the url still has a search term", asy
     }),
   });
   assert.equal(reply.ok, true);
-  assert.equal(reply.quotes[0].url, article);
-  assert.match(reply.lead, /pmc\.ncbi\.nlm\.nih\.gov/);
-  assert.doesNotMatch(reply.lead, /not on an allowlisted page/);
+  assert.match(reply.answer, /https:\/\/pmc\.ncbi\.nlm\.nih\.gov\/articles\/PMC8876709\/\?term=data%20centers/);
+  assert.deepEqual(reply.quotes, []);
 });
 
 test("an expert question searches peer-reviewed sources by keyword", async () => {
@@ -218,12 +213,17 @@ test("an expert question searches peer-reviewed sources by keyword", async () =>
   const bill = "https://legislature.maine.gov/legis/bills/display_ps.asp?LD=307&snum=132";
   const title = "LD # 307 An Act to Establish the Maine Data Center Coordination Council and Place a Temporary Limitation on Certain Data Centers (TITLE CHANGE)";
   let modelCalls = 0;
+  let replyCalls = 0;
   const reply = await runCoordinator({
     comment: "Tell me about LD 307 in greater detail, what are experts saying?",
     urls: [],
     model: async () => {
       modelCalls += 1;
       return "The energy use is enormous. pmc.ncbi.nlm.nih.gov";
+    },
+    reply: async () => {
+      replyCalls += 1;
+      return "The energy use is enormous.";
     },
     ask: async (group, payload) => {
       seen.push({ group, urls: payload.urls });
@@ -233,14 +233,14 @@ test("an expert question searches peer-reviewed sources by keyword", async () =>
     },
   });
   assert.equal(modelCalls, 1);
+  assert.equal(replyCalls, 1);
   assert.equal(seen.length, 1);
   assert.equal(seen[0].group, "academia");
   assert.ok(seen[0].urls[0].startsWith("https://pmc.ncbi.nlm.nih.gov/search/?term="));
   assert.equal(reply.ok, true);
-  assert.ok(reply.quotes.some((quote) => quote.url === article));
-  assert.equal(reply.quotes.some((quote) => quote.text.includes("energy use is enormous")), false);
-  assert.match(reply.lead, /pmc\.ncbi\.nlm\.nih\.gov/);
-  assert.doesNotMatch(reply.lead, /not on an allowlisted page/);
+  assert.match(reply.answer, /The energy use is enormous/);
+  assert.match(reply.answer, /https:\/\/pmc\.ncbi\.nlm\.nih\.gov\/search\/\?term=/);
+  assert.deepEqual(reply.quotes, []);
 });
 
 test("a detail question quotes the bill text and says when experts are absent", async () => {
@@ -265,13 +265,13 @@ test("a detail question quotes the bill text and says when experts are absent", 
         [search]: "Search terms: Tell me about LD 307 in greater detail",
       },
     }),
+    reply: async () => "The bill sets a temporary limit on certain data centers.",
   });
   assert.equal(reply.ok, true);
-  assert.ok(reply.quotes.length >= 2);
-  assert.ok(reply.quotes.some((quote) => quote.url === pdf && quote.text === section));
-  assert.equal(reply.quotes.some((quote) => quote.url === search), false);
-  assert.match(reply.lead, /^Looking at legislature\.maine\.gov/);
-  assert.match(reply.lead, /Expert commentary was not on an allowlisted page\.$/);
+  assert.match(reply.answer, /temporary limit on certain data centers/);
+  assert.match(reply.answer, /https:\/\/legislature\.maine\.gov\/legis\/bills\/display_ps\.asp\?LD=307&snum=132/);
+  assert.match(reply.answer, /https:\/\/legislature\.maine\.gov\/legis\/bills\/getPDF\.asp\?paper=HP0207&item=2&snum=132/);
+  assert.deepEqual(reply.quotes, []);
 });
 
 test("expert commentary on an allowlisted page is quoted and named", async () => {
@@ -290,10 +290,12 @@ test("expert commentary on an allowlisted page is quoted and named", async () =>
       ],
       pages: { [pdf]: section, [story]: said },
     }),
+    reply: async () => "Experts described the data center limit as temporary.",
   });
   assert.equal(reply.ok, true);
-  assert.ok(reply.quotes.some((quote) => quote.url === story));
-  assert.equal(reply.lead, "Looking at legislature.maine.gov and www.npr.org");
+  assert.match(reply.answer, /described the data center limit as temporary/);
+  assert.match(reply.answer, /https:\/\/www\.npr\.org\/2026\/maine-ld-307/);
+  assert.deepEqual(reply.quotes, []);
 });
 
 test("a found quote is introduced with the host that was read", async () => {
@@ -308,8 +310,11 @@ test("a found quote is introduced with the host that was read", async () => {
         pages: { "https://legislature.maine.gov/legis/bills/display_ps.asp?LD=307&snum=132": `LD # 307 ${quote} (TITLE CHANGE)` },
       };
     },
+    reply: async () => "It would limit certain data centers.",
   });
   assert.equal(reply.ok, true);
-  assert.equal(reply.lead, "Looking at legislature.maine.gov");
-  assert.equal(reply.quotes[0].text, quote);
+  assert.match(reply.answer, /limit certain data centers/);
+  assert.match(reply.answer, /https:\/\/legislature\.maine\.gov\/legis\/bills\/display_ps\.asp\?LD=307&snum=132/);
+  assert.notEqual(reply.answer, quote);
+  assert.deepEqual(reply.quotes, []);
 });

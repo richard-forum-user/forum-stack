@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { runAgent } from "../src/agents.js";
 import { runCoordinator } from "../src/coordinator.js";
 import { renderPage } from "../src/page.js";
-import { asksMaineBills, asksSessionBills, billDisplayLinks, pickBillQuotes, sessionMissLine, sessionNumbers, SESSION_LIST_URL } from "../src/session-bills.js";
+import { asksMaineBills, asksSessionBills, billDisplayLinks, pickBillQuotes, sessionNumbers, SESSION_LIST_URL } from "../src/session-bills.js";
 
 const COMMENT = "I'm curious about what legislation is coming up for the next session in Maine";
 const SEARCH = "https://legislature.maine.gov/bills/default_ps.asp";
@@ -73,6 +73,7 @@ test("a next-session question opens the Maine bill list and not a press catalog"
     comment: COMMENT,
     urls: [],
     model: async () => "apnews.com",
+    reply: async () => "The newest session list is the place to start.",
     ask: async (group, payload) => {
       order.push(payload.stage);
       return runAgent({
@@ -97,10 +98,10 @@ test("a next-session question opens the Maine bill list and not a press catalog"
   assert.equal(reply.ok, true);
   assert.equal(reply.pace, "That will take a moment. I'll check legislature.maine.gov.");
   assert.deepEqual(reply.stages.map((stage) => stage.line), ["Checking legislature.maine.gov."]);
-  assert.ok(reply.quotes.some((quote) => quote.text === "133rd Maine Legislature" && quote.url === DIR133));
-  assert.ok(reply.quotes.some((quote) => quote.text === "Legislative documents from 1 to 200 are not available at this time."));
-  assert.equal(reply.quotes.some((quote) => /\b(An Act|Resolve)\b/.test(quote.text)), false);
-  assert.equal(reply.quotes.some((quote) => quote.text.includes("132nd")), false);
+  assert.match(reply.answer, /The newest session list is the place to start/);
+  assert.match(reply.answer, /https:\/\/legislature\.maine\.gov\//);
+  assert.equal(reply.answer.includes("congress.gov"), false);
+  assert.deepEqual(reply.quotes, []);
   const html = renderPage({
     authorized: true,
     kind: "admin",
@@ -113,6 +114,8 @@ test("a next-session question opens the Maine bill list and not a press catalog"
     }],
   });
   assert.match(html, /That will take a moment\. I'll check legislature\.maine\.gov/);
+  assert.match(html, /The newest session list is the place to start/);
+  assert.equal(html.includes("<blockquote>"), false);
   assert.equal(html.includes("<p>and</p>"), false);
   assert.equal(html.includes("LD # 1"), false);
 });
@@ -124,6 +127,7 @@ test("a Maine legislation question quotes the legislature page, not congress.gov
     comment,
     urls: [],
     model: async () => "congress.gov",
+    reply: async () => "Maine legislation is listed by the Maine legislature.",
     ask: async (group, payload) => runAgent({
       group,
       comment: payload.comment,
@@ -139,9 +143,10 @@ test("a Maine legislation question quotes the legislature page, not congress.gov
   assert.equal(calls.some((url) => url.includes("congress.gov")), false);
   assert.equal(reply.ok, true);
   assert.equal(reply.pace, "That will take a moment. I'll check legislature.maine.gov.");
-  assert.ok(reply.quotes.some((quote) => quote.text === "133rd Maine Legislature" && quote.url === DIR133));
+  assert.match(reply.answer, /Maine legislation is listed by the Maine legislature/);
+  assert.match(reply.answer, /https:\/\/legislature\.maine\.gov\//);
   assert.equal(reply.answer.includes("congress.gov"), false);
-  assert.equal(reply.quotes.some((quote) => /\b(An Act|Resolve)\b/.test(quote.text)), false);
+  assert.deepEqual(reply.quotes, []);
 });
 
 test("a session search with no quote names the list and does not guess", async () => {
@@ -150,18 +155,15 @@ test("a session search with no quote names the list and does not guess", async (
     urls: [],
     ask: async () => ({ quotes: [], pages: {} }),
   });
-  assert.equal(reply.ok, false);
+  assert.equal(reply.ok, true);
   assert.deepEqual(reply.quotes, []);
-  assert.equal(reply.answer, sessionMissLine());
-  assert.equal(reply.answer, `I can't answer that without leaving the quoted sources. The session list is at ${SESSION_LIST_URL}.`);
-  assert.equal(reply.answer.includes("132"), false);
-  assert.equal(reply.answer.includes("133"), false);
-  assert.equal(reply.lead, "");
+  assert.match(reply.answer, new RegExp(SESSION_LIST_URL.replace(/[.]/g, "\\.")));
+  assert.equal(reply.answer.includes("without leaving the quoted sources"), false);
   const html = renderPage({
     authorized: true,
     kind: "admin",
     thread: [{ role: "assistant", text: reply.answer, quotes: [] }],
   });
-  assert.match(html, /I can't answer that without leaving the quoted sources/);
+  assert.match(html, /I read the page at/);
   assert.match(html, new RegExp(`href="${SESSION_LIST_URL.replace(/[.]/g, "\\.")}"`));
 });

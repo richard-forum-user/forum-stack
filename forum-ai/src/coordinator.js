@@ -1,17 +1,12 @@
 import { groupOf } from "./allowlist.js";
-import { checkQuotes } from "./quote-check.js";
-import { chooseQuotes, hasExpertQuote, quoteStage } from "./choose-quotes.js";
-import { asksMaine, chooseHost, HOST_PROMPT, isVague, MODEL_ID, modelText, pageRefusal } from "./pick-host.js";
-import { asksMaineBills, sessionMissLine } from "./session-bills.js";
+import { quoteStage } from "./choose-quotes.js";
+import { chooseHost, HOST_PROMPT, isVague, MODEL_ID, modelText } from "./pick-host.js";
+import { pageNotes, REPLY_PROMPT, usedLinks, withUsedLink } from "./reply.js";
 import {
-  closingLine,
   isSmallTalk,
-  NO_TARGET,
   paceFor,
   SPOKEN_REFUSAL,
-  STAGE_EMPTY,
   STAGE_LINE,
-  statusLine,
 } from "./speak.js";
 
 const BINDING = { gov: "GOV", academia: "ACADEMIA", press: "PRESS" };
@@ -37,26 +32,45 @@ function emptyReply(answer) {
   };
 }
 
-function missed(comment) {
-  return emptyReply(asksMaineBills(comment) ? sessionMissLine() : SPOKEN_REFUSAL);
+function heard(answer, extra = {}) {
+  return {
+    ok: true,
+    refusal: "",
+    answer,
+    quotes: [],
+    refused: extra.refused || [],
+    lead: "",
+    pace: extra.pace || "",
+    stages: extra.stages || [],
+    close: answer,
+    sources: extra.sources || [],
+  };
 }
 
-// Fans a check out one stage at a time: bill list, then other .gov pages,
-// then the press pages, then journal pages when the question asks for them.
+async function spoken(reply, comment, urls, pages) {
+  let said = "";
+  if (typeof reply === "function") {
+    try {
+      said = String(await reply({ comment, urls, pages: pages || {} }) || "");
+    } catch {
+      said = "";
+    }
+  }
+  return withUsedLink(said, urls);
+}
+
+// Opens allowlisted pages, then lets the model answer in ordinary sentences.
 // This function does not fetch.
-export async function* walkCheck({ comment, urls, ask, model }) {
+export async function* walkCheck({ comment, urls, ask, model, reply }) {
   const text = String(comment || "").trim();
   const pasted = (Array.isArray(urls) ? urls : []).filter(Boolean);
   if (!text) {
     yield { type: "done", reply: emptyReply(SPOKEN_REFUSAL) };
     return;
   }
-  if (isVague(text)) {
-    yield { type: "done", reply: emptyReply(pageRefusal()) };
-    return;
-  }
-  if (isSmallTalk(text, pasted)) {
-    yield { type: "done", reply: emptyReply(NO_TARGET) };
+  if (isVague(text) || isSmallTalk(text, pasted)) {
+    const answer = await spoken(reply, text, [], {});
+    yield { type: "done", reply: heard(answer) };
     return;
   }
 
@@ -78,14 +92,15 @@ export async function* walkCheck({ comment, urls, ask, model }) {
   } else {
     const choice = await chooseHost(text, model);
     if (!choice.url) {
-      const answer = asksMaine(text) ? sessionMissLine() : pageRefusal();
-      yield { type: "done", reply: emptyReply(answer) };
+      const answer = await spoken(reply, text, [], {});
+      yield { type: "done", reply: heard(answer) };
       return;
     }
     const stage = quoteStage(choice.url);
     if (!stage) {
       refused.push(choice.url);
-      yield { type: "done", reply: { ...emptyReply(pageRefusal()), refused } };
+      const answer = await spoken(reply, text, [], {});
+      yield { type: "done", reply: heard(answer, { refused }) };
       return;
     }
     buckets[stage] = [choice.url];
@@ -96,60 +111,38 @@ export async function* walkCheck({ comment, urls, ask, model }) {
   yield { type: "pace", pace };
 
   const stages = [];
+  const requested = [];
+  const pages = {};
   for (const id of STAGE_ORDER) {
     const list = buckets[id];
-    const stageComment = text;
     if (!list || !list.length) continue;
-    let result = { quotes: [], pages: {} };
+    requested.push(...list);
+    let result = { pages: {} };
     try {
       result = (await ask(groupForStage(id), {
-        comment: stageComment,
+        comment: text,
         urls: list,
         stage: id,
       })) || result;
     } catch {
-      result = { quotes: [], pages: {} };
+      result = { pages: {} };
     }
-    const chosen = chooseQuotes(text, [result], { stage: id });
-    let quotes = chosen.quotes;
-    if (quotes.length) {
-      const answer = quotes.map((quote) => `"${quote.text}"`).join(" and ");
-      const verdict = checkQuotes({ answer, quotes, pages: chosen.pages });
-      if (!verdict.ok) quotes = [];
-    }
+    Object.assign(pages, result.pages || {});
     const stage = {
       id,
       line: chosenHost ? `Checking ${chosenHost}.` : STAGE_LINE[id],
-      quotes,
-      empty: quotes.length ? "" : STAGE_EMPTY[id],
+      quotes: [],
+      empty: "",
     };
     stages.push(stage);
     yield { type: "stage", stage };
   }
 
-  const quotes = stages.flatMap((stage) => stage.quotes);
-  if (!quotes.length) {
-    const reply = missed(text);
-    reply.refused = refused;
-    reply.pace = pace;
-    reply.stages = stages;
-    yield { type: "done", reply };
-    return;
-  }
-  const answer = quotes.map((quote) => `"${quote.text}"`).join(" and ");
+  const links = usedLinks(requested, pages);
+  const answer = await spoken(reply, text, links, pages);
   yield {
     type: "done",
-    reply: {
-      ok: true,
-      answer,
-      quotes,
-      refused,
-      lead: statusLine(text, quotes, hasExpertQuote(quotes)),
-      pace,
-      stages,
-      close: closingLine(quotes),
-      sources: [...new Set(quotes.map((quote) => quote.url))],
-    },
+    reply: heard(answer, { refused, pace, stages, sources: links }),
   };
 }
 
@@ -185,6 +178,21 @@ export class ForumAiCoordinator {
                   { role: "user", content: String(comment || "").slice(0, 2000) },
                 ],
                 max_tokens: 32,
+              });
+              return modelText(result);
+            },
+            reply: async ({ comment, urls, pages }) => {
+              if (!env?.AI?.run) return "";
+              const notes = pageNotes(urls, pages);
+              const result = await env.AI.run(MODEL_ID, {
+                messages: [
+                  { role: "system", content: REPLY_PROMPT },
+                  {
+                    role: "user",
+                    content: `Question: ${String(comment || "").slice(0, 2000)}\n\n${notes || "No page was opened."}`,
+                  },
+                ],
+                max_tokens: 400,
               });
               return modelText(result);
             },
