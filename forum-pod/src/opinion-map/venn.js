@@ -20,6 +20,32 @@ const POS = {
   "CUT+REV+PRO": [180, 142],
 };
 
+// Titles sit in each circle's outer cap. A shared baseline makes the two
+// top labels run together, and a title on the top of the bottom circle
+// lands on the center count.
+const TITLE_ANCHOR = {
+  CUT: { x: 104, y: 44 },
+  REV: { x: 268, y: 51 },
+  PRO: { x: 180, y: 248 },
+};
+
+function titleLines(label) {
+  const words = String(label || "").split(/\s+/).filter(Boolean);
+  if (words.length <= 3) return [words.join(" ")];
+  const mid = Math.ceil(words.length / 2);
+  return [words.slice(0, mid).join(" "), words.slice(mid).join(" ")];
+}
+
+function titleSvg(id, label) {
+  const anchor = TITLE_ANCHOR[id];
+  if (!anchor) return "";
+  const lines = titleLines(label);
+  const tspans = lines
+    .map((line, i) => '<tspan x="' + anchor.x + '" dy="' + (i === 0 ? 0 : 14) + '">' + escapeHtml(line) + "</tspan>")
+    .join("");
+  return '<text x="' + anchor.x + '" y="' + anchor.y + '" text-anchor="middle" fill="#f3ead7" font-size="11">' + tspans + "</text>";
+}
+
 export function buildMapModel({ placement, comments, config, labels, claims, frustration, taps }) {
   const display = circleDisplayLabels(config);
   const regions = {};
@@ -80,9 +106,11 @@ export function renderVennHtml(model) {
   svg.push('<svg viewBox="0 0 360 280" role="img" aria-labelledby="venn-title">');
   svg.push('<title id="venn-title">Three circles counting people, not comments</title>');
   for (const c of circles) {
-    const meta = model.circles.find((row) => row.id === c.id);
     svg.push('<circle cx="' + c.cx + '" cy="' + c.cy + '" r="78" fill="' + c.fill + '" stroke="' + c.stroke + '" stroke-width="2"></circle>');
-    svg.push('<text x="' + c.cx + '" y="' + (c.cy - 68) + '" text-anchor="middle" fill="#f3ead7" font-size="11">' + escapeHtml(meta?.label || c.id) + "</text>");
+  }
+  for (const c of circles) {
+    const meta = model.circles.find((row) => row.id === c.id);
+    svg.push(titleSvg(c.id, meta?.label || c.id));
   }
   for (const region of model.regions) {
     if (region.id.startsWith("outside:") || !POS[region.id] || region.people === 0) continue;
