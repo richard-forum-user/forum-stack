@@ -1,0 +1,2793 @@
+{
+  "fixture_id": "maine-budget-gap-2028-29",
+  "description": "Top-level comments from a public Facebook group post (Nov 2026) asking how to close Maine's projected 2028-29 budget gap. Names removed; authors replaced with stable pseudonymous keys. Replies are not included. Gold labels are a single human-reviewed first pass and should be re-reviewed by a second labeler before being used as a strict benchmark.",
+  "privacy": "TEST STATE ONLY. Do not publish verbatim text on any public page. Do not attempt to re-identify authors.",
+  "post": {
+    "id": "P001",
+    "author": "OP",
+    "text": "Maine faces a projected $1B+ budget gap for 2028–29, and the new governor's budget is due in February.\n\nYou're in charge of setting the Maine budget. What would you cut or raise?\n\nI see a lot of talk here attacking and defending fiscal policy. So what would you propose?\nSpending cuts? To what program, what amount, and what is the impact?\nTax cuts? Which tax, and what spending would be cut to cover it?\nNew taxes? Which tax, what rate, how much it raises, and where does the money go?\nFraud/waste? Which program? Link the audit, case, or report.\nLet's explore opinions, discuss the impact and the math.",
+    "images": [
+      "Chart: 'What Maine's own tax dollars pay for', FY2027. All funds $15.86B = General Fund $6.18B (39%), Federal $5.96B (38%), Highway/fees/other $3.71B (23%). General Fund breakdown: Health & Human Services $2.37B (38%), K-12 Education $2.04B (33%), Higher education $0.43B (7%), Corrections $0.26B (4%), Courts/public safety/legal $0.33B (5%), State administration $0.29B (5%), Everything else $0.47B (8%). Source: Maine Legislature OFPR, Total Appropriations & Allocations, 2026-2027 Biennium (updated May 8, 2026), https://legislature.maine.gov/doc/12522"
+    ]
+  },
+  "thread_config": {
+    "circles": {
+      "CUT": {
+        "label": "Cut spending and fraud",
+        "themes": [
+          "cut_general",
+          "limited_government",
+          "across_board_cut",
+          "fraud_waste_audit",
+          "cut_hhs",
+          "noncitizen_benefits",
+          "school_consolidation_admin",
+          "cut_education",
+          "cut_higher_ed",
+          "cut_state_admin",
+          "cut_specific_items",
+          "cut_vanity_projects",
+          "end_developer_credits",
+          "pause_programs",
+          "spending_freeze",
+          "cut_unfilled_positions",
+          "end_energy_subsidies",
+          "no_new_programs",
+          "welfare_time_limits",
+          "work_requirements",
+          "defer_capital_projects",
+          "means_test_programs",
+          "savings_bonus_program"
+        ]
+      },
+      "REV": {
+        "label": "Raise revenue",
+        "themes": [
+          "tax_high_earners",
+          "second_home_tax",
+          "investor_property_tax",
+          "lodging_tax",
+          "reverse_tax_cuts_wealthy",
+          "end_corporate_tax_breaks",
+          "economic_growth"
+        ]
+      },
+      "PRO": {
+        "label": "Protect residents (services and tax relief)",
+        "themes": [
+          "protect_services",
+          "protect_seniors",
+          "property_tax_relief",
+          "tax_relief_residents",
+          "prioritize_education_growth",
+          "no_preemptive_cuts",
+          "min_wage_20",
+          "rent_cap",
+          "cut_business_tax_regulation"
+        ]
+      }
+    },
+    "process_themes": [
+      "demand_plan",
+      "education_outcomes",
+      "external_plan_reference",
+      "process_question",
+      "review_revenue",
+      "study_other_states"
+    ],
+    "unplaced_themes": [
+      "consumption_tax",
+      "immigration_enforcement"
+    ],
+    "outside_buckets": [
+      "process",
+      "pushback_only",
+      "venting",
+      "off_topic"
+    ],
+    "placement_unit": "author (union of all of that author's comments)"
+  },
+  "theme_labels": {
+    "cut_general": "Cut spending (general)",
+    "limited_government": "Smaller / limited government",
+    "across_board_cut": "Across-the-board % cut",
+    "fraud_waste_audit": "Find fraud and waste / audit",
+    "cut_hhs": "Cut Health & Human Services",
+    "noncitizen_benefits": "End benefits for noncitizens",
+    "school_consolidation_admin": "Cut school administration / consolidate schools",
+    "cut_education": "Cut education (general)",
+    "cut_higher_ed": "Cut higher education",
+    "cut_state_admin": "Cut state administration / legislature",
+    "cut_specific_items": "Cut a specific item",
+    "cut_vanity_projects": "Stop vanity / cosmetic projects",
+    "end_developer_credits": "End developer tax credits",
+    "pause_programs": "Pause lower-priority programs",
+    "spending_freeze": "Freeze spending",
+    "cut_unfilled_positions": "Remove unfilled positions",
+    "end_energy_subsidies": "End solar/wind subsidies",
+    "no_new_programs": "No new programs",
+    "welfare_time_limits": "Time limits on welfare",
+    "work_requirements": "Work requirements",
+    "defer_capital_projects": "Defer or re-scope building projects",
+    "means_test_programs": "Means-test universal programs",
+    "savings_bonus_program": "Reward employees for savings ideas",
+    "tax_high_earners": "Tax high earners / wealth",
+    "second_home_tax": "Tax second / non-resident homes more",
+    "investor_property_tax": "Tax corporate property investors",
+    "lodging_tax": "Higher lodging / visitor tax",
+    "reverse_tax_cuts_wealthy": "Reverse past tax cuts for the wealthy",
+    "end_corporate_tax_breaks": "End corporate tax breaks",
+    "economic_growth": "Grow the economy / attract business",
+    "protect_services": "Protect services people rely on",
+    "protect_seniors": "Protect seniors on fixed incomes",
+    "property_tax_relief": "Property-tax relief",
+    "tax_relief_residents": "Lower taxes for residents",
+    "prioritize_education_growth": "Prioritize education and job growth",
+    "no_preemptive_cuts": "Don't cut before real numbers",
+    "min_wage_20": "Raise minimum wage to $20",
+    "rent_cap": "Rent maximums",
+    "cut_business_tax_regulation": "Cut business taxes and regulation",
+    "process_question": "Question about the process",
+    "review_revenue": "Re-check revenue estimates first",
+    "external_plan_reference": "Points to an outside plan",
+    "study_other_states": "Compare with other states",
+    "education_outcomes": "Education results vs. spending",
+    "demand_plan": "Officials should bring a plan",
+    "consumption_tax": "Replace sales/income tax with a flat consumption tax",
+    "immigration_enforcement": "Immigration enforcement"
+  },
+  "claims": {
+    "K01": {
+      "text": "Noncitizens in Maine receive state and federal benefits (food, housing, MaineCare, SS, SSI).",
+      "expected": "needs_source: partly depends on immigration status; referee should quote .gov eligibility rules or return not found."
+    },
+    "K02": {
+      "text": "38% of the General Fund goes to undocumented immigrants.",
+      "expected": "contradicted_by_post_source: the 38% slice is ALL Health & Human Services appropriations (OFPR doc 12522), not spending on any immigrant group."
+    },
+    "K03": {
+      "text": "Fraud in MaineCare/childcare/state government is roughly the size of the budget gap; eliminating it would balance the budget.",
+      "expected": "needs_source: referee should quote an audit/report or return not found. Do not state as fact."
+    },
+    "K03B": {
+      "text": "Fraud in Maine could be over $45 million.",
+      "expected": "needs_source."
+    },
+    "K04": {
+      "text": "Governor LePage left a $1.3B surplus.",
+      "expected": "needs_source: quote state financial reports or return not found."
+    },
+    "K05": {
+      "text": "Maine had a surplus when Governor Mills took office.",
+      "expected": "needs_source."
+    },
+    "K06": {
+      "text": "Corporations now pay almost no state income tax; they once paid 27% of all income taxes.",
+      "expected": "needs_source: Maine Revenue Services data."
+    },
+    "K07": {
+      "text": "Maine K-12 education ranks 41st nationally.",
+      "expected": "needs_source: rankings are usually non-.gov; referee may correctly return not found."
+    },
+    "K08": {
+      "text": "The HHS share will increase 20-30%.",
+      "expected": "prediction: not checkable; label as opinion."
+    },
+    "K09": {
+      "text": "The structural gap is a myth; a projected gap exists every budget cycle.",
+      "expected": "partially_checkable: quote the DAFS four-year forecast report on what a structural gap projection is."
+    },
+    "K10": {
+      "text": "Maine public schools have given free lunch to all students since 2020.",
+      "expected": "needs_source: Maine DOE universal school meals."
+    },
+    "K11": {
+      "text": "The deficit will double in the next 4 years.",
+      "expected": "prediction: not checkable."
+    },
+    "K12": {
+      "text": "CRFB put Democrats' 'first 100 days' proposals at $4.1 trillion through 2037.",
+      "expected": "out_of_scope: federal, non-.gov source."
+    },
+    "K13": {
+      "text": "The new governor's father is a billionaire.",
+      "expected": "out_of_scope: personal claim about an individual; do not check or repeat."
+    },
+    "K14": {
+      "text": "The state spends billions supporting undocumented immigrants (SNAP, Section 8, health insurance, etc.).",
+      "expected": "needs_source."
+    },
+    "K15": {
+      "text": "Few if any undocumented immigrants are on welfare.",
+      "expected": "needs_source (counterclaim to K02/K14)."
+    }
+  },
+  "comments": [
+    {
+      "id": "C001",
+      "parent_id": "P001",
+      "author": "R001",
+      "text": "Why no mention of any discretionary spending? Because everyone already knows the bills got to get paid?",
+      "images": [],
+      "gold": {
+        "themes": [
+          "process_question"
+        ],
+        "circles": [],
+        "bucket": "process",
+        "claims": [],
+        "tone": "meta",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C002",
+      "parent_id": "P001",
+      "author": "R002",
+      "text": "Cuts always “hurt” someone or some group of people, but that doesn’t mean they shouldn’t be made. The question is whose turn is it to get hurt - the payers or the non-payers? That’s what the result of the budget will come down to.",
+      "images": [],
+      "gold": {
+        "themes": [
+          "cut_general"
+        ],
+        "circles": [
+          "CUT"
+        ],
+        "bucket": null,
+        "claims": [],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C003",
+      "parent_id": "P001",
+      "author": "R003",
+      "text": "The educational system is bloated… we need to look at every school in every district first.",
+      "images": [],
+      "gold": {
+        "themes": [
+          "school_consolidation_admin"
+        ],
+        "circles": [
+          "CUT"
+        ],
+        "bucket": null,
+        "claims": [],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C004",
+      "parent_id": "P001",
+      "author": "R004",
+      "text": "I recommend the American prescription for widespread prosperity and liberty.\n\nGovernment intervention in the economy is the singular source of the “affordability” “problem.” State and local governments are enthusiastically complicit.\n\nUnless and until legislators and citizens demand a return to limited government and free exchange then Maine swirls to the bottom, ever faster.\n\nLet’s be clear and unambiguous: There is one and only one root cause of the malaise in Maine. That is government grown wildly beyond the just purpose of government. Every “crisis” and “problem” stems from that corruption. Say it out loud.\n\nClearly identifying and vigorously making the case against the one source of the malaise in Maine is the first step toward recovery.\n\nThe first rule of thumb for producing widespread prosperity and liberty is relentless adherence to the principles of limited government and free exchange. It works every time it’s tried.",
+      "images": [],
+      "gold": {
+        "themes": [
+          "limited_government"
+        ],
+        "circles": [
+          "CUT"
+        ],
+        "bucket": null,
+        "claims": [],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C005",
+      "parent_id": "P001",
+      "author": "R005",
+      "text": "Tax the rich especially out of state homeowners property tax on maine second or third or fourth homes “bigly” and raise minimum wage to $20 lower taxes on middle and low income and see how that helps.",
+      "images": [],
+      "gold": {
+        "themes": [
+          "tax_high_earners",
+          "second_home_tax",
+          "min_wage_20",
+          "tax_relief_residents"
+        ],
+        "circles": [
+          "REV",
+          "PRO"
+        ],
+        "bucket": null,
+        "claims": [],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C006",
+      "parent_id": "P001",
+      "author": "R006",
+      "text": "So like every budget cycle. Cool story.",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "venting",
+        "claims": [],
+        "tone": "venting",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C007",
+      "parent_id": "P001",
+      "author": "R007",
+      "text": "This is a tough one.  The fact is we are a state with a great need for services.  There are a ton of factors to this but it all boils down to we use a lot more money then we generate.\n\nIf it comes down to it, I think we need to focus on certain areas rather then trying to fix everything at once.  We need to acknowledge we have limited funds and are a bit at the mercy of federal assistance.\n\nTo that end, we need to focus on two things.  The first is education to make a younger generation and new parents see maine as a promising place to grow in.  This involves k-12 and higher education.  The second is funding for business startup/job growth benefits.  We need to make maine a place people believe they can thrive in by working and making a living.  On a lesser note housing helps as it makes growth for new people to kove to maine.\n\nThis will mean other programs will become a bit stagnant.  Funding can't really grow and certain other projects will need to be put on pause as we fix other issues.  For example, solar investment will pay out in the long run but we can take a break from that to let folks see what the benefits of what we have invested are like and put funding in education.\n\nI think taxing second homes of the wealthy in maine is a fine way to increase our revenue as many retire to maine but never call maine their home.  Companies like Blackstone buying up property like stock will have to pay more for taking homes and lands from maine people too.  I think we will need to implement a rent maximum to make sure those companies don't jack up the price just to shift the tax increase onto their tenants l.  If they dont want the maine homes, good.  That means more maine people can buy homes and will likely lower the cost of homes instead of homes being used like stock investments landbuyers use just to jack up profits at the expense of their tenants.",
+      "images": [],
+      "gold": {
+        "themes": [
+          "prioritize_education_growth",
+          "pause_programs",
+          "second_home_tax",
+          "investor_property_tax",
+          "rent_cap"
+        ],
+        "circles": [
+          "CUT",
+          "REV",
+          "PRO"
+        ],
+        "bucket": null,
+        "claims": [],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C008",
+      "parent_id": "P001",
+      "author": "R008",
+      "text": "WELL, the Socialist Democrats are big on defunding the police, so let’s completely eliminate the State Police",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "venting",
+        "claims": [],
+        "tone": "sarcasm",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C009",
+      "parent_id": "P001",
+      "author": "R009",
+      "text": "Hope she greases us up first!",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "venting",
+        "claims": [],
+        "tone": "venting",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C010",
+      "parent_id": "P001",
+      "author": "R010",
+      "text": "Rename the big fat blue piece of pie what it is. Handouts. Then get all the working age people in Maine off it. Start with illegals.",
+      "images": [],
+      "gold": {
+        "themes": [
+          "cut_hhs",
+          "noncitizen_benefits"
+        ],
+        "circles": [
+          "CUT"
+        ],
+        "bucket": null,
+        "claims": [],
+        "tone": "venting",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C011",
+      "parent_id": "P001",
+      "author": "R011",
+      "text": "I would raise taxes blame the other side. Tell everyone this is what we are fighting against. Join the flavor of the day movement while I hand out big dollar contracts to my friends and family. Then say this is why you need to re elect me to not only make more money off the backs of workers but to fight the other side. Not sure who the other side is but we aren’t giving up as long as the cash is flowing!!",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "venting",
+        "claims": [],
+        "tone": "sarcasm",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C012",
+      "parent_id": "P001",
+      "author": "R012",
+      "text": "start with 5% cut across the board-that will cause each program to get serious about what is and is not needed",
+      "images": [],
+      "gold": {
+        "themes": [
+          "across_board_cut"
+        ],
+        "circles": [
+          "CUT"
+        ],
+        "bucket": null,
+        "claims": [],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C013",
+      "parent_id": "P001",
+      "author": "R013",
+      "text": "Cut it. And not by a little. Not beyond enough to balance what they already take- but by a LOT. Get rid of every single BS program, every single wasted dollar, every single unfulfilled or unverified bidding deals..There’s a TON of fraud and even more waste in Maine.",
+      "images": [],
+      "gold": {
+        "themes": [
+          "cut_general",
+          "fraud_waste_audit"
+        ],
+        "circles": [
+          "CUT"
+        ],
+        "bucket": null,
+        "claims": [],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C014",
+      "parent_id": "P001",
+      "author": "R014",
+      "text": "Why not demand fiscal management from all sectors of Maine government spending?\n\nWhy not demand managing with 1% or 2% less money than they got last year?\n\nWhen tough times come for families and businesses the thing to do is tighten up the belt and manage with less.\n\nWe ALL do it.",
+      "images": [],
+      "gold": {
+        "themes": [
+          "across_board_cut"
+        ],
+        "circles": [
+          "CUT"
+        ],
+        "bucket": null,
+        "claims": [],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C015",
+      "parent_id": "P001",
+      "author": "R009",
+      "text": "Enrollment in schools is dropping,,,BUT, You still have towns within a few miles of each other with 2 or 3 schools in each one.",
+      "images": [],
+      "gold": {
+        "themes": [
+          "school_consolidation_admin"
+        ],
+        "circles": [
+          "CUT"
+        ],
+        "bucket": null,
+        "claims": [],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C016",
+      "parent_id": "P001",
+      "author": "R015",
+      "text": "It was the dumbass democrats who ran up the deficit for the last eight years. You really think they are smart enough to fix it? Look at who's supposed to be in charge.",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "venting",
+        "claims": [],
+        "tone": "attack",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C017",
+      "parent_id": "P001",
+      "author": "R016",
+      "text": "All the free shit for one!",
+      "images": [],
+      "gold": {
+        "themes": [
+          "cut_general"
+        ],
+        "circles": [
+          "CUT"
+        ],
+        "bucket": null,
+        "claims": [],
+        "tone": "venting",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C018",
+      "parent_id": "P001",
+      "author": "R016",
+      "text": "Smaller government!",
+      "images": [],
+      "gold": {
+        "themes": [
+          "limited_government"
+        ],
+        "circles": [
+          "CUT"
+        ],
+        "bucket": null,
+        "claims": [],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C019",
+      "parent_id": "P001",
+      "author": "R017",
+      "text": "Keep voting left and I tv won’t matter , as the debt will become the bane of the state’s existence",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "venting",
+        "claims": [],
+        "tone": "venting",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C020",
+      "parent_id": "P001",
+      "author": "R018",
+      "text": "Get non citizens of our WELFARE … and do not say they are not getting it..I work with them, I help them… yes they get federal and state help. Food, housing and state medical. Non citizens are on SS AND SSI..",
+      "images": [],
+      "gold": {
+        "themes": [
+          "noncitizen_benefits"
+        ],
+        "circles": [
+          "CUT"
+        ],
+        "bucket": null,
+        "claims": [
+          "K01"
+        ],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C021",
+      "parent_id": "P001",
+      "author": "R019",
+      "text": "One step that should be taken is zero taxpayer-funded assistance for anyone who isn't a US citizen. It's well known that foreign nationals in this state receive financial benefits. Regardless of their legal status, whether they are \"illegal\", a \"refugee\", \"asylum seeker\" etc, someone who is not a US citizen should not receive any services or benefits funded by US citizens' taxpayer money. If a private citizen wants to *donate* their own money out of pocket to help refugees or whatever, that's their business, but it should not be state policy to use citizens' taxpayer money to benefit people who are not citizens. Now, this would only fix a small portion of the financial problems in this state but it's such a *ridiculously obvious* first step to take - because it's something that shouldn't be happening regardless- that it would be a sign that at least the state government is finally getting serious about fixing things.",
+      "images": [],
+      "gold": {
+        "themes": [
+          "noncitizen_benefits"
+        ],
+        "circles": [
+          "CUT"
+        ],
+        "bucket": null,
+        "claims": [
+          "K01"
+        ],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C022",
+      "parent_id": "P001",
+      "author": "R020",
+      "text": "Get rid of the fraud",
+      "images": [],
+      "gold": {
+        "themes": [
+          "fraud_waste_audit"
+        ],
+        "circles": [
+          "CUT"
+        ],
+        "bucket": null,
+        "claims": [],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C023",
+      "parent_id": "P001",
+      "author": "R021",
+      "text": "Cut all support to the red counties as they don't want the government helping them, right?",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "venting",
+        "claims": [],
+        "tone": "sarcasm",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C024",
+      "parent_id": "P001",
+      "author": "R022",
+      "text": "You do know the blue piece represents welfare as well.",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "venting",
+        "claims": [],
+        "tone": "meta",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C025",
+      "parent_id": "P001",
+      "author": "R023",
+      "text": "These are forecasts … this deficit is more likely to occur if politicians respond by cutting spending in advance.",
+      "images": [],
+      "gold": {
+        "themes": [
+          "no_preemptive_cuts"
+        ],
+        "circles": [
+          "PRO"
+        ],
+        "bucket": null,
+        "claims": [],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C026",
+      "parent_id": "P001",
+      "author": "R024",
+      "text": "Democrats America...a dumpster fire.",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "venting",
+        "claims": [],
+        "tone": "attack",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C027",
+      "parent_id": "P001",
+      "author": "R025",
+      "text": "Cut education",
+      "images": [],
+      "gold": {
+        "themes": [
+          "cut_education"
+        ],
+        "circles": [
+          "CUT"
+        ],
+        "bucket": null,
+        "claims": [],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C028",
+      "parent_id": "P001",
+      "author": "R026",
+      "text": "Raise property taxes for houses not lived in 180+ days per year. Add an additional tax to hotels/motels/rentals. Funnel it all to local gov't for k-12, this reducing the state's bill. This state has never, IMO, charged addequitly for what it has that few other places have. It would not discourage visitors or part-time home owners with an additional 1 to 2% fee on their privilege to enjoy this state. I am NOT an expert, so if you think I am wrong I'm happy to politely discuss.",
+      "images": [],
+      "gold": {
+        "themes": [
+          "second_home_tax",
+          "lodging_tax",
+          "property_tax_relief"
+        ],
+        "circles": [
+          "REV",
+          "PRO"
+        ],
+        "bucket": null,
+        "claims": [],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C029",
+      "parent_id": "P001",
+      "author": "R027",
+      "text": "5% cut to every program across the board., If I can cut my budget they can cut theirs. Stop promising things you cannot deliver. HHS needs to be trimmed and fraud eradicated. Cut the excise tax,property taxes and give us no tax on tips, no tax on other, no tax on ss. Implement the work requirements for SNAP and Maine care for the healthy. Increase the oversight. Cut the business tax and regualtory burdens that cause buissnes to leave this state. There needs to be growth policy. The Dems/ socialists in Washington are going to f.. everything up: \"Democrats plan to spike spending in the name of “affordability” — but that’s sure to explode inflation all over again.\n\nThe Committee for a Responsible Federal Budget just put the tab for Dems’ “first 100 days” proposals at a staggering $4.1 trillion through 2037.\"",
+      "images": [
+        "Graphic: Maine Policy Institute 'Maine by the Numbers' state rankings list"
+      ],
+      "gold": {
+        "themes": [
+          "across_board_cut",
+          "cut_hhs",
+          "fraud_waste_audit",
+          "tax_relief_residents",
+          "property_tax_relief",
+          "work_requirements",
+          "cut_business_tax_regulation"
+        ],
+        "circles": [
+          "CUT",
+          "PRO"
+        ],
+        "bucket": null,
+        "claims": [
+          "K12"
+        ],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C030",
+      "parent_id": "P001",
+      "author": "R028",
+      "text": "Add a tax for second homes and wealth over $200,000.",
+      "images": [],
+      "gold": {
+        "themes": [
+          "second_home_tax",
+          "tax_high_earners"
+        ],
+        "circles": [
+          "REV"
+        ],
+        "bucket": null,
+        "claims": [],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C031",
+      "parent_id": "P001",
+      "author": "R029",
+      "text": "The blue section will increase by 20 to 30 percent. Free everything for everyone. Unless you actually work your ass off. Then just bend over and keep giving.",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "venting",
+        "claims": [
+          "K08"
+        ],
+        "tone": "venting",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C032",
+      "parent_id": "P001",
+      "author": "R030",
+      "text": "Keep voting blue, you morons!!!",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "venting",
+        "claims": [],
+        "tone": "attack",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C033",
+      "parent_id": "P001",
+      "author": "R031",
+      "text": "read the attached Maine Policy Institute budget analysis for 2026 and beyond https://mainepolicy.org/research/maine-policy-budget/ lots of good ideas to get started.",
+      "images": [
+        "Link card: Maine Policy Budget - Maine Policy Institute"
+      ],
+      "gold": {
+        "themes": [
+          "external_plan_reference"
+        ],
+        "circles": [],
+        "bucket": "process",
+        "claims": [],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C034",
+      "parent_id": "P001",
+      "author": "R032",
+      "text": "First, review revenues, which may have changed since the last estimate.",
+      "images": [],
+      "gold": {
+        "themes": [
+          "review_revenue"
+        ],
+        "circles": [],
+        "bucket": "process",
+        "claims": [],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C035",
+      "parent_id": "P001",
+      "author": "R033",
+      "text": "Reversing Lepages tax cuts for the wealthy would be a first good step. How about higher taxes on the out of staters 2nd,3rd and 4th homes. Stop giving tax credits to developers. Why should we be funding these large builds that aren't even making housing affordable. Go back to the 2016 passed Stand Up For Students act that would relieve pressure on property owners to cover education. Stop spending money on fancy medians no one asked for. Stop moving exits on the highway that serve no real purpose. Example, the newly added exit in Saco that makes zero sense. The shift on exit 45...Stop spending money on vanity projects.",
+      "images": [],
+      "gold": {
+        "themes": [
+          "reverse_tax_cuts_wealthy",
+          "second_home_tax",
+          "end_developer_credits",
+          "property_tax_relief",
+          "cut_vanity_projects"
+        ],
+        "circles": [
+          "CUT",
+          "REV",
+          "PRO"
+        ],
+        "bucket": null,
+        "claims": [],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C036",
+      "parent_id": "P001",
+      "author": "R034",
+      "text": "Do the opposite of the previous governor",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "venting",
+        "claims": [],
+        "tone": "venting",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C037",
+      "parent_id": "P001",
+      "author": "R035",
+      "text": "Cancel the Cellphones",
+      "images": [],
+      "gold": {
+        "themes": [
+          "cut_specific_items"
+        ],
+        "circles": [
+          "CUT"
+        ],
+        "bucket": null,
+        "claims": [],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C038",
+      "parent_id": "P001",
+      "author": "R036",
+      "text": "10% cut to the big blue blob. Then 5% more each year the next 3 years. Let the blob determine where the cuts go. Trim the fat at the top by ditching some \"directors\" and \"commissioners\" or actually cut spending in some of the wasteful programs. They get to pick!",
+      "images": [],
+      "gold": {
+        "themes": [
+          "cut_hhs",
+          "cut_state_admin"
+        ],
+        "circles": [
+          "CUT"
+        ],
+        "bucket": null,
+        "claims": [],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C039",
+      "parent_id": "P001",
+      "author": "R037",
+      "text": "TAXATION IS THEFT",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "pushback_only",
+        "claims": [],
+        "tone": "venting",
+        "opposes": [
+          "new_taxes"
+        ]
+      }
+    },
+    {
+      "id": "C040",
+      "parent_id": "P001",
+      "author": "R038",
+      "text": "Well, Maine has always been known as a Wellfare state all the way back in the 80's and 90's and they just keep spending on it.",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "venting",
+        "claims": [],
+        "tone": "venting",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C041",
+      "parent_id": "P001",
+      "author": "R039",
+      "text": "I will summarize the comments: Lower all the taxes but don't cut any of the services I rely on. Alternatively, tax somebody else, but not me.",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "venting",
+        "claims": [],
+        "tone": "meta",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C042",
+      "parent_id": "P001",
+      "author": "R040",
+      "text": "Dude...they cut nothing the past 8 years....they are certainly not going to start now. You are just gonna have to get used to payin' more for everything. There's a large dependent voting block out there that's gonna need those dollars come next election and well, they come first.",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "venting",
+        "claims": [],
+        "tone": "venting",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C043",
+      "parent_id": "P001",
+      "author": "R041",
+      "text": "I remember seeing post that people on the left say that the Republicans should pay the consequences of the administration. Perfect, we can use that same theory here in Maine. You voted for a Democrat you pay their tax increase. [emoji]",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "venting",
+        "claims": [],
+        "tone": "venting",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C044",
+      "parent_id": "P001",
+      "author": "R042",
+      "text": "Waste, Fraud and Abuse. Maines version of DOGE. Once that is tackled on all pieces of the pie chart, let’s revisit. Then, like any household budget, you ask yourself what can we do without for awhile. Do we need new schools if enrollment and grades are down? Can existing structures be renovated? Same with public safety buildings. We can’t cheapen out of safety. We need bridges replaced. I wouldn’t contact every Department head in the state who handle budgets for their Department and tell them whatever savings you and your team can muster that do not impact the safety of citizen, bring it forward and if adopted, you and your team will receive a bonus on whatever you find with the majority going to the person who came up with the idea. Maybe it’s in Procurement. They put in the additional effort to price shop vehicles, sand, salt etc.",
+      "images": [],
+      "gold": {
+        "themes": [
+          "fraud_waste_audit",
+          "defer_capital_projects",
+          "savings_bonus_program"
+        ],
+        "circles": [
+          "CUT"
+        ],
+        "bucket": null,
+        "claims": [],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C045",
+      "parent_id": "P001",
+      "author": "R043",
+      "text": "First, the projected budget gap is just that. Projected.\n\nEvery government budget that I have ever worked on starts out with a projected budget gap.\n\nYou begin by working with best guess estimates of revenue and expenses. You start with flat funding from the year before, with increases for known inflation (fuel, labor, insurances, etc.)\n\nAnd then you examine the actual numbers of incoming revenue, and then compare them to the projected revenue from earlier estimates.\n\nAnd then you begin the real hard work of where best to cut and increase both spending AND tax revenues.\n\nThat’s why the choice for the Commissioner of Administrative and Financial Services is so important. One of the best at the job was a Republican, Sawin Millett.\n\nAnd probably the governor-elects most important appointee…",
+      "images": [],
+      "gold": {
+        "themes": [
+          "review_revenue",
+          "process_question"
+        ],
+        "circles": [],
+        "bucket": "process",
+        "claims": [],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C046",
+      "parent_id": "P001",
+      "author": "R044",
+      "text": "Hhs and k-12 12-15% gone right off the top. Fire all thr newly highered admins that are not absolutely necessary. Keep teachers all others not needed 100% need to get cut loose",
+      "images": [],
+      "gold": {
+        "themes": [
+          "cut_hhs",
+          "school_consolidation_admin"
+        ],
+        "circles": [
+          "CUT"
+        ],
+        "bucket": null,
+        "claims": [],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C047",
+      "parent_id": "P001",
+      "author": "R045",
+      "text": "If you have never had to deal with mental illness in your family, or the sudden loss of a job, or an unexpected injury without health insurance, or recovery from addiction, you might look at that Health and Human Services wedge as \"waste\" or \"fraud.\" The fact is that people need help, and someday it might be you or someone you love. I'd rather see them helped than build another highway or welcome more cruise ships to our harbors. Please be specific as to what programs you would cut before raising taxes on second homes for out-of-state vacationers and the like.",
+      "images": [],
+      "gold": {
+        "themes": [
+          "protect_services"
+        ],
+        "circles": [
+          "PRO"
+        ],
+        "bucket": null,
+        "claims": [],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C048",
+      "parent_id": "P001",
+      "author": "R046",
+      "text": "Maybe Get a new governor that’s not questioning about it but knows what to do about it …. [emoji]",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "venting",
+        "claims": [],
+        "tone": "venting",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C049",
+      "parent_id": "P001",
+      "author": "R047",
+      "text": "Taxing out of state 2nd home owners more than the rest of us is killing the goose that laid the golden egg! These property owners DO NOT have kids in our school system and DO NOT rely on services that the rest of us have or don't have the entire 12 months of the year.",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "pushback_only",
+        "claims": [],
+        "tone": "constructive",
+        "opposes": [
+          "second_home_tax"
+        ]
+      }
+    },
+    {
+      "id": "C050",
+      "parent_id": "P001",
+      "author": "R048",
+      "text": "find a billion somewhere.Not here.",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "venting",
+        "claims": [],
+        "tone": "venting",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C051",
+      "parent_id": "P001",
+      "author": "R049",
+      "text": "Guess who’s gonna pay for it ?",
+      "images": [
+        "Graphic: 'We've had enough of Maine politicians thinking our money is theirs to spend'"
+      ],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "venting",
+        "claims": [],
+        "tone": "venting",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C052",
+      "parent_id": "P001",
+      "author": "R050",
+      "text": "Que the overuse of the word REVENUE, it’s soooooo much more palatable to the masses than TAXES!! [emoji][emoji][emoji]",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "pushback_only",
+        "claims": [],
+        "tone": "venting",
+        "opposes": [
+          "new_taxes"
+        ]
+      }
+    },
+    {
+      "id": "C053",
+      "parent_id": "P001",
+      "author": "R051",
+      "text": "Tear it all down and start over!",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "venting",
+        "claims": [],
+        "tone": "venting",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C054",
+      "parent_id": "P001",
+      "author": "R052",
+      "text": "DEMONrats and their useful idiots destroying the state.",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "venting",
+        "claims": [],
+        "tone": "attack",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C055",
+      "parent_id": "P001",
+      "author": "R053",
+      "text": "Raise taxes on upper incomes and properties ...",
+      "images": [],
+      "gold": {
+        "themes": [
+          "tax_high_earners"
+        ],
+        "circles": [
+          "REV"
+        ],
+        "bucket": null,
+        "claims": [],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C056",
+      "parent_id": "P001",
+      "author": "R054",
+      "text": "Sounds like people in Augusta need a pay cut!!!",
+      "images": [],
+      "gold": {
+        "themes": [
+          "cut_state_admin"
+        ],
+        "circles": [
+          "CUT"
+        ],
+        "bucket": null,
+        "claims": [],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C057",
+      "parent_id": "P001",
+      "author": "R055",
+      "text": "Cut state administrative costs and investigate the healthcare and welfare fraud. That alone would save a lot.",
+      "images": [],
+      "gold": {
+        "themes": [
+          "cut_state_admin",
+          "fraud_waste_audit"
+        ],
+        "circles": [
+          "CUT"
+        ],
+        "bucket": null,
+        "claims": [],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C058",
+      "parent_id": "P001",
+      "author": "R056",
+      "text": "Send Somolia the bill!",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "venting",
+        "claims": [],
+        "tone": "attack",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C059",
+      "parent_id": "P001",
+      "author": "R057",
+      "text": "This is the best the democrats can do at running a state. Get ready for the worst!",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "venting",
+        "claims": [],
+        "tone": "attack",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C060",
+      "parent_id": "P001",
+      "author": "R058",
+      "text": "Dont pay your hospitals..they all close..huh..",
+      "images": [],
+      "gold": {
+        "themes": [
+          "protect_services"
+        ],
+        "circles": [
+          "PRO"
+        ],
+        "bucket": null,
+        "claims": [],
+        "tone": "sarcasm",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C061",
+      "parent_id": "P001",
+      "author": "R059",
+      "text": "Tax and spend. [emoji]",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "venting",
+        "claims": [],
+        "tone": "venting",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C062",
+      "parent_id": "P001",
+      "author": "R060",
+      "text": "Health and human services needs cuts. Get all immigrants and illegals off the system. Cut K-12 assistant to the assistant to the assistant. You do not need a superintendent for every school. There are places close enough where one superintendent can cover multiple schools. Some of this was done in the past, but more needs to be done. State government increased under Mills, look at the departments that need to be cut.",
+      "images": [],
+      "gold": {
+        "themes": [
+          "cut_hhs",
+          "noncitizen_benefits",
+          "school_consolidation_admin"
+        ],
+        "circles": [
+          "CUT"
+        ],
+        "bucket": null,
+        "claims": [],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C063",
+      "parent_id": "P001",
+      "author": "R061",
+      "text": "They have a super major in Maine, so the Dems can run that deficit to 10 billion and the only thing you can do about it is pay the Bill!",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "venting",
+        "claims": [],
+        "tone": "venting",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C064",
+      "parent_id": "P001",
+      "author": "R062",
+      "text": "Take all illegals on the welfare programs, health, snap, free housing and a check every month. That could be put towards the deficit. No more free rides and stop spending for ridiculous things. we did not need a new wall or fence and landscaping around the Blaine house. Just a couple of thoughts.",
+      "images": [],
+      "gold": {
+        "themes": [
+          "noncitizen_benefits",
+          "cut_vanity_projects"
+        ],
+        "circles": [
+          "CUT"
+        ],
+        "bucket": null,
+        "claims": [
+          "K14"
+        ],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C065",
+      "parent_id": "P001",
+      "author": "R063",
+      "text": "Cut the spending, lower taxes. Be fiscally responsible for a change!!!",
+      "images": [],
+      "gold": {
+        "themes": [
+          "cut_general",
+          "tax_relief_residents"
+        ],
+        "circles": [
+          "CUT",
+          "PRO"
+        ],
+        "bucket": null,
+        "claims": [],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C066",
+      "parent_id": "P001",
+      "author": "R064",
+      "text": "Well, I did watch sanford spend many millions of state money to build a new school they didn't need while the deputy mayor made $2million selling her family's useless swamp land to the town to build it on.\n\nWe couldn't expand the old one because there was a creek nearby, in the opposite direction they would have built in.",
+      "images": [],
+      "gold": {
+        "themes": [
+          "defer_capital_projects"
+        ],
+        "circles": [
+          "CUT"
+        ],
+        "bucket": null,
+        "claims": [],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C067",
+      "parent_id": "P001",
+      "author": "R065",
+      "text": "Call up Mills. Ask her where the money went. Maine had a surplus when she took over.",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "venting",
+        "claims": [
+          "K05"
+        ],
+        "tone": "venting",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C068",
+      "parent_id": "P001",
+      "author": "R066",
+      "text": "At some point politicians in Augusta need to figure out that Maine has a large elderly population on a fixed income who can't afford the urgent level of spending. No one likes to,think about “cutting the budget”. What do politicians think retired people on a fixed income have to do to pay the current level of taxes?",
+      "images": [],
+      "gold": {
+        "themes": [
+          "cut_general",
+          "protect_seniors"
+        ],
+        "circles": [
+          "CUT",
+          "PRO"
+        ],
+        "bucket": null,
+        "claims": [],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C069",
+      "parent_id": "P001",
+      "author": "R067",
+      "text": "What I don't see on this circle is the cost of such large amount of State Reps and Senate members we pay for that do nothing to cut back their numbers. Think about it.",
+      "images": [],
+      "gold": {
+        "themes": [
+          "cut_state_admin"
+        ],
+        "circles": [
+          "CUT"
+        ],
+        "bucket": null,
+        "claims": [],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C070",
+      "parent_id": "P001",
+      "author": "R068",
+      "text": "The deficit is about the same as the Medicare/Mainecare/childcare fraud the state allowed to happen",
+      "images": [],
+      "gold": {
+        "themes": [
+          "fraud_waste_audit"
+        ],
+        "circles": [
+          "CUT"
+        ],
+        "bucket": null,
+        "claims": [
+          "K03"
+        ],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C071",
+      "parent_id": "P001",
+      "author": "R069",
+      "text": "38% to illegals",
+      "images": [],
+      "gold": {
+        "themes": [
+          "noncitizen_benefits"
+        ],
+        "circles": [
+          "CUT"
+        ],
+        "bucket": null,
+        "claims": [
+          "K02"
+        ],
+        "tone": "venting",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C072",
+      "parent_id": "P001",
+      "author": "R070",
+      "text": "Get control of all the fraud in the State government! Deny it all you want, but its definitely there. Get control of that I wouldn't be surprised that the budget gets balanced. Js",
+      "images": [],
+      "gold": {
+        "themes": [
+          "fraud_waste_audit"
+        ],
+        "circles": [
+          "CUT"
+        ],
+        "bucket": null,
+        "claims": [
+          "K03"
+        ],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C073",
+      "parent_id": "P001",
+      "author": "R071",
+      "text": "Not me. Hiding ALL my money.",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "venting",
+        "claims": [],
+        "tone": "venting",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C074",
+      "parent_id": "P001",
+      "author": "R072",
+      "text": "The next 4 years the deficit is going to be doubled, the Democrats are going to continue their bad policies that caused the deficit and they are bringing in more illegal alien freeloaders to add to the problem",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "venting",
+        "claims": [
+          "K11"
+        ],
+        "tone": "venting",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C075",
+      "parent_id": "P001",
+      "author": "R073",
+      "text": "",
+      "images": [
+        "Image: 'Property Tax' house icon with a red prohibition sign"
+      ],
+      "gold": {
+        "themes": [
+          "property_tax_relief"
+        ],
+        "circles": [
+          "PRO"
+        ],
+        "bucket": null,
+        "claims": [],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C076",
+      "parent_id": "P001",
+      "author": "R074",
+      "text": "HHS and education with the stipulation that the cuts have to come from administrators in the school system",
+      "images": [],
+      "gold": {
+        "themes": [
+          "cut_hhs",
+          "school_consolidation_admin"
+        ],
+        "circles": [
+          "CUT"
+        ],
+        "bucket": null,
+        "claims": [],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C077",
+      "parent_id": "P001",
+      "author": "R075",
+      "text": "This question is patiently unfair. We are not privy to the information about what is required by law in the budget.",
+      "images": [],
+      "gold": {
+        "themes": [
+          "process_question"
+        ],
+        "circles": [],
+        "bucket": "process",
+        "claims": [],
+        "tone": "meta",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C078",
+      "parent_id": "P001",
+      "author": "R076",
+      "text": "I expect no less from the fucking crooks running the state.",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "venting",
+        "claims": [],
+        "tone": "attack",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C079",
+      "parent_id": "P001",
+      "author": "R077",
+      "text": "I don't see on this chart all the money spent on the illegals!",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "venting",
+        "claims": [
+          "K14"
+        ],
+        "tone": "venting",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C080",
+      "parent_id": "P001",
+      "author": "R078",
+      "text": "Welfare 38% fkn PATHETIC!!!",
+      "images": [],
+      "gold": {
+        "themes": [
+          "cut_hhs"
+        ],
+        "circles": [
+          "CUT"
+        ],
+        "bucket": null,
+        "claims": [],
+        "tone": "venting",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C081",
+      "parent_id": "P001",
+      "author": "R077",
+      "text": "You want housing. Get rid of the illegals. You want hospitals. Get rid of the illegals! You want lower taxes! Get rid of tge illegals. We are taxed this high to support them! Enough! End sanctuary status and all this shit ends!",
+      "images": [],
+      "gold": {
+        "themes": [
+          "noncitizen_benefits"
+        ],
+        "circles": [
+          "CUT"
+        ],
+        "bucket": null,
+        "claims": [
+          "K14"
+        ],
+        "tone": "attack",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C082",
+      "parent_id": "P001",
+      "author": "R079",
+      "text": "They will raise our taxes again just to give it away and kill us mainers that pay then",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "venting",
+        "claims": [],
+        "tone": "venting",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C083",
+      "parent_id": "P001",
+      "author": "R080",
+      "text": "Over a guys girl and his dog....unreal",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "off_topic",
+        "claims": [],
+        "tone": "off_topic",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C084",
+      "parent_id": "P001",
+      "author": "R080",
+      "text": "Was it really worth it??",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "off_topic",
+        "claims": [],
+        "tone": "off_topic",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C085",
+      "parent_id": "P001",
+      "author": "R080",
+      "text": "How many actually got cancer and died and loved ones lost in car accidents",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "off_topic",
+        "claims": [],
+        "tone": "off_topic",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C086",
+      "parent_id": "P001",
+      "author": "R081",
+      "text": "Well I not support their new taxes and give them my money. They can sponge it off the people that have been voting for them. Fo",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "pushback_only",
+        "claims": [],
+        "tone": "venting",
+        "opposes": [
+          "new_taxes"
+        ]
+      }
+    },
+    {
+      "id": "C087",
+      "parent_id": "P001",
+      "author": "R081",
+      "text": "Gotta love the socialist democratic party and their lies.",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "venting",
+        "claims": [],
+        "tone": "attack",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C088",
+      "parent_id": "P001",
+      "author": "R082",
+      "text": "Where's all the free shit listed?",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "venting",
+        "claims": [],
+        "tone": "venting",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C089",
+      "parent_id": "P001",
+      "author": "R083",
+      "text": "Audit ALL state funded benefits. Put that money back into the account for other benefactors. Get rid of programs that do more harm than good ie: the needle exchange program, housing for non Americans, (we have Americans that NEED housing) audit ALL care facilities in the state to make sure they are all up to health code. If not, fix it or close it. If you are not a legal American citizen OR on a path to becoming a legal American citizen, you are NOT eligible for state/federal aid of any type. PERIOD. For those legal Mainers that need assistance, it would still be available. You just have to go through the application process again. There would be more money in the coffers due to good auditing eliminating billions in fraud.",
+      "images": [],
+      "gold": {
+        "themes": [
+          "fraud_waste_audit",
+          "noncitizen_benefits",
+          "cut_specific_items"
+        ],
+        "circles": [
+          "CUT"
+        ],
+        "bucket": null,
+        "claims": [
+          "K03"
+        ],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C090",
+      "parent_id": "P001",
+      "author": "R084",
+      "text": "Democrats don't cut! They look for who they can tax more!",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "venting",
+        "claims": [],
+        "tone": "venting",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C091",
+      "parent_id": "P001",
+      "author": "R085",
+      "text": "I would attack fraud and claw back some of that stolen money. I would allocate funds to Mainers first then if any left over to legal immigrants. I would study New Hampshire's plan to see why our neighbors are so successful and Maine has such high taxes and poor schooling",
+      "images": [],
+      "gold": {
+        "themes": [
+          "fraud_waste_audit",
+          "noncitizen_benefits",
+          "study_other_states"
+        ],
+        "circles": [
+          "CUT"
+        ],
+        "bucket": null,
+        "claims": [],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C092",
+      "parent_id": "P001",
+      "author": "R086",
+      "text": "thank you Mills [emoji][emoji][emoji]",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "venting",
+        "claims": [],
+        "tone": "venting",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C093",
+      "parent_id": "P001",
+      "author": "R085",
+      "text": "Where is Maine's K-12 money going? Who is in charge? democrats? Maine’s K-12 education ranks in the bottom half of U.S. states, with recent national reports placing it 41st overall and in the bottom 10 for K-12 performance, behind many states including Mississippi.",
+      "images": [],
+      "gold": {
+        "themes": [
+          "education_outcomes"
+        ],
+        "circles": [],
+        "bucket": "process",
+        "claims": [
+          "K07"
+        ],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C094",
+      "parent_id": "P001",
+      "author": "R087",
+      "text": "Holly shit all the dems always ask google and I never believe it for once I might it say the fraud in maine could be over 45 million let that sink in",
+      "images": [],
+      "gold": {
+        "themes": [
+          "fraud_waste_audit"
+        ],
+        "circles": [
+          "CUT"
+        ],
+        "bucket": null,
+        "claims": [
+          "K03B"
+        ],
+        "tone": "venting",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C095",
+      "parent_id": "P001",
+      "author": "R088",
+      "text": "You ran against Collins on lowering cost. Looks like you lied.",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "off_topic",
+        "claims": [],
+        "tone": "off_topic",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C096",
+      "parent_id": "P001",
+      "author": "R089",
+      "text": "Thinking out loud for the next budget biennium - a flat state consumption tax to replace sales and income tax. Zero state budget increases for 2 years. Take all currently unfilled state positions out of the budget. No subsidies for solar and wind. No new programs - affordable housing etc. No health insurance (Maine Care for all) expansion, identify and eliminate all Medicare/Medicaid waste and fraud. Just for starters.",
+      "images": [],
+      "gold": {
+        "themes": [
+          "consumption_tax",
+          "spending_freeze",
+          "cut_unfilled_positions",
+          "end_energy_subsidies",
+          "no_new_programs",
+          "fraud_waste_audit"
+        ],
+        "circles": [
+          "CUT"
+        ],
+        "bucket": null,
+        "claims": [],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C097",
+      "parent_id": "P001",
+      "author": "R090",
+      "text": "Sorry to have to say this, but the reality is that we're screwed. The pandering worked, across the board.",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "venting",
+        "claims": [],
+        "tone": "venting",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C098",
+      "parent_id": "P001",
+      "author": "R091",
+      "text": "Dump that higher education slice, folks can pay for their own education like they have for many years. Give people a free ride and it won’t be appreciated. Not to mention it was a stupid idea to begin with.",
+      "images": [],
+      "gold": {
+        "themes": [
+          "cut_higher_ed"
+        ],
+        "circles": [
+          "CUT"
+        ],
+        "bucket": null,
+        "claims": [],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C099",
+      "parent_id": "P001",
+      "author": "R092",
+      "text": "We could cut the fraud that would be a good start!",
+      "images": [],
+      "gold": {
+        "themes": [
+          "fraud_waste_audit"
+        ],
+        "circles": [
+          "CUT"
+        ],
+        "bucket": null,
+        "claims": [],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C100",
+      "parent_id": "P001",
+      "author": "R093",
+      "text": "You think this is an issue Mainers who have to buy gas, groceries, etc actually care about this? Really? [emoji][emoji][emoji]",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "venting",
+        "claims": [],
+        "tone": "meta",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C101",
+      "parent_id": "P001",
+      "author": "R094",
+      "text": "You know where the health and human services budget is going.",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "venting",
+        "claims": [],
+        "tone": "venting",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C102",
+      "parent_id": "P001",
+      "author": "R095",
+      "text": "Find more money for outrageous local property tax relief!!!",
+      "images": [],
+      "gold": {
+        "themes": [
+          "property_tax_relief"
+        ],
+        "circles": [
+          "PRO"
+        ],
+        "bucket": null,
+        "claims": [],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C103",
+      "parent_id": "P001",
+      "author": "R096",
+      "text": "Tax the snowbirds like Paulie LiarPage.",
+      "images": [],
+      "gold": {
+        "themes": [
+          "second_home_tax"
+        ],
+        "circles": [
+          "REV"
+        ],
+        "bucket": null,
+        "claims": [],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C104",
+      "parent_id": "P001",
+      "author": "R097",
+      "text": "Get ICE to get the illegals out.",
+      "images": [],
+      "gold": {
+        "themes": [
+          "immigration_enforcement"
+        ],
+        "circles": [],
+        "bucket": "venting",
+        "claims": [],
+        "tone": "venting",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C105",
+      "parent_id": "P001",
+      "author": "R098",
+      "text": "Healthcare fraud and giving it for free to illegals and people who shouldn't have it is what needs to go. Especially illegals or immigrants, they should not get free healthcare, should be deported immediately.",
+      "images": [],
+      "gold": {
+        "themes": [
+          "fraud_waste_audit",
+          "noncitizen_benefits"
+        ],
+        "circles": [
+          "CUT"
+        ],
+        "bucket": null,
+        "claims": [],
+        "tone": "venting",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C106",
+      "parent_id": "P001",
+      "author": "R099",
+      "text": "Bring in Data Centers",
+      "images": [],
+      "gold": {
+        "themes": [
+          "economic_growth"
+        ],
+        "circles": [
+          "REV"
+        ],
+        "bucket": null,
+        "claims": [],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C107",
+      "parent_id": "P001",
+      "author": "R100",
+      "text": "That 38% needs to be decreased",
+      "images": [],
+      "gold": {
+        "themes": [
+          "cut_hhs"
+        ],
+        "circles": [
+          "CUT"
+        ],
+        "bucket": null,
+        "claims": [],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C108",
+      "parent_id": "P001",
+      "author": "R101",
+      "text": "Time to open the books on Health and Human Services.",
+      "images": [],
+      "gold": {
+        "themes": [
+          "fraud_waste_audit"
+        ],
+        "circles": [
+          "CUT"
+        ],
+        "bucket": null,
+        "claims": [],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C109",
+      "parent_id": "P001",
+      "author": "R102",
+      "text": "Audit for waste everywhere and cut off all benefits to scammers and illegals.",
+      "images": [],
+      "gold": {
+        "themes": [
+          "fraud_waste_audit",
+          "noncitizen_benefits"
+        ],
+        "circles": [
+          "CUT"
+        ],
+        "bucket": null,
+        "claims": [],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C110",
+      "parent_id": "P001",
+      "author": "R103",
+      "text": "By all accounts this massive budget gaps or short falls appear in democrat strong holds can't surely be coincidence. Spend billions supporting illegal aliens with tax funded programs like snap, section 8, health insurance, medications furniture allowance, clothing, transportation, translators and much more like legal aid all paid for by law-abiding tax paying citizens that are LEGAL to be in this country.",
+      "images": [],
+      "gold": {
+        "themes": [
+          "noncitizen_benefits"
+        ],
+        "circles": [
+          "CUT"
+        ],
+        "bucket": null,
+        "claims": [
+          "K14"
+        ],
+        "tone": "venting",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C111",
+      "parent_id": "P001",
+      "author": "R104",
+      "text": "Higher education. BS! Stop that handout immediately. The welfare system needs to be overhauled completely and new rules need to be put in place. Welfare is not a career. A single parent (legal citizen) can collect to cover 1 child for 3 - 5 years. During that time they better be figuring out what they are going to do with the rest of their life because the handout need to stop when that time runs out. Housing, snap, welfare checks, all of it. They have another kid, they're on there own.",
+      "images": [],
+      "gold": {
+        "themes": [
+          "cut_higher_ed",
+          "welfare_time_limits"
+        ],
+        "circles": [
+          "CUT"
+        ],
+        "bucket": null,
+        "claims": [],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C112",
+      "parent_id": "P001",
+      "author": "R105",
+      "text": "I understand the high cost of Healthcare because the Democrats love to support deadbeats and illegals, but I don't understand the high cost of education because they're failing so miserably at it. Maybe liberal indoctrination is really expensive?",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "venting",
+        "claims": [],
+        "tone": "attack",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C113",
+      "parent_id": "P001",
+      "author": "R106",
+      "text": "Hmm, when Lepage left, he left us with a 1.3B surplus....",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "venting",
+        "claims": [
+          "K04"
+        ],
+        "tone": "venting",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C114",
+      "parent_id": "P001",
+      "author": "R107",
+      "text": "demoncrats did this and what do dumb -uck mainers do elect more demoncrats",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "venting",
+        "claims": [],
+        "tone": "attack",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C115",
+      "parent_id": "P001",
+      "author": "R108",
+      "text": "Democrats are like teen girls with their daddies credit card, and she's drunk.",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "venting",
+        "claims": [],
+        "tone": "attack",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C116",
+      "parent_id": "P001",
+      "author": "R109",
+      "text": "Well, I have 6 siblings across the U.S., and we all have kids in public schools. Only I live in Maine. Our Maine public schools have given free school lunches to students since 2020. I have asked my siblings, and no, their kids do not receive free lunches. Why is our state doing this when they don't have it in the budget? Why not go back to free lunches for students AS NEEDED. I think we can all get behind not letting children go hungry, but for the majority of people who have the money--why not put that back on parents instead of putting it on the state's tab?",
+      "images": [],
+      "gold": {
+        "themes": [
+          "means_test_programs",
+          "protect_services"
+        ],
+        "circles": [
+          "CUT",
+          "PRO"
+        ],
+        "bucket": null,
+        "claims": [
+          "K10"
+        ],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C117",
+      "parent_id": "P001",
+      "author": "R110",
+      "text": "If wealthy people have second homes, then they dont need Education and Health/Human Services, both of which are the biggest cost portion of the Budget.",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "venting",
+        "claims": [],
+        "tone": "meta",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C118",
+      "parent_id": "P001",
+      "author": "R111",
+      "text": "Thank a democrat and Mills for this,",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "venting",
+        "claims": [],
+        "tone": "venting",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C119",
+      "parent_id": "P001",
+      "author": "R112",
+      "text": "Excuse me, but why are elected officials who made promises , who should have promoted a plan that got voters to vote for them in the 1st place, (I never heard a plan from this new incomming administration on what they were going to do), now asking voters, us,  to do their job that they will be getting a very robust salary to do, like propose solutions? Does this post even make sense to anyone? The state never fixes a problem, they create new swoopy things to take the focus off of the existing issues that now become compunded by more free crap that make people dependant on handouts for no personal investment whatsoever, and no betterment for the recipients other than a bandade on a sucking chest wound. Throw money that you don't have at something and tout it as \"help\", and \"look what we are doing for you\". Then, when you know people are going to start complaining or asking questions, promise everyone a couple of hundred dollars for some lame reason to get them to fall back in line and stop complaining. So tired of the rodent wheel we have all been told to stay on. The lack of any kind of real plan, just finger pointing to say hey, look at them, they are bad, choose us to make decisions for you when you you have no idea what you are going to do makes you worse than those you blame.",
+      "images": [],
+      "gold": {
+        "themes": [
+          "demand_plan"
+        ],
+        "circles": [],
+        "bucket": "process",
+        "claims": [],
+        "tone": "venting",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C120",
+      "parent_id": "P001",
+      "author": "R113",
+      "text": "Get the fraud out of hhs that would take care of a good portion of it",
+      "images": [],
+      "gold": {
+        "themes": [
+          "fraud_waste_audit",
+          "cut_hhs"
+        ],
+        "circles": [
+          "CUT"
+        ],
+        "bucket": null,
+        "claims": [],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C121",
+      "parent_id": "P001",
+      "author": "R114",
+      "text": "What Janet said the budget was great in her address to the State. Another lie then. And her mini me is going to fix it. Sure more taxation.",
+      "images": [
+        "Image: profane anti-Democrat meme (text not reproduced)"
+      ],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "pushback_only",
+        "claims": [],
+        "tone": "attack",
+        "opposes": [
+          "new_taxes"
+        ]
+      }
+    },
+    {
+      "id": "C122",
+      "parent_id": "P001",
+      "author": "R114",
+      "text": "Cut education .",
+      "images": [],
+      "gold": {
+        "themes": [
+          "cut_education"
+        ],
+        "circles": [
+          "CUT"
+        ],
+        "bucket": null,
+        "claims": [],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C123",
+      "parent_id": "P001",
+      "author": "R115",
+      "text": "Wasn't it that they were sending out $300 checks to everybody. I'm getting confused.",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "off_topic",
+        "claims": [],
+        "tone": "off_topic",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C124",
+      "parent_id": "P001",
+      "author": "R116",
+      "text": "Cut out handouts to illegals, no housing, welfare etc. That would be a start.",
+      "images": [],
+      "gold": {
+        "themes": [
+          "noncitizen_benefits"
+        ],
+        "circles": [
+          "CUT"
+        ],
+        "bucket": null,
+        "claims": [],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C125",
+      "parent_id": "P001",
+      "author": "R117",
+      "text": "and the pingrees are some of the richest people in the state, the govs father is a billionaire",
+      "images": [],
+      "gold": {
+        "themes": [],
+        "circles": [],
+        "bucket": "venting",
+        "claims": [
+          "K13"
+        ],
+        "tone": "attack",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C126",
+      "parent_id": "P001",
+      "author": "R118",
+      "text": "No need to recreate the wheel here. How does this graph compare to states that are actually, fiscally responsible? How can Mainers continue to face these ludicrous tax increases? Isn’t this the definition of insanity?",
+      "images": [],
+      "gold": {
+        "themes": [
+          "study_other_states"
+        ],
+        "circles": [],
+        "bucket": "process",
+        "claims": [],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C127",
+      "parent_id": "P001",
+      "author": "R119",
+      "text": "Time to cut all the extra curricular activities from education. You want your child to play a sport you pay for it.",
+      "images": [],
+      "gold": {
+        "themes": [
+          "cut_specific_items"
+        ],
+        "circles": [
+          "CUT"
+        ],
+        "bucket": null,
+        "claims": [],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C128",
+      "parent_id": "P001",
+      "author": "R120",
+      "text": "Usual Republican lies and nonsense. Their are few if any \"illegals\" on welfare. And even if their were its our fault because the law doesn't allow them to work. The structural budget gap exists every year often much larger than now. The structural gap is a myth. Nothing counts until we have an actual budget and that must be balanced. This is all about nothing. But I have a mythical solution to your mythical problem ,- end all handouts. Start with the tax breaks for corporations which now pay almost no income taxes in the state. When I moved here years ago they paid 27% of all income taxes.",
+      "images": [],
+      "gold": {
+        "themes": [
+          "end_corporate_tax_breaks"
+        ],
+        "circles": [
+          "REV"
+        ],
+        "bucket": null,
+        "claims": [
+          "K15",
+          "K09",
+          "K06"
+        ],
+        "tone": "constructive",
+        "opposes": []
+      }
+    },
+    {
+      "id": "C129",
+      "parent_id": "P001",
+      "author": "R121",
+      "text": "I see no relationship between ‘education’ budget slice and test scores. Maybe spending the money is making our students dumber? Perhaps it’s just another cover for a welfare program of a different stripe. Either way, cut the whole thing. That’s one big problem solved. Or spend it on infrastructure.",
+      "images": [],
+      "gold": {
+        "themes": [
+          "cut_education"
+        ],
+        "circles": [
+          "CUT"
+        ],
+        "bucket": null,
+        "claims": [],
+        "tone": "constructive",
+        "opposes": []
+      }
+    }
+  ],
+  "expected": {
+    "n_comments": 129,
+    "n_authors": 121,
+    "author_region_counts": {
+      "CUT": 46,
+      "outside:venting": 43,
+      "outside:process": 7,
+      "PRO": 5,
+      "REV": 5,
+      "CUT+PRO": 4,
+      "outside:pushback_only": 4,
+      "outside:off_topic": 3,
+      "REV+PRO": 2,
+      "CUT+REV+PRO": 2
+    },
+    "author_placement": {
+      "R001": "outside:process",
+      "R002": "CUT",
+      "R003": "CUT",
+      "R004": "CUT",
+      "R005": "REV+PRO",
+      "R006": "outside:venting",
+      "R007": "CUT+REV+PRO",
+      "R008": "outside:venting",
+      "R009": "CUT",
+      "R010": "CUT",
+      "R011": "outside:venting",
+      "R012": "CUT",
+      "R013": "CUT",
+      "R014": "CUT",
+      "R015": "outside:venting",
+      "R016": "CUT",
+      "R017": "outside:venting",
+      "R018": "CUT",
+      "R019": "CUT",
+      "R020": "CUT",
+      "R021": "outside:venting",
+      "R022": "outside:venting",
+      "R023": "PRO",
+      "R024": "outside:venting",
+      "R025": "CUT",
+      "R026": "REV+PRO",
+      "R027": "CUT+PRO",
+      "R028": "REV",
+      "R029": "outside:venting",
+      "R030": "outside:venting",
+      "R031": "outside:process",
+      "R032": "outside:process",
+      "R033": "CUT+REV+PRO",
+      "R034": "outside:venting",
+      "R035": "CUT",
+      "R036": "CUT",
+      "R037": "outside:pushback_only",
+      "R038": "outside:venting",
+      "R039": "outside:venting",
+      "R040": "outside:venting",
+      "R041": "outside:venting",
+      "R042": "CUT",
+      "R043": "outside:process",
+      "R044": "CUT",
+      "R045": "PRO",
+      "R046": "outside:venting",
+      "R047": "outside:pushback_only",
+      "R048": "outside:venting",
+      "R049": "outside:venting",
+      "R050": "outside:pushback_only",
+      "R051": "outside:venting",
+      "R052": "outside:venting",
+      "R053": "REV",
+      "R054": "CUT",
+      "R055": "CUT",
+      "R056": "outside:venting",
+      "R057": "outside:venting",
+      "R058": "PRO",
+      "R059": "outside:venting",
+      "R060": "CUT",
+      "R061": "outside:venting",
+      "R062": "CUT",
+      "R063": "CUT+PRO",
+      "R064": "CUT",
+      "R065": "outside:venting",
+      "R066": "CUT+PRO",
+      "R067": "CUT",
+      "R068": "CUT",
+      "R069": "CUT",
+      "R070": "CUT",
+      "R071": "outside:venting",
+      "R072": "outside:venting",
+      "R073": "PRO",
+      "R074": "CUT",
+      "R075": "outside:process",
+      "R076": "outside:venting",
+      "R077": "CUT",
+      "R078": "CUT",
+      "R079": "outside:venting",
+      "R080": "outside:off_topic",
+      "R081": "outside:pushback_only",
+      "R082": "outside:venting",
+      "R083": "CUT",
+      "R084": "outside:venting",
+      "R085": "CUT",
+      "R086": "outside:venting",
+      "R087": "CUT",
+      "R088": "outside:off_topic",
+      "R089": "CUT",
+      "R090": "outside:venting",
+      "R091": "CUT",
+      "R092": "CUT",
+      "R093": "outside:venting",
+      "R094": "outside:venting",
+      "R095": "PRO",
+      "R096": "REV",
+      "R097": "outside:venting",
+      "R098": "CUT",
+      "R099": "REV",
+      "R100": "CUT",
+      "R101": "CUT",
+      "R102": "CUT",
+      "R103": "CUT",
+      "R104": "CUT",
+      "R105": "outside:venting",
+      "R106": "outside:venting",
+      "R107": "outside:venting",
+      "R108": "outside:venting",
+      "R109": "CUT+PRO",
+      "R110": "outside:venting",
+      "R111": "outside:venting",
+      "R112": "outside:process",
+      "R113": "CUT",
+      "R114": "CUT",
+      "R115": "outside:off_topic",
+      "R116": "CUT",
+      "R117": "outside:venting",
+      "R118": "outside:process",
+      "R119": "CUT",
+      "R120": "REV",
+      "R121": "CUT"
+    },
+    "theme_author_counts": {
+      "fraud_waste_audit": 16,
+      "noncitizen_benefits": 13,
+      "cut_hhs": 9,
+      "second_home_tax": 6,
+      "cut_general": 5,
+      "school_consolidation_admin": 5,
+      "property_tax_relief": 5,
+      "cut_state_admin": 4,
+      "process_question": 3,
+      "tax_high_earners": 3,
+      "tax_relief_residents": 3,
+      "across_board_cut": 3,
+      "cut_education": 3,
+      "cut_specific_items": 3,
+      "protect_services": 3,
+      "limited_government": 2,
+      "review_revenue": 2,
+      "cut_vanity_projects": 2,
+      "defer_capital_projects": 2,
+      "study_other_states": 2,
+      "cut_higher_ed": 2,
+      "min_wage_20": 1,
+      "investor_property_tax": 1,
+      "rent_cap": 1,
+      "pause_programs": 1,
+      "prioritize_education_growth": 1,
+      "no_preemptive_cuts": 1,
+      "lodging_tax": 1,
+      "work_requirements": 1,
+      "cut_business_tax_regulation": 1,
+      "external_plan_reference": 1,
+      "end_developer_credits": 1,
+      "reverse_tax_cuts_wealthy": 1,
+      "savings_bonus_program": 1,
+      "protect_seniors": 1,
+      "education_outcomes": 1,
+      "end_energy_subsidies": 1,
+      "no_new_programs": 1,
+      "spending_freeze": 1,
+      "consumption_tax": 1,
+      "cut_unfilled_positions": 1,
+      "immigration_enforcement": 1,
+      "economic_growth": 1,
+      "welfare_time_limits": 1,
+      "means_test_programs": 1,
+      "demand_plan": 1,
+      "end_corporate_tax_breaks": 1
+    },
+    "theme_comment_counts": {
+      "fraud_waste_audit": 16,
+      "noncitizen_benefits": 13,
+      "cut_hhs": 9,
+      "second_home_tax": 6,
+      "cut_general": 5,
+      "school_consolidation_admin": 5,
+      "property_tax_relief": 5,
+      "cut_state_admin": 4,
+      "process_question": 3,
+      "tax_high_earners": 3,
+      "tax_relief_residents": 3,
+      "across_board_cut": 3,
+      "cut_education": 3,
+      "cut_specific_items": 3,
+      "protect_services": 3,
+      "limited_government": 2,
+      "review_revenue": 2,
+      "cut_vanity_projects": 2,
+      "defer_capital_projects": 2,
+      "study_other_states": 2,
+      "cut_higher_ed": 2,
+      "min_wage_20": 1,
+      "prioritize_education_growth": 1,
+      "pause_programs": 1,
+      "investor_property_tax": 1,
+      "rent_cap": 1,
+      "no_preemptive_cuts": 1,
+      "lodging_tax": 1,
+      "work_requirements": 1,
+      "cut_business_tax_regulation": 1,
+      "external_plan_reference": 1,
+      "reverse_tax_cuts_wealthy": 1,
+      "end_developer_credits": 1,
+      "savings_bonus_program": 1,
+      "protect_seniors": 1,
+      "education_outcomes": 1,
+      "consumption_tax": 1,
+      "spending_freeze": 1,
+      "cut_unfilled_positions": 1,
+      "end_energy_subsidies": 1,
+      "no_new_programs": 1,
+      "immigration_enforcement": 1,
+      "economic_growth": 1,
+      "welfare_time_limits": 1,
+      "means_test_programs": 1,
+      "demand_plan": 1,
+      "end_corporate_tax_breaks": 1
+    },
+    "opposes_author_counts": {
+      "new_taxes": 4,
+      "second_home_tax": 1
+    },
+    "tone_comment_counts": {
+      "constructive": 62,
+      "venting": 38,
+      "attack": 14,
+      "meta": 6,
+      "off_topic": 5,
+      "sarcasm": 4
+    },
+    "must_be_center_all_three": [
+      "R007",
+      "R033"
+    ]
+  }
+}
