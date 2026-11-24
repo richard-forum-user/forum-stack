@@ -1,0 +1,2651 @@
+{
+  "model_id": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+  "served_model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+  "prompt_version": "extract-v1",
+  "temperature": 0,
+  "comments": {
+    "C001": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "cut_general"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [],
+        "tone": "constructive",
+        "specificity": 0
+      },
+      "cache_key": "0c151f649cd9dccd659faed7bd2c950f3052fe965c0818372b67e341a75e8aaa|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C002": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "cut_general",
+          "limited_government"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "Cuts always “hurt” someone or some group of people, but that doesn’t mean they shouldn’t be made",
+            "kind": "prediction"
+          }
+        ],
+        "tone": "constructive",
+        "specificity": 0
+      },
+      "cache_key": "3b2acdea20b28522c66db6584990d915769db41021fdd1b8aaa12a5442b24f33|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C003": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "cut_education",
+          "school_consolidation_admin"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "The educational system is bloated",
+            "kind": "fact"
+          }
+        ],
+        "tone": "constructive",
+        "specificity": 1
+      },
+      "cache_key": "c6f20ed28cd5151e60ee8747bb503190158307957ab6f9065452a46f585b581d|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C004": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "limited_government"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "government grown wildly beyond the just purpose of government",
+            "kind": "fact"
+          },
+          {
+            "span": "There is one and only one root cause of the malaise in Maine",
+            "kind": "fact"
+          },
+          {
+            "span": "The first rule of thumb for producing widespread prosperity and liberty is relentless adherence to the principles of limited government and free exchange",
+            "kind": "fact"
+          }
+        ],
+        "tone": "constructive",
+        "specificity": 0
+      },
+      "cache_key": "6deb6887d3ecd5f4fba7310b6e1a145170346ab3ef464d4393b81b89ab532e01|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C005": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "second_home_tax",
+          "tax_high_earners",
+          "tax_relief_residents",
+          "min_wage_20"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "raise minimum wage to $20",
+            "kind": "prediction"
+          },
+          {
+            "span": "lower taxes on middle and low income",
+            "kind": "prediction"
+          }
+        ],
+        "tone": "constructive",
+        "specificity": 1
+      },
+      "cache_key": "f76f3b29ed8894e321fd157289fc795bfdb4dd0d358b0d459e134a8efa0043ad|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C006": {
+      "status": "ok",
+      "value": {
+        "themes": [],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "So like every budget cycle",
+            "kind": "prediction"
+          }
+        ],
+        "tone": "sarcasm",
+        "specificity": 0
+      },
+      "cache_key": "cc94ff801b5db11ca5120a8cd03b62743df887bf12ac1f0437ef0d3c2a56adf9|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C007": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "prioritize_education_growth",
+          "second_home_tax",
+          "rent_cap",
+          "cut_vanity_projects"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "we use a lot more money then we generate",
+            "kind": "fact"
+          },
+          {
+            "span": "we have limited funds and are a bit at the mercy of federal assistance",
+            "kind": "fact"
+          }
+        ],
+        "tone": "constructive",
+        "specificity": 1
+      },
+      "cache_key": "af63ce3a623e52db45f8ed288c70cefef96b164cc8bc042f95fc1007fd2aad7e|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C008": {
+      "status": "ok",
+      "value": {
+        "themes": [],
+        "new_theme_suggestions": [
+          {
+            "id": "cut_courts_public_safety_legal",
+            "label": "cut courts public safety legal"
+          }
+        ],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "defunding the police",
+            "kind": "fact"
+          }
+        ],
+        "tone": "attack",
+        "specificity": 1
+      },
+      "cache_key": "48d877d7bb882f499ee90ffaf88b429d8d3364feb2c685439ada9bdd46a9d346|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C009": {
+      "status": "ok",
+      "value": {
+        "themes": [],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [],
+        "tone": "sarcasm",
+        "specificity": 0
+      },
+      "cache_key": "aa44680b00f9d2669e15d39550a6bd42acc197d7654a335a27ec136f4e711188|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C010": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "cut_hhs",
+          "noncitizen_benefits"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "Handouts",
+            "kind": "fact"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 1
+      },
+      "cache_key": "7751b4aad5b1ad4b05e241cc221bcf23fdc0f20f0544f991d55df85e35e28ebd|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C011": {
+      "status": "ok",
+      "value": {
+        "themes": [],
+        "new_theme_suggestions": [],
+        "opposes": [
+          "tax_high_earners",
+          "end_corporate_tax_breaks"
+        ],
+        "claims": [
+          {
+            "span": "hand out big dollar contracts to my friends and family",
+            "kind": "personal"
+          }
+        ],
+        "tone": "sarcasm",
+        "specificity": 0
+      },
+      "cache_key": "177327a606a6b98809639ce87f64149f6fd86cc43d8972c3e51039ff8d56f8e8|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C012": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "across_board_cut"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "5% cut across the board",
+            "kind": "prediction"
+          }
+        ],
+        "tone": "constructive",
+        "specificity": 2
+      },
+      "cache_key": "76c538735f1596dc54a541fec53fa9ac8d9c0eec97536e2b8a2955ae33cc6fc6|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C013": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "cut_general",
+          "fraud_waste_audit"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "every single BS program",
+            "kind": "fact"
+          },
+          {
+            "span": "a TON of fraud and even more waste in Maine",
+            "kind": "fact"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 1
+      },
+      "cache_key": "945380ae9e2a8c3c76289c5e40bc7500658d124e05c855dd810e02783f2acf56|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C014": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "cut_general",
+          "across_board_cut"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "When tough times come for families and businesses the thing to do is tighten up the belt and manage with less.",
+            "kind": "fact"
+          }
+        ],
+        "tone": "constructive",
+        "specificity": 1
+      },
+      "cache_key": "0b28397285c0b2931474b9a131a2d99444d52a91bdd371debcdb444aa9e1a103|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C015": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "school_consolidation_admin"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "Enrollment in schools is dropping",
+            "kind": "fact"
+          }
+        ],
+        "tone": "constructive",
+        "specificity": 1
+      },
+      "cache_key": "3119144a17d7ab6e439205f3bfcfef2ce015f6a4b8162b7a6c429a7d2a864bb7|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C016": {
+      "status": "ok",
+      "value": {
+        "themes": [],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "It was the dumbass democrats who ran up the deficit for the last eight years",
+            "kind": "fact"
+          },
+          {
+            "span": "You really think they are smart enough to fix it",
+            "kind": "prediction"
+          }
+        ],
+        "tone": "attack",
+        "specificity": 0
+      },
+      "cache_key": "bd77fabd44493fe0010f048a0258652bf171198fd4b41f7f0970cbef34ba4ff2|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C017": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "noncitizen_benefits"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "All the free shit for one",
+            "kind": "prediction"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 0
+      },
+      "cache_key": "c3f14906bbb3d884a1355ac7f67e2f9ebe48b3b090a5e257f3c967a75eead463|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C018": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "limited_government"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [],
+        "tone": "constructive",
+        "specificity": 0
+      },
+      "cache_key": "cf836617e1e6bbc2bdbddac3aea6ee67b256aaf2fc28b54ec80f1a640fe9cf98|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C019": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "limited_government"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "the debt will become the bane of the state’s existence",
+            "kind": "prediction"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 0
+      },
+      "cache_key": "44c891f1815e97ce5dd205c06b8d5aa7c5652fee05984f3003a025d07dec263c|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C020": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "noncitizen_benefits"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "Get non citizens of our WELFARE",
+            "kind": "fact"
+          },
+          {
+            "span": "Non citizens are on SS AND SSI",
+            "kind": "fact"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 1
+      },
+      "cache_key": "60322c28cbaa879d62b76a711398af3265aa6fba48e2d3fd33b6838a88a59bb2|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C021": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "noncitizen_benefits"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "foreign nationals in this state receive financial benefits",
+            "kind": "fact"
+          }
+        ],
+        "tone": "constructive",
+        "specificity": 1
+      },
+      "cache_key": "25eee7d927e015f4635ff243639efe2d7647ede72aa5b7f1f6b2ec995009cf46|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C022": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "fraud_waste_audit"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "Get rid of the fraud",
+            "kind": "fact"
+          }
+        ],
+        "tone": "constructive",
+        "specificity": 0
+      },
+      "cache_key": "2018d9f7e093153fed8345ec2196793259d8b6af50b451c1d20fb37b7835f2d8|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C023": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "cut_general"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [
+          "cut_vanity_projects",
+          "cut_unfilled_positions",
+          "cut_state_admin",
+          "cut_specific_items",
+          "cut_hhs",
+          "cut_education",
+          "cut_higher_ed",
+          "school_consolidation_admin",
+          "noncitizen_benefits",
+          "end_developer_credits",
+          "pause_programs",
+          "spending_freeze",
+          "end_energy_subsidies",
+          "no_new_programs",
+          "welfare_time_limits",
+          "work_requirements",
+          "defer_capital_projects",
+          "means_test_programs",
+          "savings_bonus_program"
+        ],
+        "claims": [
+          {
+            "span": "don't want the government helping them",
+            "kind": "fact"
+          }
+        ],
+        "tone": "sarcasm",
+        "specificity": 1
+      },
+      "cache_key": "6e7af12070f631382b360597428e1836a8c56e9cf9b0ee05ad2b09b98b8ba8bc|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C024": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "cut_hhs"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "the blue piece represents welfare as well",
+            "kind": "fact"
+          }
+        ],
+        "tone": "constructive",
+        "specificity": 1
+      },
+      "cache_key": "fc67fa7f37e6a18d162bc1eee6d112c7dd6195808c76b5260f1d42eaa71a0c91|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C025": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "no_preemptive_cuts"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [
+          "across_board_cut",
+          "cut_general"
+        ],
+        "claims": [
+          {
+            "span": "this deficit is more likely to occur if politicians respond by cutting spending in advance",
+            "kind": "prediction"
+          }
+        ],
+        "tone": "constructive",
+        "specificity": 0
+      },
+      "cache_key": "0b7fcab2481674100511a3701406cf9bf2659fd802d649ab1707579f0a891e30|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C026": {
+      "status": "ok",
+      "value": {
+        "themes": [],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "a dumpster fire",
+            "kind": "prediction"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 0
+      },
+      "cache_key": "71f4a9e16bbefa2bf5af67f3416a28c1c8f394b764fef5aba71d16935a7f6943|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C027": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "cut_education"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "Cut education",
+            "kind": "fact"
+          }
+        ],
+        "tone": "constructive",
+        "specificity": 1
+      },
+      "cache_key": "6a3b141e77b6af6c54ec916c7262aca42d925fb76ee0d006ccef0c1faaaa0c01|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C028": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "second_home_tax",
+          "lodging_tax"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [],
+        "tone": "constructive",
+        "specificity": 2
+      },
+      "cache_key": "135db3ad496c14ec460687df0d89220fdf028bf811c2ce38ad5fa2bda6f9a5dc|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C029": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "across_board_cut",
+          "cut_hhs",
+          "cut_business_tax_regulation",
+          "work_requirements",
+          "end_energy_subsidies"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [
+          "tax_high_earners",
+          "second_home_tax",
+          "investor_property_tax",
+          "lodging_tax",
+          "reverse_tax_cuts_wealthy",
+          "end_corporate_tax_breaks"
+        ],
+        "claims": [
+          {
+            "span": "If I can cut my budget they can cut theirs",
+            "kind": "prediction"
+          },
+          {
+            "span": "HHS needs to be trimmed and fraud eradicated",
+            "kind": "fact"
+          },
+          {
+            "span": "The Dems/ socialists in Washington are going to f.. everything up",
+            "kind": "prediction"
+          },
+          {
+            "span": "Democrats plan to spike spending in the name of “affordability” — but that’s sure to explode inflation all over again",
+            "kind": "prediction"
+          },
+          {
+            "span": "The Committee for a Responsible Federal Budget just put the tab for Dems’ “first 100 days” proposals at a staggering $4.1 trillion through 2037",
+            "kind": "fact"
+          }
+        ],
+        "tone": "constructive",
+        "specificity": 2
+      },
+      "cache_key": "1722c51eb1927cb6278d3fcfe0997263b5b991cbe862834e72cf6a84fc2e62f0|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C030": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "second_home_tax",
+          "tax_high_earners"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "Add a tax for second homes and wealth over $200,000",
+            "kind": "fact"
+          }
+        ],
+        "tone": "constructive",
+        "specificity": 2
+      },
+      "cache_key": "3b4fff6b5ab5c1e8d196bd3387605678d8b0827f32df8c73d802e819e24e45ec|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C031": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "cut_general",
+          "tax_relief_residents"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [
+          "tax_high_earners"
+        ],
+        "claims": [
+          {
+            "span": "The blue section will increase by 20 to 30 percent",
+            "kind": "prediction"
+          },
+          {
+            "span": "Free everything for everyone",
+            "kind": "prediction"
+          },
+          {
+            "span": "Then just bend over and keep giving",
+            "kind": "prediction"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 0
+      },
+      "cache_key": "bd5d106f043876dae141e6647b341f8fc04b9aeebaa09cbd813b8009f77f36b4|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C032": {
+      "status": "ok",
+      "value": {
+        "themes": [],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [],
+        "tone": "attack",
+        "specificity": 0
+      },
+      "cache_key": "3166a5a92185df82ca71134db5c21746702049e7be324617472adb043f923507|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C033": {
+      "status": "ok",
+      "value": {
+        "themes": [],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "lots of good ideas to get started",
+            "kind": "fact"
+          }
+        ],
+        "tone": "constructive",
+        "specificity": 0
+      },
+      "cache_key": "3fd8529448c6763e95b15b7f2909e47dc4e0d5c6edfef8fd65f6d2ad565bfcd9|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C034": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "review_revenue"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "which may have changed since the last estimate",
+            "kind": "prediction"
+          }
+        ],
+        "tone": "constructive",
+        "specificity": 0
+      },
+      "cache_key": "567ae72a5ccd01724c94d6f98a3fc7fa436553f04d3499fb57d122b28af19021|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C035": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "reverse_tax_cuts_wealthy",
+          "second_home_tax",
+          "end_developer_credits",
+          "cut_vanity_projects"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "Reversing Lepages tax cuts for the wealthy",
+            "kind": "fact"
+          },
+          {
+            "span": "Stop giving tax credits to developers",
+            "kind": "fact"
+          },
+          {
+            "span": "the newly added exit in Saco that makes zero sense",
+            "kind": "fact"
+          }
+        ],
+        "tone": "constructive",
+        "specificity": 1
+      },
+      "cache_key": "28ab5a5b7ff94137ad589f28d510f342308b6d66ee3f84c62c65308f484e4b48|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C036": {
+      "status": "ok",
+      "value": {
+        "themes": [],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "Do the opposite of the previous governor",
+            "kind": "prediction"
+          }
+        ],
+        "tone": "constructive",
+        "specificity": 0
+      },
+      "cache_key": "8b32387dc3585cd0def2a184ff8df06e3f9725604a0db4e582adabc58c27a73c|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C037": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "cut_specific_items"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "Cancel the Cellphones",
+            "kind": "fact"
+          }
+        ],
+        "tone": "constructive",
+        "specificity": 1
+      },
+      "cache_key": "8f8806b943fad77a6190bafa9c61b1e0339bc47da57df8e2b36b5288be8a7428|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C038": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "cut_hhs",
+          "cut_general",
+          "across_board_cut"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "10% cut to the big blue blob",
+            "kind": "prediction"
+          }
+        ],
+        "tone": "constructive",
+        "specificity": 2
+      },
+      "cache_key": "f64e6bcf01ab13ed0d9c1016ef6b311ce9a622627cf970f8154b1831cecbe31f|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C039": {
+      "status": "ok",
+      "value": {
+        "themes": [],
+        "new_theme_suggestions": [],
+        "opposes": [
+          "tax_high_earners",
+          "tax_relief_residents",
+          "second_home_tax",
+          "investor_property_tax",
+          "lodging_tax",
+          "reverse_tax_cuts_wealthy",
+          "end_corporate_tax_breaks"
+        ],
+        "claims": [
+          {
+            "span": "TAXATION IS THEFT",
+            "kind": "fact"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 0
+      },
+      "cache_key": "0152f585bd10f71285f61ac7a7022aa507c2b23385c733ee3383edeccf501715|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C040": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "cut_hhs",
+          "noncitizen_benefits",
+          "welfare_time_limits",
+          "work_requirements"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "Maine has always been known as a Wellfare state all the way back in the 80's and 90's and they just keep spending on it",
+            "kind": "fact"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 0
+      },
+      "cache_key": "edd45091c7c3966e9f9760748ed3bf5f8213c44d4f9ab56720bfccf545dd34b8|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C041": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "cut_general",
+          "tax_relief_residents"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [
+          "tax_high_earners",
+          "second_home_tax",
+          "investor_property_tax",
+          "lodging_tax"
+        ],
+        "claims": [
+          {
+            "span": "Lower all the taxes but don't cut any of the services I rely on",
+            "kind": "prediction"
+          },
+          {
+            "span": "tax somebody else, but not me",
+            "kind": "prediction"
+          }
+        ],
+        "tone": "sarcasm",
+        "specificity": 0
+      },
+      "cache_key": "99abb217ea48cdca095c93690811131ab560dc9534e05f4d85318842aba17d1b|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C042": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "cut_general",
+          "limited_government"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [
+          "tax_relief_residents"
+        ],
+        "claims": [
+          {
+            "span": "they cut nothing the past 8 years",
+            "kind": "fact"
+          },
+          {
+            "span": "they are certainly not going to start now",
+            "kind": "prediction"
+          },
+          {
+            "span": "You are just gonna have to get used to payin' more for everything",
+            "kind": "prediction"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 0
+      },
+      "cache_key": "7a72a71970b6f03d2ad1a053ec921ceb3f3a4de6a7fed799c3c1b2356313e427|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C043": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "tax_high_earners"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "You voted for a Democrat you pay their tax increase",
+            "kind": "prediction"
+          }
+        ],
+        "tone": "sarcasm",
+        "specificity": 0
+      },
+      "cache_key": "d955787b928826be4cff1b8bdd725bad518e38da55b279c590dfbf51442c9938|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C044": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "fraud_waste_audit",
+          "cut_specific_items",
+          "savings_bonus_program",
+          "pause_programs"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "Waste, Fraud and Abuse",
+            "kind": "fact"
+          },
+          {
+            "span": "Maines version of DOGE",
+            "kind": "fact"
+          },
+          {
+            "span": "enrollment and grades are down",
+            "kind": "fact"
+          }
+        ],
+        "tone": "constructive",
+        "specificity": 1
+      },
+      "cache_key": "707b0fc277e1de2898aa219737e788163d11dded916e28236f27e8df4143c2c8|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C045": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "process_question"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "just that. Projected",
+            "kind": "fact"
+          },
+          {
+            "span": "You begin by working with best guess estimates of revenue and expenses",
+            "kind": "fact"
+          },
+          {
+            "span": "One of the best at the job was a Republican, Sawin Millett",
+            "kind": "personal"
+          }
+        ],
+        "tone": "constructive",
+        "specificity": 0
+      },
+      "cache_key": "a3412174962994f4bf3fb96d9c8192b3745a550ffbf47315d616399aacbd20b3|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C046": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "cut_hhs",
+          "cut_education",
+          "cut_state_admin"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "Hhs and k-12 12-15% gone right off the top",
+            "kind": "prediction"
+          },
+          {
+            "span": "Fire all thr newly highered admins that are not absolutely necessary",
+            "kind": "fact"
+          }
+        ],
+        "tone": "constructive",
+        "specificity": 2
+      },
+      "cache_key": "982752d8e81214c78ba7ac1ae28db374d99b8353a2e6587d3d759622315a447a|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C047": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "cut_hhs",
+          "protect_services"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [
+          "cut_hhs",
+          "cut_general"
+        ],
+        "claims": [
+          {
+            "span": "people need help, and someday it might be you or someone you love",
+            "kind": "fact"
+          }
+        ],
+        "tone": "constructive",
+        "specificity": 1
+      },
+      "cache_key": "70d7179b3948e5a2ab47d33108f8ec6d0b2853f764c3e25178ab94f745d30adc|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C048": {
+      "status": "ok",
+      "value": {
+        "themes": [],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "Maybe Get a new governor that’s not questioning about it but knows what to do about it",
+            "kind": "prediction"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 0
+      },
+      "cache_key": "93b9f166930436edb20443da8ee03495c0577946daa64be902a5dcdb51af8903|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C049": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "second_home_tax"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [
+          "second_home_tax"
+        ],
+        "claims": [
+          {
+            "span": "killing the goose that laid the golden egg",
+            "kind": "prediction"
+          }
+        ],
+        "tone": "constructive",
+        "specificity": 1
+      },
+      "cache_key": "f0964761f1fe03bd46207aee9a23532f6503175a75b09b2a56756d7d1c07b8b1|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C050": {
+      "status": "ok",
+      "value": {
+        "themes": [],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "find a billion somewhere",
+            "kind": "prediction"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 0
+      },
+      "cache_key": "b213d40925261666c24e7a6750c974d686fef4725e7516856d6018dd2d66415f|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C051": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "limited_government"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [
+          "tax_relief_residents",
+          "protect_services"
+        ],
+        "claims": [
+          {
+            "span": "Guess who’s gonna pay for it ?",
+            "kind": "prediction"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 0
+      },
+      "cache_key": "0759a6d859296e4bfb831e2714ef46101224f4879419d50a5282d9bd7f4d7486|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C052": {
+      "status": "ok",
+      "value": {
+        "themes": [],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "it’s soooooo much more palatable to the masses than TAXES",
+            "kind": "prediction"
+          }
+        ],
+        "tone": "sarcasm",
+        "specificity": 0
+      },
+      "cache_key": "bb989904e1a349d3b8bc2a85e57faa77f65b16e29593e4990183b3d1481fc639|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C053": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "limited_government"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [],
+        "tone": "venting",
+        "specificity": 0
+      },
+      "cache_key": "36db05cdacd53c6db3cd736e4ddb7bd48bee928c965833fc3124985b0ea84501|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C054": {
+      "status": "ok",
+      "value": {
+        "themes": [],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "DEMONrats and their useful idiots destroying the state",
+            "kind": "prediction"
+          }
+        ],
+        "tone": "attack",
+        "specificity": 0
+      },
+      "cache_key": "a894c4f9b8ecf707f84456fd2f3ab1692cab2aa2c1d7af82999f39cb8dffcb35|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C055": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "tax_high_earners"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "Raise taxes on upper incomes and properties",
+            "kind": "prediction"
+          }
+        ],
+        "tone": "constructive",
+        "specificity": 1
+      },
+      "cache_key": "305e50437c6fb7782d64efc99fb1b2a85e5b9b3d5899595162e287f6c0716980|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C056": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "cut_state_admin"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "people in Augusta need a pay cut",
+            "kind": "prediction"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 1
+      },
+      "cache_key": "845d14f142b7a23d5e64cb76ff7708025806f3b5c81b9ca1fcc1ea6d2f586a43|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C057": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "cut_state_admin",
+          "fraud_waste_audit"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "Cut state administrative costs and investigate the healthcare and welfare fraud. That alone would save a lot.",
+            "kind": "prediction"
+          }
+        ],
+        "tone": "constructive",
+        "specificity": 1
+      },
+      "cache_key": "8e074fac609e5c5800f51956846a703c14fa2a8784622190f0d43eb0a0158ebc|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C058": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "noncitizen_benefits"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [],
+        "tone": "venting",
+        "specificity": 0
+      },
+      "cache_key": "be5132b28d5f1301d03c8c7b032af7d4950e4db411ac384fe8a085573befa2c8|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C059": {
+      "status": "ok",
+      "value": {
+        "themes": [],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "Get ready for the worst",
+            "kind": "prediction"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 0
+      },
+      "cache_key": "b8551c2c64678b642c6113aceb01cbbb7619761ac59d12a4a1a75942c3f00768|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C060": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "cut_hhs"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [
+          "cut_hhs"
+        ],
+        "claims": [
+          {
+            "span": "Dont pay your hospitals..they all close..huh..",
+            "kind": "prediction"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 0
+      },
+      "cache_key": "ace035136d3fc7e2a163cab95f006fe92b93e3eabf08dcc474e47c5928ef7b84|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C061": {
+      "status": "ok",
+      "value": {
+        "themes": [],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "Tax and spend",
+            "kind": "fact"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 0
+      },
+      "cache_key": "2dba4df6f14d4abf7b51f90c1e827d9d6c86d951a44c8dc1fa92bd76128a10bd|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C062": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "cut_hhs",
+          "cut_education",
+          "school_consolidation_admin",
+          "cut_state_admin",
+          "noncitizen_benefits"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "State government increased under Mills",
+            "kind": "fact"
+          }
+        ],
+        "tone": "constructive",
+        "specificity": 1
+      },
+      "cache_key": "72fce0a953b8a21430ea2cb5c3843291de49b3d16cdb9fc63448fb271aa4b701|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C063": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "limited_government"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [
+          "tax_relief_residents",
+          "protect_services"
+        ],
+        "claims": [
+          {
+            "span": "They have a super major in Maine, so the Dems can run that deficit to 10 billion and the only thing you can do about it is pay the Bill!",
+            "kind": "prediction"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 0
+      },
+      "cache_key": "856438c5ccaeb17ce3e7d0c538c2d54c38cc4a5a28c2417125ab7289cc2ca06e|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C064": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "noncitizen_benefits",
+          "cut_vanity_projects"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "we did not need a new wall or fence and landscaping around the Blaine house",
+            "kind": "fact"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 1
+      },
+      "cache_key": "3f4b44262d058a778e523cacffc8ae5467e04fb162cd13737b4ff3c3b34b2c9f|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C065": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "cut_general"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "Be fiscally responsible for a change!!!",
+            "kind": "prediction"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 0
+      },
+      "cache_key": "3696fdae389d084101665c297b0f9b8a674df7f9e5ec9210a1ce53bdb8909bb1|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C066": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "cut_vanity_projects",
+          "cut_specific_items"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "sanford spend many millions of state money to build a new school they didn't need",
+            "kind": "fact"
+          },
+          {
+            "span": "the deputy mayor made $2million selling her family's useless swamp land to the town to build it on",
+            "kind": "personal"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 1
+      },
+      "cache_key": "803f99cbcaab4a63ef6833fe6d05fb6b25b0a5832b527d5aa76f5fbecc45ed0a|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C067": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "cut_general"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "Maine had a surplus when she took over",
+            "kind": "fact"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 0
+      },
+      "cache_key": "d7a40d54bd095cca44434739ea32446dd3c5789cd6cdf7477edf88152e1fea98|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C068": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "protect_seniors"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "Maine has a large elderly population on a fixed income who can't afford the urgent level of spending",
+            "kind": "fact"
+          }
+        ],
+        "tone": "constructive",
+        "specificity": 0
+      },
+      "cache_key": "8752283eba2377526708405c1fe3bafa88cb5602ae94fbf24fa6b2ecb04bb2ea|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C069": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "cut_state_admin"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "do nothing to cut back their numbers",
+            "kind": "fact"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 1
+      },
+      "cache_key": "c513b6ac899e3ce2549a55ae66cfe66229a73ccab38c31d047641d040d4ce82b|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C070": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "fraud_waste_audit"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "Medicare/Mainecare/childcare fraud the state allowed to happen",
+            "kind": "fact"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 1
+      },
+      "cache_key": "d202caa32929e8a6ab9be4bca914a23bd2352ccae7ff1116f5def316ea0cb210|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C071": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "noncitizen_benefits"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "38% to illegals",
+            "kind": "fact"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 0
+      },
+      "cache_key": "de7a59f70126ef3fb1b7d1fdce3da1a93bcb7b1dfdde41dd3e612b6518f1e37a|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C072": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "fraud_waste_audit"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "Get control of all the fraud in the State government!",
+            "kind": "prediction"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 0
+      },
+      "cache_key": "b5fa63ce4c9fe91ecfeae6bb062d836271126840d34fd31576bdfd0b0a22aa71|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C073": {
+      "status": "ok",
+      "value": {
+        "themes": [],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "Hiding ALL my money",
+            "kind": "personal"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 0
+      },
+      "cache_key": "ec2d2e5cb2c1edd5c977460fa049e0e6f3d67acdb4603b5a5fe2c523b2205623|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C074": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "noncitizen_benefits"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [
+          "tax_relief_residents",
+          "protect_services"
+        ],
+        "claims": [
+          {
+            "span": "the deficit is going to be doubled",
+            "kind": "prediction"
+          },
+          {
+            "span": "the Democrats are going to continue their bad policies that caused the deficit",
+            "kind": "fact"
+          },
+          {
+            "span": "they are bringing in more illegal alien freeloaders to add to the problem",
+            "kind": "fact"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 0
+      },
+      "cache_key": "b913f7b5fcb7ed8b3614b2aab3452d0027f7670bec4d8beead38e4900e588a6a|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C075": {
+      "status": "ok",
+      "value": {
+        "themes": [],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [],
+        "tone": "off_topic",
+        "specificity": 0
+      },
+      "cache_key": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C076": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "cut_hhs",
+          "cut_education",
+          "school_consolidation_admin"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "HHS and education with the stipulation that the cuts have to come from administrators in the school system",
+            "kind": "fact"
+          }
+        ],
+        "tone": "constructive",
+        "specificity": 1
+      },
+      "cache_key": "3771b2c1e111189a0b0a7c52d440650f2dda8d985966210fb01615316bd2ea15|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C077": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "process_question"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "We are not privy to the information about what is required by law in the budget",
+            "kind": "fact"
+          }
+        ],
+        "tone": "meta",
+        "specificity": 0
+      },
+      "cache_key": "5dd5fd6681d28bf44af38e5dfcd67ac180af756a0efd13ac67a54e44a3cf91cd|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C078": {
+      "status": "ok",
+      "value": {
+        "themes": [],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [],
+        "tone": "attack",
+        "specificity": 0
+      },
+      "cache_key": "34a13a1ec83838d42abec54c6d4b173a9692eae597a6f401bd03a7768f8d0a72|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C079": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "noncitizen_benefits"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "all the money spent on the illegals",
+            "kind": "fact"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 0
+      },
+      "cache_key": "2bacc1c72fe57adc12ae0c6113940097846046158387861d488de80c0f0cbc70|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C080": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "cut_hhs",
+          "welfare_time_limits",
+          "work_requirements"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "Welfare 38% fkn PATHETIC!!!",
+            "kind": "fact"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 1
+      },
+      "cache_key": "9a6181488a7e3a7920e4cd63ef95f87b063c29a5953603e0afa2fed0f2879036|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C081": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "noncitizen_benefits"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [],
+        "tone": "venting",
+        "specificity": 0
+      },
+      "cache_key": "b03533730a5092de5280fb76628c41668ad1238f3e2ed8b9e5397c6887f68efd|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C082": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "tax_relief_residents"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [
+          "tax_high_earners",
+          "tax_relief_residents"
+        ],
+        "claims": [
+          {
+            "span": "raise our taxes again just to give it away and kill us mainers that pay then",
+            "kind": "prediction"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 0
+      },
+      "cache_key": "46f537b442928af3c77aaa1e622b76c79c36e009f6e9cba1930e0fa23067ee36|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C083": {
+      "status": "ok",
+      "value": {
+        "themes": [],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [],
+        "tone": "venting",
+        "specificity": 0
+      },
+      "cache_key": "2d404543b1faad7fc74d7c07fe7e89bc5fd8b6a29644eb0e08660e63b4183578|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C084": {
+      "status": "ok",
+      "value": {
+        "themes": [],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "Was it really worth it??",
+            "kind": "prediction"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 0
+      },
+      "cache_key": "b276824e0a94801400ed89b558266161e83b25e5e9f0606bee9538573a1550c1|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C085": {
+      "status": "ok",
+      "value": {
+        "themes": [],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "How many actually got cancer and died and loved ones lost in car accidents",
+            "kind": "fact"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 0
+      },
+      "cache_key": "2979583333603b706ad82daead41b9e243acfd3fdb730053f3eb283824036033|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C086": {
+      "status": "ok",
+      "value": {
+        "themes": [],
+        "new_theme_suggestions": [],
+        "opposes": [
+          "tax_high_earners",
+          "tax_relief_residents"
+        ],
+        "claims": [
+          {
+            "span": "give them my money",
+            "kind": "prediction"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 0
+      },
+      "cache_key": "b9e1f1b28071efc42cf32c7d4a8c28f10c355455422c2edf82cc039f6f325c9f|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C087": {
+      "status": "ok",
+      "value": {
+        "themes": [],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "socialist democratic party and their lies",
+            "kind": "fact"
+          }
+        ],
+        "tone": "attack",
+        "specificity": 0
+      },
+      "cache_key": "bbca6801cd03a7a01f9ad89f8c1d1b81de875fed00cc6e8561d9d70aff548b77|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C088": {
+      "status": "ok",
+      "value": {
+        "themes": [],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "free shit",
+            "kind": "fact"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 0
+      },
+      "cache_key": "dcfdf519e08ba359d3cecc6e824cb57dde8621bbf2b92054cd980247db9dae15|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C089": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "cut_hhs",
+          "noncitizen_benefits",
+          "fraud_waste_audit"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [
+          "second_home_tax",
+          "tax_high_earners",
+          "end_energy_subsidies",
+          "investor_property_tax",
+          "lodging_tax",
+          "reverse_tax_cuts_wealthy",
+          "end_corporate_tax_breaks",
+          "cut_education",
+          "cut_higher_ed",
+          "cut_state_admin",
+          "cut_specific_items",
+          "cut_vanity_projects",
+          "end_developer_credits",
+          "pause_programs",
+          "spending_freeze",
+          "cut_unfilled_positions"
+        ],
+        "claims": [
+          {
+            "span": "billions in fraud",
+            "kind": "prediction"
+          }
+        ],
+        "tone": "constructive",
+        "specificity": 1
+      },
+      "cache_key": "a2e103397c0ffaa55cda5a4557f3d7b42be42df77d977b9458525b115bbbc9d1|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C090": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "cut_general",
+          "tax_high_earners"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [
+          "tax_relief_residents"
+        ],
+        "claims": [
+          {
+            "span": "Democrats don't cut! They look for who they can tax more!",
+            "kind": "prediction"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 0
+      },
+      "cache_key": "c7f223172fbb68a1ebfc33f51e6c91cf06423d1750e7f55e79184ea002856466|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C091": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "fraud_waste_audit",
+          "study_other_states"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "our neighbors are so successful and Maine has such high taxes and poor schooling",
+            "kind": "fact"
+          }
+        ],
+        "tone": "constructive",
+        "specificity": 1
+      },
+      "cache_key": "ab02fd8f699ccd222f9dc850d61c0c041aa1c8bb0820bfae54621ddd66e0c21a|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C092": {
+      "status": "ok",
+      "value": {
+        "themes": [],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [],
+        "tone": "venting",
+        "specificity": 0
+      },
+      "cache_key": "d034633ff6e5cbd8ce84e5e9ba7b839c645c9c3009e9b689ca9e305800ab434b|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C093": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "cut_education"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "41st overall and in the bottom 10 for K-12 performance",
+            "kind": "fact"
+          }
+        ],
+        "tone": "constructive",
+        "specificity": 1
+      },
+      "cache_key": "90a199f7f2a992520f114139d1520eec797660180c43d002d50c456cb047e08d|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C094": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "fraud_waste_audit"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "the fraud in maine could be over 45 million",
+            "kind": "fact"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 1
+      },
+      "cache_key": "d894b9281a76389d5dca0f39f33370486195577947f51d4f8a129578a2949ad8|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C095": {
+      "status": "ok",
+      "value": {
+        "themes": [],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "You ran against Collins on lowering cost. Looks like you lied.",
+            "kind": "personal"
+          }
+        ],
+        "tone": "attack",
+        "specificity": 0
+      },
+      "cache_key": "0baab8038ad71a4318d1c0a80d73da1da5d43747cdbebd41fecc8f289c200e08|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C096": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "cut_unfilled_positions",
+          "end_energy_subsidies",
+          "no_new_programs",
+          "fraud_waste_audit",
+          "consumption_tax"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [
+          "tax_high_earners",
+          "protect_services"
+        ],
+        "claims": [
+          {
+            "span": "Zero state budget increases for 2 years",
+            "kind": "prediction"
+          },
+          {
+            "span": "identify and eliminate all Medicare/Medicaid waste and fraud",
+            "kind": "fact"
+          }
+        ],
+        "tone": "constructive",
+        "specificity": 1
+      },
+      "cache_key": "74c9c8cf6e79bc8f31eb318477fbea57626a256f3ef4fab7dc3f1f4e016e8c0f|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C097": {
+      "status": "ok",
+      "value": {
+        "themes": [],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "we're screwed",
+            "kind": "prediction"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 0
+      },
+      "cache_key": "337eee14fd3cf5089d02b65defedd620534130ff39657041e8c7866e44515289|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C098": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "cut_higher_ed"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "Give people a free ride and it won’t be appreciated",
+            "kind": "prediction"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 1
+      },
+      "cache_key": "386b2788b5b0cad55e085080dd95c0c2ecd0de356a358412c5e42f66dc8712f8|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C099": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "fraud_waste_audit"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "cut the fraud",
+            "kind": "fact"
+          }
+        ],
+        "tone": "constructive",
+        "specificity": 0
+      },
+      "cache_key": "5418dce3e7e6335969b10eac7bcb26ef3d55f789db27afe9dbd54ef52dccb636|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C100": {
+      "status": "ok",
+      "value": {
+        "themes": [],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "Mainers who have to buy gas, groceries, etc actually care about this",
+            "kind": "prediction"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 0
+      },
+      "cache_key": "32737833ce3e82f3341f0838f4a0b8b7192a3c531919863128b9e28fa3f9b7ad|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C101": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "cut_hhs"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "You know where the health and human services budget is going",
+            "kind": "fact"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 1
+      },
+      "cache_key": "78409a72ad9f8a90186655db0c75f07d78612ada159a26282f614fb2470ed08b|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C102": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "property_tax_relief"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "outrageous local property tax relief",
+            "kind": "fact"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 1
+      },
+      "cache_key": "8c30f4df379da168df111157c0a04a97f7b3d949577eb13bddf3c79f37a3a8b8|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C103": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "second_home_tax"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "Tax the snowbirds like Paulie LiarPage",
+            "kind": "personal"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 1
+      },
+      "cache_key": "66ceb84109adbb3efa039a5a9483ad8c5bddc84cc14fac0c37aecd217e3bd81d|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C104": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "immigration_enforcement"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "Get ICE to get the illegals out",
+            "kind": "fact"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 0
+      },
+      "cache_key": "16728950fc2ed4f78a5cec7214ecd92b308f3ee50e35ebf59116cbd8d2e66585|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C105": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "cut_hhs",
+          "noncitizen_benefits",
+          "fraud_waste_audit"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "Healthcare fraud and giving it for free to illegals and people who shouldn't have it",
+            "kind": "fact"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 1
+      },
+      "cache_key": "3fa48d0c67d371fc3d18acc79f039288764120ad6520d533abaa77dde39ec46a|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C106": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "economic_growth"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "Bring in Data Centers",
+            "kind": "prediction"
+          }
+        ],
+        "tone": "constructive",
+        "specificity": 1
+      },
+      "cache_key": "12fcf6db7a11ca6a16b955c5cf9e678cf8be4b1a30ac3d46dfa12ac16f8c0e49|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C107": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "cut_hhs"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "That 38% needs to be decreased",
+            "kind": "prediction"
+          }
+        ],
+        "tone": "constructive",
+        "specificity": 1
+      },
+      "cache_key": "69697b8a0aec99044cd38feb72bfe8c2cc3bd57e150bc3e6a390c9969ea5a077|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C108": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "cut_hhs"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "Time to open the books on Health and Human Services",
+            "kind": "fact"
+          }
+        ],
+        "tone": "constructive",
+        "specificity": 1
+      },
+      "cache_key": "4744d04a114a11a28e28568d8bd9fe838917d7d124d56d13de9f29fcee0c5ea7|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C109": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "fraud_waste_audit",
+          "noncitizen_benefits"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "scammers and illegals",
+            "kind": "fact"
+          }
+        ],
+        "tone": "constructive",
+        "specificity": 1
+      },
+      "cache_key": "a6baa3b9b1a3ca571b9affd3ca11da0f76ad937e6da1e4eda302bc01c3045670|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C110": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "noncitizen_benefits"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [
+          "tax_relief_residents"
+        ],
+        "claims": [
+          {
+            "span": "Spend billions supporting illegal aliens with tax funded programs like snap, section 8, health insurance, medications furniture allowance, clothing, transportation, translators and much more like legal aid all paid for by law-abiding tax paying citizens that are LEGAL to be in this country.",
+            "kind": "fact"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 0
+      },
+      "cache_key": "40c31e5a8616885b7d46bc408f47dc2ebf81e0bd5792d2e0fd118c2bde5d7178|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C111": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "cut_higher_ed",
+          "welfare_time_limits",
+          "work_requirements"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "The welfare system needs to be overhauled completely",
+            "kind": "fact"
+          },
+          {
+            "span": "Welfare is not a career",
+            "kind": "fact"
+          },
+          {
+            "span": "A single parent (legal citizen) can collect to cover 1 child for 3 - 5 years",
+            "kind": "fact"
+          }
+        ],
+        "tone": "constructive",
+        "specificity": 1
+      },
+      "cache_key": "1e3c7fe40a04bf38dfb3e5047d06999aa5e2f226c94054d98de309e8d42ddd90|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C112": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "cut_education",
+          "cut_hhs",
+          "noncitizen_benefits"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "the Democrats love to support deadbeats and illegals",
+            "kind": "fact"
+          },
+          {
+            "span": "they're failing so miserably at it",
+            "kind": "fact"
+          },
+          {
+            "span": "liberal indoctrination is really expensive",
+            "kind": "prediction"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 1
+      },
+      "cache_key": "880e1407d37f6d4b3408ac378df48009c5668edcbd63bf2a6157233347cf7df1|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C113": {
+      "status": "ok",
+      "value": {
+        "themes": [],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "when Lepage left, he left us with a 1.3B surplus",
+            "kind": "fact"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 0
+      },
+      "cache_key": "b16502ae2ae9d98ded4e4616aadc57e8c3cbfd3232994a0aeba7a95d38c9c686|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C114": {
+      "status": "ok",
+      "value": {
+        "themes": [],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "demoncrats did this",
+            "kind": "fact"
+          }
+        ],
+        "tone": "attack",
+        "specificity": 0
+      },
+      "cache_key": "d2ad69a53d4f9e412460639b285bb7e4a1ec7d94ad05d31ecdc0fca96edc14cd|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C115": {
+      "status": "ok",
+      "value": {
+        "themes": [],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "Democrats are like teen girls with their daddies credit card, and she's drunk",
+            "kind": "personal"
+          }
+        ],
+        "tone": "attack",
+        "specificity": 0
+      },
+      "cache_key": "612ba04c3bc67a52f25c6c9dc9e6c5e680f217955bbd8202467309d5688359a0|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C116": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "cut_education",
+          "cut_specific_items"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "no, their kids do not receive free lunches",
+            "kind": "personal"
+          }
+        ],
+        "tone": "constructive",
+        "specificity": 1
+      },
+      "cache_key": "579cab9394cef8b77aa2aea544bacfb8f488d21a73f976e032b12ffbec1dc890|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C117": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "cut_education",
+          "cut_hhs",
+          "second_home_tax"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "If wealthy people have second homes, then they dont need Education and Health/Human Services, both of which are the biggest cost portion of the Budget",
+            "kind": "prediction"
+          }
+        ],
+        "tone": "constructive",
+        "specificity": 1
+      },
+      "cache_key": "83c98b62fde24417b635329f06a6a93327b496acbf8b5594021706bafc5c08f3|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C118": {
+      "status": "ok",
+      "value": {
+        "themes": [],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "Thank a democrat and Mills for this",
+            "kind": "fact"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 0
+      },
+      "cache_key": "301ee6ac79970f8565ecfe401b9df3347cbfd833e46801840c91b4c9fddb49e6|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C119": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "limited_government",
+          "cut_vanity_projects",
+          "no_new_programs",
+          "process_question"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [
+          "tax_relief_residents",
+          "protect_services"
+        ],
+        "claims": [],
+        "tone": "venting",
+        "specificity": 0
+      },
+      "cache_key": "a0495fadc130478d389f4707b0306072ab01d6e1e387a38a08bbfe92cc68eb12|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C120": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "fraud_waste_audit",
+          "cut_hhs"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "Get the fraud out of hhs that would take care of a good portion of it",
+            "kind": "prediction"
+          }
+        ],
+        "tone": "constructive",
+        "specificity": 1
+      },
+      "cache_key": "08a9529a303671993e8af494074689cf8f37f7b6c2312353f19c42c7ff12ac31|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C121": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "cut_general",
+          "tax_high_earners"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [
+          "tax_relief_residents"
+        ],
+        "claims": [
+          {
+            "span": "Another lie then",
+            "kind": "prediction"
+          },
+          {
+            "span": "Sure more taxation",
+            "kind": "prediction"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 0
+      },
+      "cache_key": "362ffb6d7c333241930bd56034a595757c7b5787daed9b0e287b01b5b4dbf148|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C122": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "cut_education"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "Cut education",
+            "kind": "fact"
+          }
+        ],
+        "tone": "constructive",
+        "specificity": 1
+      },
+      "cache_key": "bac9fe054a62bee51a478e33ff4e586a952de10b15ab6d84b815b1723e19bf0a|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C123": {
+      "status": "ok",
+      "value": {
+        "themes": [],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "$300 checks to everybody",
+            "kind": "fact"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 0
+      },
+      "cache_key": "cef2e9f5e67c3079cc21e0f3bfa05ab7bd0874fa4538eac763b27b43a9f0b0bc|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C124": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "noncitizen_benefits"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "Cut out handouts to illegals, no housing, welfare etc.",
+            "kind": "fact"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 1
+      },
+      "cache_key": "b31f4b15306f010918c53d66718a24fbd350ad5a58601ead7fd80eddbe6442f4|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C125": {
+      "status": "ok",
+      "value": {
+        "themes": [],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "the pingrees are some of the richest people in the state, the govs father is a billionaire",
+            "kind": "personal"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 0
+      },
+      "cache_key": "89f831a066c71598d0f7877ec8ba2eaf7fbe23d60f90df5feea107e3b03c15e3|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C126": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "study_other_states"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "fiscally responsible",
+            "kind": "fact"
+          },
+          {
+            "span": "ludicrous tax increases",
+            "kind": "fact"
+          },
+          {
+            "span": "the definition of insanity",
+            "kind": "prediction"
+          }
+        ],
+        "tone": "venting",
+        "specificity": 0
+      },
+      "cache_key": "d2225f48ecf82667c8a7c136ffd7c5a6b0006ab8088292da3541d31c172c7d3d|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C127": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "cut_education"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [],
+        "claims": [
+          {
+            "span": "Time to cut all the extra curricular activities from education. You want your child to play a sport you pay for it.",
+            "kind": "prediction"
+          }
+        ],
+        "tone": "constructive",
+        "specificity": 1
+      },
+      "cache_key": "6e6617ed573a5e01c06d19dcc9a18b43d82de4aa8e1fb77865694d1f7207949c|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C128": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "cut_business_tax_regulation",
+          "end_corporate_tax_breaks"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [
+          "noncitizen_benefits"
+        ],
+        "claims": [
+          {
+            "span": "the law doesn't allow them to work",
+            "kind": "fact"
+          },
+          {
+            "span": "they paid 27% of all income taxes",
+            "kind": "fact"
+          }
+        ],
+        "tone": "attack",
+        "specificity": 1
+      },
+      "cache_key": "bc3f1cf055937d1124c8814f931fb586e4995a54b54908e25b5c331dce58e079|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    },
+    "C129": {
+      "status": "ok",
+      "value": {
+        "themes": [
+          "cut_education"
+        ],
+        "new_theme_suggestions": [],
+        "opposes": [
+          "prioritize_education_growth"
+        ],
+        "claims": [
+          {
+            "span": "I see no relationship between ‘education’ budget slice and test scores",
+            "kind": "prediction"
+          },
+          {
+            "span": "Maybe spending the money is making our students dumber",
+            "kind": "prediction"
+          },
+          {
+            "span": "Perhaps it’s just another cover for a welfare program of a different stripe",
+            "kind": "prediction"
+          }
+        ],
+        "tone": "constructive",
+        "specificity": 1
+      },
+      "cache_key": "9d87692409d37d817781be20e722e8555f1939c2df36b0e83d340127833716f9|extract-v1|@cf/meta/llama-3.3-70b-instruct-fp8-fast"
+    }
+  }
+}

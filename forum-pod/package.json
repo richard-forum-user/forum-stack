@@ -19,7 +19,8 @@
     "ios:open": "npx cap open ios",
     "ios:archive": "npm run vendor:civic-ai && VITE_BASE=./ vite build && npx cap sync ios && cd ios/App && xcodebuild -workspace App.xcworkspace -scheme App -configuration Release -archivePath build/App.xcarchive archive",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "eval:opinion-map": "node src/opinion-map/eval.mjs"
   },
   "dependencies": {
     "@capacitor-community/sqlite": "^6.0.2",

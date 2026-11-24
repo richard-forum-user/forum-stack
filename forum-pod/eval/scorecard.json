@@ -1,0 +1,157 @@
+{
+  "fixture_id": "maine-budget-gap-2028-29",
+  "model": "@cf/meta/llama-3.3-70b-instruct-fp8-fast",
+  "prompt_version": "extract-v1",
+  "tests": [
+    {
+      "id": "gold",
+      "name": "Gold themes reproduce author_region_counts",
+      "pass": true,
+      "detail": "exact"
+    },
+    {
+      "id": "unit-span",
+      "name": "Claim span must be an exact substring",
+      "pass": true,
+      "detail": "kept 1, dropped 1"
+    },
+    {
+      "id": "unit-theme",
+      "name": "Unknown theme moves to suggestions",
+      "pass": true,
+      "detail": "fraud_waste_audit"
+    },
+    {
+      "id": "unit-unknown",
+      "name": "Unknown fields fail validation",
+      "pass": true,
+      "detail": "unknown_field:note"
+    },
+    {
+      "id": "unit-json",
+      "name": "Invalid JSON is detected and a JSON object can be recovered",
+      "pass": true,
+      "detail": "not_json"
+    },
+    {
+      "id": "unit-tone",
+      "name": "Tone outside the list fails",
+      "pass": true,
+      "detail": "bad_tone"
+    },
+    {
+      "id": "unit-marker-open",
+      "name": "Open question skips the phrase marker",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "unit-marker-oppose",
+      "name": "Single proposal checks oppose before support",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "unit-marker-support",
+      "name": "Single proposal support phrase",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "unit-marker-missing",
+      "name": "Missing mode does not run as single_proposal",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "unit-prompt",
+      "name": "Extraction prompt omits the author key",
+      "pass": true,
+      "detail": ""
+    },
+    {
+      "id": "unit-seed",
+      "name": "Seed plan is idempotent and hides author keys",
+      "pass": true,
+      "detail": "Resident 001"
+    },
+    {
+      "id": "1",
+      "name": "Author placement agreement",
+      "pass": false,
+      "detail": "83 of 121 authors match (need 103). model @cf/meta/llama-3.3-70b-instruct-fp8-fast, prompt extract-v1, failures 0"
+    },
+    {
+      "id": "2",
+      "name": "Center authors",
+      "pass": false,
+      "detail": "R007=CUT+REV+PRO R033=CUT+REV"
+    },
+    {
+      "id": "3",
+      "name": "Region counts",
+      "pass": false,
+      "detail": "CUT got 63 gold 46; venting got 28 gold 43; process got 4 gold 7; CUT+REV+PRO got 1 gold 2; CUT+REV got 4 gold 0"
+    },
+    {
+      "id": "4",
+      "name": "Theme recall",
+      "pass": false,
+      "detail": "noncitizen_benefits got 17 gold 13; cut_hhs got 19 gold 9; second_home_tax got 8 gold 6; cut_general got 13 gold 5; property_tax_relief got 1 gold 5; tax_high_earners got 6 gold 3; tax_relief_residents got 4 gold 3; across_board_cut got 4 gold 3; cut_education got 12 gold 3; cut_specific_items got 4 gold 3; protect_services got 1 gold 3"
+    },
+    {
+      "id": "5",
+      "name": "Pushback",
+      "pass": false,
+      "detail": "second_home_tax 8 for, 5 against; new_taxes 0"
+    },
+    {
+      "id": "6",
+      "name": "Tone",
+      "pass": true,
+      "detail": "109 of 129 comments agree on constructive vs not"
+    },
+    {
+      "id": "7",
+      "name": "Claims",
+      "pass": true,
+      "detail": "K02 routed"
+    },
+    {
+      "id": "8",
+      "name": "Hallucination guard",
+      "pass": true,
+      "detail": "zero bad spans"
+    },
+    {
+      "id": "9",
+      "name": "Determinism",
+      "pass": true,
+      "detail": "two placement runs"
+    },
+    {
+      "id": "10",
+      "name": "Count guard",
+      "pass": true,
+      "detail": "wrong number dropped"
+    },
+    {
+      "id": "11",
+      "name": "Privacy",
+      "pass": true,
+      "detail": "no author keys and no comment text"
+    },
+    {
+      "id": "12",
+      "name": "Venn",
+      "pass": true,
+      "detail": "html and screenshots"
+    },
+    {
+      "id": "bridge",
+      "name": "Bridge statements",
+      "pass": true,
+      "detail": "Cut Health Services | Reduce General Spending | Tax Non Resident Homes | Cut Education Funding | Stop Cosmetic Projects"
+    }
+  ]
+}
